@@ -1,0 +1,400 @@
+/**
+ * FACTLY - Credibility Chart Styles
+ * Modern, accessible data visualization
+ */
+
+/* ============================================
+   Container
+   ============================================ */
+.credibility-chart {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.4s ease-out 0.1s both;
+}
+
+.credibility-chart h3 {
+  margin: 0 0 var(--space-6) 0;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.credibility-chart h3::before {
+  content: '📊';
+  font-size: var(--text-2xl);
+}
+
+/* ============================================
+   Chart Placeholder (Empty State)
+   ============================================ */
+.chart-placeholder {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--text-muted);
+}
+
+.chart-placeholder-icon {
+  font-size: var(--text-5xl);
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.chart-placeholder p {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.placeholder-bar {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  position: relative;
+}
+
+.placeholder-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-full);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   Chart Container
+   ============================================ */
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ============================================
+   Chart Item
+   ============================================ */
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.chart-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-label-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chart-label-icon {
+  font-size: var(--text-base);
+}
+
+/* ============================================
+   Chart Bar
+   ============================================ */
+.chart-bar-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  height: 28px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: var(--space-2);
+}
+
+/* Bar gradient overlays */
+.chart-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
+  border-radius: var(--radius-full) var(--radius-full) 0 0;
+}
+
+.chart-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+/* Bar Colors */
+.chart-bar.source-reliability {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.chart-bar.content-consistency {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.chart-bar.fact-check-coverage {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.chart-bar.cross-reference {
+  background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+}
+
+.chart-value {
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  min-width: 44px;
+  text-align: right;
+}
+
+/* ============================================
+   Chart Summary
+   ============================================ */
+.chart-summary {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-light);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.summary-item {
+  text-align: center;
+  padding: var(--space-4);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
+}
+
+.summary-item:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+}
+
+.summary-label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
+}
+
+.summary-value {
+  display: block;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.summary-item.score .summary-value {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.summary-item.confidence .summary-value {
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   Factor Details
+   ============================================ */
+.factor-details {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-light);
+}
+
+.factor-details h4 {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.factor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.factor-item:last-child {
+  border-bottom: none;
+}
+
+.factor-name {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.factor-score {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/* Small devices (phones) */
+@media (max-width: 640px) {
+  .credibility-chart {
+    padding: var(--space-5);
+  }
+  
+  .credibility-chart h3 {
+    font-size: var(--text-lg);
+  }
+  
+  .chart-bar-wrapper {
+    height: 24px;
+  }
+  
+  .chart-value {
+    font-size: var(--text-xs);
+    min-width: 36px;
+  }
+  
+  .chart-summary {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+  
+  .summary-item {
+    padding: var(--space-3);
+  }
+  
+  .summary-value {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* Medium devices (tablets) */
+@media (min-width: 641px) and (max-width: 768px) {
+  .credibility-chart {
+    padding: var(--space-5);
+  }
+  
+  .chart-summary {
+    gap: var(--space-3);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .credibility-chart {
+    animation: none;
+  }
+  
+  .chart-bar {
+    transition: none;
+  }
+  
+  .chart-bar::after,
+  .placeholder-bar::after {
+    animation: none;
+  }
+  
+  .summary-item:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .credibility-chart {
+    border-width: 2px;
+    border-color: var(--text-secondary);
+  }
+  
+  .chart-bar-wrapper {
+    border: 1px solid var(--text-muted);
+  }
+  
+  .summary-item {
+    border-width: 2px;
+    border-color: var(--text-muted);
+  }
+}

@@ -1,0 +1,365 @@
+/**
+ * FACTLY - Verification Form Styles
+ * Modern, accessible, and responsive design
+ */
+
+/* ============================================
+   Container
+   ============================================ */
+.verification-form-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  animation: slideUp 0.5s ease-out;
+}
+
+.verification-form-container h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-3);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.verification-form-container > p {
+  color: var(--text-muted);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-8);
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================
+   Form
+   ============================================ */
+.verification-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  background: var(--bg-secondary);
+  padding: var(--space-8);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   Textarea
+   ============================================ */
+.verification-form textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: var(--space-5);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  resize: vertical;
+  transition: border-color var(--transition-fast), 
+              box-shadow var(--transition-fast),
+              background var(--transition-fast);
+}
+
+.verification-form textarea:hover {
+  border-color: var(--border-medium);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.verification-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+}
+
+.verification-form textarea::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.verification-form textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+}
+
+/* ============================================
+   Submit Button
+   ============================================ */
+.verification-form button[type="submit"] {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-white);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border: none;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.verification-form button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+}
+
+.verification-form button[type="submit"]:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.verification-form button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Loading spinner inside button */
+.verification-form button[type="submit"] .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--color-white);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================
+   Error Message
+   ============================================ */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+  color: #fca5a5;
+  font-size: var(--text-base);
+  text-align: left;
+}
+
+.error-message::before {
+  content: '⚠️';
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Features Section
+   ============================================ */
+.features {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+  flex-wrap: wrap;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.feature:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.feature-icon {
+  font-size: var(--text-2xl);
+  filter: grayscale(0.2);
+  transition: filter var(--transition-fast);
+}
+
+.feature:hover .feature-icon {
+  filter: grayscale(0);
+}
+
+/* ============================================
+   Character Counter
+   ============================================ */
+.char-counter {
+  text-align: right;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: calc(-1 * var(--space-3));
+}
+
+.char-counter.warning {
+  color: var(--color-warning);
+}
+
+.char-counter.error {
+  color: var(--color-error);
+}
+
+/* ============================================
+   Input Options (URL/Text Toggle)
+   ============================================ */
+.input-options {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  justify-content: center;
+}
+
+.input-option {
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.input-option:hover {
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+}
+
+.input-option.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/* Small devices (phones) */
+@media (max-width: 640px) {
+  .verification-form-container {
+    padding: var(--space-6) var(--space-4);
+  }
+  
+  .verification-form-container h2 {
+    font-size: var(--text-2xl);
+  }
+  
+  .verification-form-container > p {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-6);
+  }
+  
+  .verification-form {
+    padding: var(--space-5);
+  }
+  
+  .verification-form textarea {
+    min-height: 140px;
+    padding: var(--space-4);
+  }
+  
+  .verification-form button[type="submit"] {
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-base);
+  }
+  
+  .features {
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    align-items: center;
+  }
+  
+  .feature {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+}
+
+/* Medium devices (tablets) */
+@media (min-width: 641px) and (max-width: 768px) {
+  .verification-form-container {
+    padding: var(--space-6);
+  }
+  
+  .features {
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  
+  .feature {
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .verification-form-container {
+    animation: none;
+  }
+  
+  .feature:hover {
+    transform: none;
+  }
+  
+  .verification-form button[type="submit"]:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .verification-form {
+    border-width: 2px;
+    border-color: var(--text-secondary);
+  }
+  
+  .verification-form textarea {
+    border-width: 2px;
+  }
+  
+  .feature {
+    border-width: 2px;
+  }
+}

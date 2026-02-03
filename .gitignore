@@ -1,0 +1,90 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS specific
+.env
+Thumbs.db
+Desktop.ini
+
+# Node / Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+.eslintcache
+
+# Build outputs
+/build
+/dist
+.cache/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+factly.log
+factly.log.*
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Backend specific
+backend/runserver.log
+backend/.backend_pid
+frontend/.frontend_pid
+frontend/npm.log
+
+# OS / Editor temporary files
+*.tmp
+*.bak
+.git-credentials

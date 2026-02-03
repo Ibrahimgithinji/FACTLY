@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="dark" />
+    
+    <!-- Primary Meta Tags -->
+    <title>FACTLY - AI-Powered Fact Checking & News Verification</title>
+    <meta name="title" content="FACTLY - AI-Powered Fact Checking & News Verification" />
+    <meta name="description" content="Verify the credibility of news headlines and articles with FACTLY's advanced AI fact-checking. Get instant credibility scores, evidence analysis, and source verification." />
+    <meta name="keywords" content="fact checking, news verification, fake news detector, credibility score, AI fact checker, misinformation, disinformation, news analysis" />
+    <meta name="author" content="FACTLY" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://factly.app" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://factly.app" />
+    <meta property="og:title" content="FACTLY - AI-Powered Fact Checking & News Verification" />
+    <meta property="og:description" content="Verify the credibility of news headlines and articles with FACTLY's advanced AI fact-checking. Get instant credibility scores, evidence analysis, and source verification." />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta property="og:site_name" content="FACTLY" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://factly.app" />
+    <meta property="twitter:title" content="FACTLY - AI-Powered Fact Checking & News Verification" />
+    <meta property="twitter:description" content="Verify the credibility of news headlines and articles with FACTLY's advanced AI fact-checking. Get instant credibility scores, evidence analysis, and source verification." />
+    <meta property="twitter:image" content="%PUBLIC_URL%/twitter-image.png" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    
+    <!-- Security Headers (meta equivalents) -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    
+    <!-- Mobile Web App Capable -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="FACTLY" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#0f172a" />
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
+    
+    <!-- Structured Data - JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "FACTLY",
+      "description": "AI-Powered Fact Checking & News Verification Platform",
+      "url": "https://factly.app",
+      "applicationCategory": "NewsApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "AI-powered fact checking",
+        "Credibility scoring",
+        "Source verification",
+        "Evidence analysis",
+        "Cross-reference checking"
+      ]
+    }
+    </script>
+    
+    <!-- Performance: Preload critical resources -->
+    <link rel="preload" href="%PUBLIC_URL%/static/js/main.chunk.js" as="script" />
+    <link rel="preload" href="%PUBLIC_URL%/static/css/main.chunk.css" as="style" />
+    
+    <style>
+      /* Critical CSS for initial render */
+      html {
+        background-color: #0f172a;
+      }
+      
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #0f172a;
+        color: #f8fafc;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Loading state styles */
+      .initial-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .initial-loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #22c55e;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      .initial-loading-text {
+        color: #94a3b8;
+        font-size: 1rem;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Skip link for accessibility */
+      .skip-link {
+        position: absolute;
+        top: -100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #22c55e;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        z-index: 9999;
+        transition: top 0.2s;
+      }
+      
+      .skip-link:focus {
+        top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <noscript>
+      <div style="padding: 2rem; text-align: center; background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <h1 style="margin-bottom: 1rem; font-size: 2rem;">JavaScript Required</h1>
+        <p style="color: #94a3b8; max-width: 400px;">
+          FACTLY requires JavaScript to function properly. Please enable JavaScript in your browser settings to use our fact-checking services.
+        </p>
+      </div>
+    </noscript>
+    
+    <div id="root">
+      <!-- Initial loading state -->
+      <div class="initial-loading">
+        <div class="initial-loading-spinner"></div>
+        <p class="initial-loading-text">Loading FACTLY...</p>
+      </div>
+    </div>
+  </body>
+</html>
