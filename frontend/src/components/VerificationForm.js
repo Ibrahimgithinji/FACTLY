@@ -51,7 +51,7 @@ const VerificationForm = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query: input.trim() }),
+        body: JSON.stringify({ text: input.trim() }),
         signal: controller.signal,
       });
 

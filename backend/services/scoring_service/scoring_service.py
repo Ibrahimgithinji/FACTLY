@@ -237,8 +237,11 @@ class ScoringService:
                 sources_analyzed.append(getattr(source_reliability, 'source_name', 'Unknown'))
 
             # Related news sources
+            # Note: RelatedNews doesn't have source_credibility, so we use relevance_score as proxy
+            # In production, you'd want to look up source credibility from a database
             for news in related_news[:5]:  # Consider top 5 related articles
-                source_score = getattr(news, 'source_credibility', 0.5)
+                # Use relevance_score as a proxy for source credibility when not available
+                source_score = getattr(news, 'relevance_score', 0.5)
                 relevance = getattr(news, 'relevance_score', 0.5)
                 weighted = source_score * relevance
                 scores.append(weighted)

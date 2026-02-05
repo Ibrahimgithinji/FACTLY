@@ -102,6 +102,12 @@ class EvidenceSearchService:
             api_key=self.newsldr_api_key,
             cache_manager=self.cache
         ) if self.newsldr_api_key else None
+        
+        # Log which clients are available
+        google_status = "READY" if self.google_client else "NOT AVAILABLE"
+        newsldr_status = "READY" if self.newsldr_client else "NOT AVAILABLE"
+        newsapi_status = "READY" if self.newsapi_key else "NOT AVAILABLE"
+        logger.info(f"EvidenceSearchService initialized - Google: {google_status}, NewsLdr: {newsldr_status}, NewsAPI: {newsapi_status}")
 
     def search_evidence(self, claim: str, language: str = "en",
                         max_results_per_source: int = 10) -> EvidenceCollection:

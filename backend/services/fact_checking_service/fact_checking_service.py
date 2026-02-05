@@ -7,6 +7,7 @@ Orchestrates fact-checking using multiple external APIs and returns unified resu
 import logging
 from typing import List, Optional
 from datetime import datetime
+import os
 from .google_fact_check import GoogleFactCheckClient
 from .newsldr_api import NewsLdrClient
 from .unified_schema import VerificationResult, ClaimReview, RelatedNews, SourceReliability
@@ -26,8 +27,39 @@ class FactCheckingService:
             cache_manager: Optional cache manager instance
         """
         self.cache = cache_manager or CacheManager()
-        self.google_client = GoogleFactCheckClient(cache_manager=self.cache)
-        self.newsldr_client = NewsLdrClient(cache_manager=self.cache)
+        
+        # Get API keys from environment
+        self.google_api_key = os.getenv('GOOGLE_FACT_CHECK_API_KEY')
+        self.newsldr_api_key = os.getenv('NEWSLDR_API_KEY')
+        
+        # Initialize Google Fact Check client (will raise ValueError if no API key)
+        self.google_client = None
+        if self.google_api_key:
+            try:
+                self.google_client = GoogleFactCheckClient(api_key=self.google_api_key, cache_manager=self.cache)
+            except ValueError as e:
+                logger.warning(f"Google Fact Check client not initialized: {e}")
+        else:
+            logger.warning("GOOGLE_FACT_CHECK_API_KEY not set - Google Fact Check disabled")
+        
+        # Initialize NewsLdr client (will raise ValueError if no API key)
+        self.newsldr_client = None
+        if self.newsldr_api_key:
+            try:
+                self.newsldr_client = NewsLdrClient(api_key=self.newsldr_api_key, cache_manager=self.cache)
+            except ValueError as e:
+                logger.warning(f"NewsLdr client not initialized: {e}")
+        else:
+            logger.warning("NEWSLDR_API_KEY not set - NewsLdr disabled")
+        
+        # Also check if clients were initialized successfully
+        self._check_clients_ready()
+
+    def _check_clients_ready(self):
+        """Log which API clients are ready for use."""
+        google_ready = "Google Fact Check" if self.google_client else "NOT AVAILABLE"
+        newsldr_ready = "NewsLdr" if self.newsldr_client else "NOT AVAILABLE"
+        logger.info(f"API Clients Ready - Google Fact Check: {google_ready}, NewsLdr: {newsldr_ready}")
 
     def verify_claim(self, claim: str, language: str = "en") -> VerificationResult:
         """
@@ -44,23 +76,29 @@ class FactCheckingService:
 
         # Get claim reviews from Google Fact Check
         claim_reviews = []
-        try:
-            claim_reviews = self.google_client.search_claims(claim, language)
-            logger.info(f"Found {len(claim_reviews)} claim reviews from Google")
-        except Exception as e:
-            logger.error(f"Error getting Google claim reviews: {e}")
+        if self.google_client:
+            try:
+                claim_reviews = self.google_client.search_claims(claim, language)
+                logger.info(f"Found {len(claim_reviews)} claim reviews from Google")
+            except Exception as e:
+                logger.error(f"Error getting Google claim reviews: {e}")
+        else:
+            logger.warning("Google Fact Check client not available")
 
         # Get related news from NewsLdr
         related_news = []
-        try:
-            related_news = self.newsldr_client.get_related_news(claim)
-            logger.info(f"Found {len(related_news)} related news articles from NewsLdr")
-        except Exception as e:
-            logger.error(f"Error getting NewsLdr related news: {e}")
+        if self.newsldr_client:
+            try:
+                related_news = self.newsldr_client.get_related_news(claim)
+                logger.info(f"Found {len(related_news)} related news articles from NewsLdr")
+            except Exception as e:
+                logger.error(f"Error getting NewsLdr related news: {e}")
+        else:
+            logger.warning("NewsLdr client not available")
 
         # Get source reliability (if we have sources from news)
         source_reliability = None
-        if related_news:
+        if related_news and self.newsldr_client:
             # Use the most relevant source for reliability check
             top_source = max(related_news, key=lambda x: x.relevance_score).source
             try:
