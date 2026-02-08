@@ -8,8 +8,9 @@ This enhanced version includes better fact-checking integration and more accurat
 
 import logging
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
+import time
 import re
 
 from ..fact_checking_service.unified_schema import VerificationResult, ClaimReview
@@ -40,6 +41,7 @@ class FactlyScoreResult:
     evidence_summary: Dict[str, Any]
     timestamp: datetime
     metadata: Dict[str, Any]
+    processing_time: float  # Time in seconds to calculate the score
 
 
 class ScoringService:
@@ -100,6 +102,9 @@ class ScoringService:
         """
         logger.info(f"Calculating enhanced Factly Score™ for claim: {verification_result.original_claim[:100]}...")
 
+        # Track processing time
+        start_time = time.time()
+
         # Calculate component scores
         components = []
 
@@ -122,6 +127,9 @@ class ScoringService:
         # Calculate final weighted score
         total_weighted_score = sum(comp.weighted_score for comp in components)
         factly_score = int(round(total_weighted_score * 100))  # Convert to 0-100 scale
+        
+        # Calculate processing time
+        processing_time = time.time() - start_time
 
         # Determine classification
         classification = self._classify_score(factly_score)
@@ -149,7 +157,8 @@ class ScoringService:
                 'processing_timestamp': datetime.now().isoformat(),
                 'total_claim_reviews': len(verification_result.claim_reviews),
                 'total_related_news': len(verification_result.related_news)
-            }
+            },
+            processing_time=processing_time
         )
 
     def _calculate_fact_check_consensus(self, verification_result: VerificationResult) -> ComponentScore:

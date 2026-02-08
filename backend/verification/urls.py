@@ -7,6 +7,7 @@ app_name = 'verification'
 urlpatterns = [
     # Standard verification endpoints
     path('verify/', views.VerificationView.as_view(), name='verify'),
+    path('verify/enhanced/', views.EnhancedVerificationView.as_view(), name='verify_enhanced'),
     path('health/', views.health_check, name='health_check'),
     
     # Fast verification endpoints (async, optimized)

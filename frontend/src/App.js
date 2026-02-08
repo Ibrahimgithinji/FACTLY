@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import './App.css';
 
 // Lazy load components for code splitting
+// React-scripts webpack config supports basic code splitting with lazy()
 const VerificationForm = lazy(() => import('./components/VerificationForm'));
 const ScoreDisplay = lazy(() => import('./components/ScoreDisplay'));
 const EvidencePanel = lazy(() => import('./components/EvidencePanel'));

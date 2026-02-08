@@ -45,32 +45,38 @@ const CredibilityChart = () => {
     );
   }
 
-  const { score, confidence, factors = {} } = result;
+  const { score, confidence, factors = {}, components = [] } = result;
+
+  // Map backend component data to chart display
+  const componentMap = {};
+  components.forEach(comp => {
+    componentMap[comp.name.toLowerCase().replace(/\s+/g, '')] = comp;
+  });
 
   const chartData = [
     { 
       label: 'Source Reliability', 
-      value: factors.sourceReliability || score * 0.9, 
+      value: componentMap['sourcecredibility'] ? componentMap['sourcecredibility'].score : (factors.sourceReliability || score * 0.9), 
       className: 'source-reliability',
       icon: '📚'
     },
     { 
       label: 'Content Consistency', 
-      value: factors.contentConsistency || score * 0.85, 
+      value: componentMap['contentanalysis'] ? componentMap['contentanalysis'].score : (factors.contentConsistency || score * 0.85), 
       className: 'content-consistency',
       icon: '✓'
     },
     { 
       label: 'Fact-Check Coverage', 
-      value: factors.factCheckCoverage || confidence, 
+      value: componentMap['factcheckconsensus'] ? componentMap['factcheckconsensus'].score : (factors.factCheckCoverage || confidence), 
       className: 'fact-check-coverage',
       icon: '🔍'
     },
     { 
-      label: 'Cross-Reference Score', 
-      value: factors.crossReference || score * 0.8, 
-      className: 'cross-reference',
-      icon: '🔗'
+      label: 'Evidence Quality', 
+      value: componentMap['evidencequality'] ? componentMap['evidencequality'].score : (factors.evidenceQuality || score * 0.8), 
+      className: 'evidence-quality',
+      icon: '📋'
     },
   ];
 

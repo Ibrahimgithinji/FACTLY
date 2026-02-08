@@ -30,6 +30,15 @@ const VerificationForm = () => {
     return null;
   }, []);
 
+  const isValidUrl = useCallback((string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -44,14 +53,23 @@ const VerificationForm = () => {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for URL extraction
 
-      const response = await fetch('http://localhost:8000/api/verify/', {
+      // Detect if input is a URL
+      const isUrl = isValidUrl(input.trim());
+      
+      const requestBody = isUrl
+        ? { url: input.trim() }
+        : { text: input.trim() };
+
+      console.log('Sending request to API:', isUrl ? 'URL mode' : 'Text mode');
+
+      const response = await fetch('http://localhost:8000/api/verify/enhanced/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: input.trim() }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
 
@@ -63,6 +81,11 @@ const VerificationForm = () => {
       }
 
       const data = await response.json();
+      console.log('API Response received:', {
+        factlyScore: data.factly_score?.factly_score || data.factly_score?.score,
+        classification: data.factly_score?.classification
+      });
+      
       localStorage.setItem('factCheckResult', JSON.stringify(data));
       localStorage.setItem('factCheckQuery', input.trim());
       navigate('/results');
@@ -130,7 +153,7 @@ const VerificationForm = () => {
             maxLength={MAX_CHARS}
           />
           <p id="input-help" className="sr-only">
-            Enter a news headline, article URL, or paste article text to verify its credibility.
+            Enter a news headline, article URL, or article text to verify its credibility.
             Maximum {MAX_CHARS} characters.
           </p>
           <div 

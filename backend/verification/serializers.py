@@ -41,10 +41,10 @@ class FactlyScoreResultSerializer(serializers.Serializer):
 class VerificationResponseSerializer(serializers.Serializer):
     """Serializer for complete verification response."""
     original_text = serializers.CharField()
-    extracted_content = serializers.DictField(required=False)
-    nlp_analysis = serializers.DictField(required=False)
-    fact_checking_results = serializers.DictField()
+    extracted_content = serializers.DictField(required=False, allow_null=True, allow_empty=True)
+    nlp_analysis = serializers.DictField(required=False, allow_null=True, allow_empty=True)
+    fact_checking_results = serializers.DictField(required=False, allow_null=True)
     factly_score = FactlyScoreResultSerializer()
     processing_time = serializers.FloatField()
-    api_sources = serializers.ListField(child=serializers.CharField())
-    timestamp = serializers.DateTimeField()
+    api_sources = serializers.ListField(child=serializers.CharField(), required=False, allow_null=True)
+    timestamp = serializers.DateTimeField(required=False, allow_null=True)
