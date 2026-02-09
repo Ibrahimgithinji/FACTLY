@@ -86,8 +86,30 @@ const VerificationForm = () => {
         classification: data.factly_score?.classification
       });
       
+      // Save result for current session
       localStorage.setItem('factCheckResult', JSON.stringify(data));
       localStorage.setItem('factCheckQuery', input.trim());
+      
+      // Save to history
+      const historyItem = {
+        id: `history_${Date.now()}`,
+        claim: input.trim(),
+        originalText: input.trim(),
+        factly_score: data.factly_score?.factly_score || data.factly_score?.score,
+        classification: data.factly_score?.classification,
+        confidence_level: data.factly_score?.confidence_level,
+        components: data.factly_score?.components || [],
+        justifications: data.factly_score?.justifications || [],
+        timestamp: new Date().toISOString()
+      };
+      
+      // Add to existing history
+      const existingHistory = JSON.parse(localStorage.getItem('factCheckHistory') || '[]');
+      existingHistory.unshift(historyItem);
+      // Keep only last 50 items
+      const trimmedHistory = existingHistory.slice(0, 50);
+      localStorage.setItem('factCheckHistory', JSON.stringify(trimmedHistory));
+      
       navigate('/results');
     } catch (err) {
       if (err.name === 'AbortError') {
@@ -118,6 +140,33 @@ const VerificationForm = () => {
         };
         localStorage.setItem('factCheckResult', JSON.stringify(mockData));
         localStorage.setItem('factCheckQuery', input.trim());
+        
+        // Save mock data to history
+        const mockHistoryItem = {
+          id: `history_${Date.now()}`,
+          claim: input.trim(),
+          originalText: input.trim(),
+          factly_score: Math.round(mockData.score * 100),
+          classification: mockData.score > 0.7 ? 'Likely Authentic' : (mockData.score > 0.4 ? 'Uncertain' : 'Likely Fake'),
+          confidence_level: 'High',
+          components: [
+            { name: 'Source Reliability', score: mockData.factors.sourceReliability, weight: 0.25 },
+            { name: 'Content Consistency', score: mockData.factors.contentConsistency, weight: 0.25 },
+            { name: 'Fact-Check Coverage', score: mockData.factors.factCheckCoverage, weight: 0.25 },
+            { name: 'Cross-Reference', score: mockData.factors.crossReference, weight: 0.25 },
+          ],
+          justifications: [
+            `Factly Score™ of ${Math.round(mockData.score * 100)}/100 indicates likely authentic credibility.`,
+            'Analysis based on multiple fact-checking sources.',
+          ],
+          timestamp: new Date().toISOString()
+        };
+        
+        const existingMockHistory = JSON.parse(localStorage.getItem('factCheckHistory') || '[]');
+        existingMockHistory.unshift(mockHistoryItem);
+        const trimmedMockHistory = existingMockHistory.slice(0, 50);
+        localStorage.setItem('factCheckHistory', JSON.stringify(trimmedMockHistory));
+        
         navigate('/results');
       } else {
         setError(err.message || 'An unexpected error occurred. Please try again.');

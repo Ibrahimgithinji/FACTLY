@@ -1,0 +1,260 @@
+.history-card {
+  max-width: 1200px;
+  width: 100%;
+}
+
+.history-content {
+  display: flex;
+  gap: 2rem;
+  padding: 1.5rem;
+}
+
+.history-list {
+  flex: 1;
+  max-width: 400px;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.history-item {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.history-item:hover {
+  background: #334155;
+  transform: translateX(4px);
+}
+
+.history-item.selected {
+  border-color: #3b82f6;
+  background: #334155;
+}
+
+.history-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.score-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: white;
+}
+
+.classification {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.history-claim {
+  font-size: 0.875rem;
+  color: #f8fafc;
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.history-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #334155;
+}
+
+.history-date {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.delete-button:hover {
+  color: #ef4444;
+}
+
+.history-details {
+  flex: 1;
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #334155;
+}
+
+.details-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #f8fafc;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: #f8fafc;
+}
+
+.details-section {
+  margin-bottom: 1.5rem;
+}
+
+.details-section h3 {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.details-section p {
+  color: #f8fafc;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.result-overview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.score-large {
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.classification-large {
+  font-size: 1.25rem;
+  color: #94a3b8;
+}
+
+.component-item {
+  margin-bottom: 1rem;
+}
+
+.component-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.component-name {
+  font-size: 0.875rem;
+  color: #f8fafc;
+}
+
+.component-score {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.component-bar {
+  height: 8px;
+  background: #334155;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.component-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.justifications-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #f8fafc;
+}
+
+.justifications-list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.details-actions {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #334155;
+}
+
+.history-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #334155;
+}
+
+.history-count {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.clear-button {
+  background: none;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-button:hover {
+  background: #ef4444;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .history-content {
+    flex-direction: column;
+  }
+
+  .history-list {
+    max-width: 100%;
+    max-height: 300px;
+  }
+
+  .history-details {
+    max-height: none;
+  }
+}

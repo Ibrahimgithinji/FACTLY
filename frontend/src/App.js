@@ -13,6 +13,8 @@ const EvidencePanel = lazy(() => import('./components/EvidencePanel'));
 const CredibilityChart = lazy(() => import('./components/CredibilityChart'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
+const HistoryPage = lazy(() => import('./pages/HistoryPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -60,6 +62,15 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
+                <Route 
+                  path="/history" 
+                  element={
+                    <ProtectedRoute>
+                      <HistoryPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route path="/about" element={<AboutPage />} />
                 <Route 
                   path="*" 
                   element={
