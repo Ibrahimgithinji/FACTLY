@@ -7,7 +7,7 @@ const CredibilityChart = () => {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const storedResult = localStorage.getItem('factCheckResult');
+    const storedResult = sessionStorage.getItem('factCheckResult');
     if (storedResult) {
       setResult(JSON.parse(storedResult));
     }

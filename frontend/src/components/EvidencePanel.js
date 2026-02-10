@@ -6,7 +6,7 @@ const EvidencePanel = () => {
   const [expandedClaims, setExpandedClaims] = useState({});
 
   useEffect(() => {
-    const storedResult = localStorage.getItem('factCheckResult');
+    const storedResult = sessionStorage.getItem('factCheckResult');
     if (storedResult) {
       setResult(JSON.parse(storedResult));
     }

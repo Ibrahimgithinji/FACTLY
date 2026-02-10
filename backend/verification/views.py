@@ -476,3 +476,13 @@ class VerificationView(APIView):
                 {"error": f"Verification failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+def health_check(request):
+    """Health check endpoint to verify backend is running."""
+    from django.http import JsonResponse
+    return JsonResponse({
+        "status": "healthy",
+        "service": "Factly Backend",
+        "version": "1.0.0"
+    })

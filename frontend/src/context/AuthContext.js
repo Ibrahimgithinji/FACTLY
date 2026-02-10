@@ -17,8 +17,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing token on mount
-    const token = localStorage.getItem('authToken');
-    const storedUser = localStorage.getItem('user');
+    const token = sessionStorage.getItem('authToken');
+    const storedUser = sessionStorage.getItem('user');
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
@@ -28,7 +28,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Mock API call - replace with actual backend endpoint
       const response = await fetch('http://localhost:8000/api/auth/login/', {
         method: 'POST',
         headers: {
@@ -43,33 +42,19 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('authToken', data.token);
+      sessionStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       setIsAuthenticated(true);
       return { success: true };
     } catch (err) {
-      // Fallback to mock authentication for demo
-      if (email && password.length >= 6) {
-        const mockUser = {
-          id: '1',
-          email,
-          name: email.split('@')[0],
-        };
-        const mockToken = 'mock-jwt-token-' + Date.now();
-        localStorage.setItem('authToken', mockToken);
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
-        setIsAuthenticated(true);
-        return { success: true };
-      }
-      return { success: false, error: err.message || 'Invalid credentials' };
+      console.error('Login error:', err);
+      return { success: false, error: err.message || 'Login failed. Please try again.' };
     }
   };
 
   const signup = async (name, email, password) => {
     try {
-      // Mock API call - replace with actual backend endpoint
       const response = await fetch('http://localhost:8000/api/auth/signup/', {
         method: 'POST',
         headers: {
@@ -84,33 +69,20 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('authToken', data.token);
+      sessionStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       setIsAuthenticated(true);
       return { success: true };
     } catch (err) {
-      // Fallback to mock authentication for demo
-      if (name && email && password.length >= 6) {
-        const mockUser = {
-          id: '1',
-          email,
-          name,
-        };
-        const mockToken = 'mock-jwt-token-' + Date.now();
-        localStorage.setItem('authToken', mockToken);
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
-        setIsAuthenticated(true);
-        return { success: true };
-      }
-      return { success: false, error: err.message || 'Signup failed' };
+      console.error('Signup error:', err);
+      return { success: false, error: err.message || 'Signup failed. Please try again.' };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
   };

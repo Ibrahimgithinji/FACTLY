@@ -198,4 +198,30 @@ class EnhancedVerificationSummaryData:
         }
 
 
+@dataclass
+class VerificationResult:
+    """Complete verification result combining all evidence and analysis."""
+    claim: str
+    claim_reviews: List[ClaimReview] = field(default_factory=list)
+    related_news: List[RelatedNews] = field(default_factory=list)
+    source_reliability: Optional[SourceReliability] = None
+    overall_confidence: float = 0.5  # 0.0 to 1.0
+    api_sources: List[str] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary with exact values preserved."""
+        return {
+            "claim": self.claim,
+            "claim_reviews": [review.to_dict() for review in self.claim_reviews],
+            "related_news": [news.to_dict() for news in self.related_news],
+            "source_reliability": self.source_reliability.to_dict() if self.source_reliability else None,
+            "overall_confidence": self.overall_confidence,
+            "api_sources": self.api_sources,
+            "timestamp": datetime_to_iso(self.timestamp),
+            "metadata": self.metadata
+        }
+
+
 

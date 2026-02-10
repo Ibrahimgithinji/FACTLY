@@ -3,7 +3,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import ErrorBoundary from './components/ErrorBoundary';
+import { setupChunkErrorRecovery } from './utils/chunkRecovery';
 import './App.css';
+
+// Initialize chunk error recovery for HMR
+setupChunkErrorRecovery();
 
 // Lazy load components for code splitting
 // React-scripts webpack config supports basic code splitting with lazy()
@@ -43,47 +48,49 @@ function App() {
           <Navbar />
           <main id="main-content" className="app-main" role="main">
             <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route 
-                  path="/" 
-                  element={
-                    <ProtectedRoute>
-                      <VerificationForm />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/results" 
-                  element={
-                    <ProtectedRoute>
-                      <ResultsPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/history" 
-                  element={
-                    <ProtectedRoute>
-                      <HistoryPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/about" element={<AboutPage />} />
-                <Route 
-                  path="*" 
-                  element={
-                    <div className="error-container" role="alert">
-                      <div className="error-icon" aria-hidden="true">404</div>
-                      <h1 className="error-title">Page Not Found</h1>
-                      <p className="error-message">
-                        The page you're looking for doesn't exist or has been moved.
-                      </p>
-                    </div>
-                  } 
-                />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route 
+                    path="/" 
+                    element={
+                      <ProtectedRoute>
+                        <VerificationForm />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/results" 
+                    element={
+                      <ProtectedRoute>
+                        <ResultsPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/history" 
+                    element={
+                      <ProtectedRoute>
+                        <HistoryPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route 
+                    path="*" 
+                    element={
+                      <div className="error-container" role="alert">
+                        <div className="error-icon" aria-hidden="true">404</div>
+                        <h1 className="error-title">Page Not Found</h1>
+                        <p className="error-message">
+                          The page you're looking for doesn't exist or has been moved.
+                        </p>
+                      </div>
+                    } 
+                  />
+                </Routes>
+              </ErrorBoundary>
             </Suspense>
           </main>
         </div>

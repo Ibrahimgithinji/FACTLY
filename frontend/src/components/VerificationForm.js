@@ -64,7 +64,7 @@ const VerificationForm = () => {
 
       console.log('Sending request to API:', isUrl ? 'URL mode' : 'Text mode');
 
-      const response = await fetch('http://localhost:8000/api/verify/enhanced/', {
+      const response = await fetch('http://localhost:8000/api/verify/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,10 +87,10 @@ const VerificationForm = () => {
       });
       
       // Save result for current session
-      localStorage.setItem('factCheckResult', JSON.stringify(data));
-      localStorage.setItem('factCheckQuery', input.trim());
+      sessionStorage.setItem('factCheckResult', JSON.stringify(data));
+      sessionStorage.setItem('factCheckQuery', input.trim());
       
-      // Save to history
+      // Save to history (localStorage is for persistent history)
       const historyItem = {
         id: `history_${Date.now()}`,
         claim: input.trim(),
@@ -114,62 +114,8 @@ const VerificationForm = () => {
     } catch (err) {
       if (err.name === 'AbortError') {
         setError('Request timed out. Please try again.');
-      } else if (err.message.includes('Failed to fetch')) {
-        // Backend not available - use mock data for demo
-        console.log('Backend not available, using mock data');
-        const mockData = {
-          score: 0.75,
-          confidence: 0.82,
-          sources: [
-            { name: 'Reuters Fact Check', url: 'https://www.reuters.com/fact-check', credibility: 'High' },
-            { name: 'AP News', url: 'https://apnews.com/hub/fact-checking', credibility: 'High' },
-            { name: 'BBC Verify', url: 'https://www.bbc.com/news/verify', credibility: 'High' },
-          ],
-          claims: [
-            { text: 'Sample claim verified by multiple sources', rating: 'True', source: 'https://example.com' },
-            { text: 'Another claim with mixed evidence', rating: 'Mixed', source: 'https://example.com' },
-          ],
-          factors: {
-            sourceReliability: 0.85,
-            contentConsistency: 0.78,
-            factCheckCoverage: 0.72,
-            crossReference: 0.80,
-          },
-          query: input.trim(),
-          timestamp: new Date().toISOString(),
-        };
-        localStorage.setItem('factCheckResult', JSON.stringify(mockData));
-        localStorage.setItem('factCheckQuery', input.trim());
-        
-        // Save mock data to history
-        const mockHistoryItem = {
-          id: `history_${Date.now()}`,
-          claim: input.trim(),
-          originalText: input.trim(),
-          factly_score: Math.round(mockData.score * 100),
-          classification: mockData.score > 0.7 ? 'Likely Authentic' : (mockData.score > 0.4 ? 'Uncertain' : 'Likely Fake'),
-          confidence_level: 'High',
-          components: [
-            { name: 'Source Reliability', score: mockData.factors.sourceReliability, weight: 0.25 },
-            { name: 'Content Consistency', score: mockData.factors.contentConsistency, weight: 0.25 },
-            { name: 'Fact-Check Coverage', score: mockData.factors.factCheckCoverage, weight: 0.25 },
-            { name: 'Cross-Reference', score: mockData.factors.crossReference, weight: 0.25 },
-          ],
-          justifications: [
-            `Factly Score™ of ${Math.round(mockData.score * 100)}/100 indicates likely authentic credibility.`,
-            'Analysis based on multiple fact-checking sources.',
-          ],
-          timestamp: new Date().toISOString()
-        };
-        
-        const existingMockHistory = JSON.parse(localStorage.getItem('factCheckHistory') || '[]');
-        existingMockHistory.unshift(mockHistoryItem);
-        const trimmedMockHistory = existingMockHistory.slice(0, 50);
-        localStorage.setItem('factCheckHistory', JSON.stringify(trimmedMockHistory));
-        
-        navigate('/results');
       } else {
-        setError(err.message || 'An unexpected error occurred. Please try again.');
+        setError(err.message || 'Verification failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
