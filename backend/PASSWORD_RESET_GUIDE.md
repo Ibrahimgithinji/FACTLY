@@ -43,6 +43,11 @@ PASSWORD_RESET_TIMEOUT_HOURS=24
 FRONTEND_URL=http://localhost:3000
 ```
 
+**⚠️ Development Mode**: If you leave `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` empty or as placeholders, the system will **automatically fallback to development mode**:
+- Password reset tokens will be created and logged to the console/log file
+- You can copy the reset link directly from the logs without needing real email credentials
+- This is useful for testing and development
+
 #### 2. Gmail Configuration (if using Gmail)
 - Go to https://myaccount.google.com/apppasswords
 - Select "Mail" and "Windows Computer" (or your device)

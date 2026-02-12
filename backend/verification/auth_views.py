@@ -203,23 +203,44 @@ Best regards,
 FACTLY Team
             """
             
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
-            )
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                logger.info(f"Password reset email sent successfully to: {email}")
+            except Exception as email_error:
+                logger.error(f"Error sending password reset email: {email_error}")
+                # Check if email credentials are not configured
+                if settings.EMAIL_HOST_USER in ['', 'your-email@gmail.com'] or \
+                   settings.EMAIL_HOST_PASSWORD in ['', 'your-app-specific-password']:
+                    logger.warning(
+                        "Email credentials appear to be not properly configured. "
+                        "Using fallback backend (console output). "
+                        "Reset token has been created and logged."
+                    )
+                    # Log the reset link for development purposes
+                    logger.warning(f"=== PASSWORD RESET LINK (DEVELOPMENT MODE) ===")
+                    logger.warning(f"User: {user.email}")
+                    logger.warning(f"Reset Link: {reset_link}")
+                    logger.warning(f"Token: {token}")
+                    logger.warning(f"Expires at: {expires_at}")
+                    logger.warning("==========================================")
+                else:
+                    # Re-raise if credentials seem configured
+                    raise
             
-            logger.info(f"Password reset email sent to: {email}")
             return Response(
                 {'message': 'If an account exists with this email, a password reset link has been sent.'},
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            logger.error(f"Error sending password reset email: {e}")
+            logger.error(f"Error processing password reset request: {e}")
             return Response(
-                {'error': 'Unable to send reset email. Please try again later.'},
+                {'error': 'Unable to process password reset request. Please try again later.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

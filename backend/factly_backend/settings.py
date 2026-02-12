@@ -168,7 +168,8 @@ SECURE_CONTENT_SECURITY_POLICY = {
 }
 
 # Email configuration for password reset and notifications
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# Use custom fallback backend that handles invalid credentials gracefully
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'verification.email_backend.FallbackEmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
