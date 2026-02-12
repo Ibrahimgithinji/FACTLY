@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../utils/api';
 import './VerificationForm.css';
 
 const VerificationForm = () => {
@@ -64,7 +65,7 @@ const VerificationForm = () => {
 
       console.log('Sending request to API:', isUrl ? 'URL mode' : 'Text mode');
 
-      const response = await fetch('http://localhost:8000/api/verify/', {
+      const response = await fetch(API_ENDPOINTS.VERIFY, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

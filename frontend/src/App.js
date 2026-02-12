@@ -18,6 +18,8 @@ const EvidencePanel = lazy(() => import('./components/EvidencePanel'));
 const CredibilityChart = lazy(() => import('./components/CredibilityChart'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 
@@ -52,6 +54,8 @@ function App() {
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                   <Route 
                     path="/" 
                     element={

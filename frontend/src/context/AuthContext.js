@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { API_ENDPOINTS } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login/', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,12 +38,18 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        let errorMessage = 'Login failed';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || 'Login failed';
+        } catch (e) {
+          // If response is not JSON, use default message
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      sessionStorage.setItem('authToken', data.token);
+      sessionStorage.setItem('authToken', data.access);
       sessionStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       setIsAuthenticated(true);
@@ -55,7 +62,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (name, email, password) => {
     try {
-      const response = await fetch('http://localhost:8000/api/auth/signup/', {
+      const response = await fetch(API_ENDPOINTS.SIGNUP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,12 +71,18 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Signup failed');
+        let errorMessage = 'Signup failed';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || 'Signup failed';
+        } catch (e) {
+          // If response is not JSON, use default message
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      sessionStorage.setItem('authToken', data.token);
+      sessionStorage.setItem('authToken', data.access);
       sessionStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       setIsAuthenticated(true);
@@ -87,6 +100,75 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send reset email');
+      }
+
+      return { success: true, message: data.message };
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      return { success: false, error: err.message || 'Failed to send reset email' };
+    }
+  };
+
+  const verifyResetToken = async (token) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.VERIFY_RESET_TOKEN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Invalid reset token');
+      }
+
+      const data = await response.json();
+      return { success: true, email: data.email };
+    } catch (err) {
+      console.error('Verify reset token error:', err);
+      return { success: false, error: err.message || 'Invalid or expired reset link' };
+    }
+  };
+
+  const resetPassword = async (token, newPassword, confirmPassword) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.RESET_PASSWORD, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, new_password: newPassword, confirm_password: confirmPassword }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reset password');
+      }
+
+      const data = await response.json();
+      return { success: true, message: data.message };
+    } catch (err) {
+      console.error('Reset password error:', err);
+      return { success: false, error: err.message || 'Failed to reset password' };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -94,6 +176,9 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    forgotPassword,
+    verifyResetToken,
+    resetPassword,
   };
 
   return (

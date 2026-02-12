@@ -9,6 +9,9 @@ urlpatterns = [
     path('auth/login/', auth_views.LoginView.as_view(), name='login'),
     path('auth/signup/', auth_views.SignupView.as_view(), name='signup'),
     path('auth/refresh/', auth_views.RefreshTokenView.as_view(), name='refresh'),
+    path('auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
+    path('auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
+    path('auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
     
     # Standard verification endpoints
     path('verify/', views.VerificationView.as_view(), name='verify'),

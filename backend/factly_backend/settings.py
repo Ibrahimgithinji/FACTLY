@@ -163,9 +163,21 @@ SECURE_CONTENT_SECURITY_POLICY = {
     "style-src": ("'self'", "'unsafe-inline'"),  # unsafe-inline needed for inline styles if any
     "img-src": ("'self'", "data:", "https:"),
     "font-src": ("'self'",),
-    "connect-src": ("'self'",),
+    "connect-src": ("'self'", "http://localhost:8000"),
     "frame-ancestors": ("'none'",),
 }
+
+# Email configuration for password reset and notifications
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@factly.com')
+
+# Password reset token expiration time (in hours)
+PASSWORD_RESET_TIMEOUT_HOURS = int(os.getenv('PASSWORD_RESET_TIMEOUT_HOURS', 24))
 
 # CORS configuration: enable and set origins via ALLOWED_CORS env variable (comma-separated)
 # Default: allow localhost for development only
