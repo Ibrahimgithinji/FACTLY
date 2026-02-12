@@ -23,19 +23,20 @@ class FallbackEmailBackend(SMTPBackend):
         Open connection to SMTP server.
         Falls back to console backend if credentials are placeholders or invalid.
         """
-        # Check if using placeholder credentials
+        # Check if using placeholder or clearly non-configured credentials
         host_user = settings.EMAIL_HOST_USER
         host_password = settings.EMAIL_HOST_PASSWORD
-        
-        placeholder_indicators = [
-            'your-email@gmail.com',
-            'your-app-specific-password',
-            'your_email',
-            'your_password',
-            '',  # Empty credentials
-        ]
-        
-        if any(indicator.lower() in (host_user + host_password).lower() for indicator in placeholder_indicators):
+
+        def _looks_like_placeholder(value):
+            v = (value or '').lower()
+            if v == '':
+                return True
+            # catch common placeholder patterns
+            if 'your' in v or 'example' in v or 'app' in v or 'password' in v:
+                return True
+            return False
+
+        if _looks_like_placeholder(host_user) or _looks_like_placeholder(host_password):
             logger.warning(
                 'Email credentials appear to be placeholders. '
                 'Using console backend for development. '

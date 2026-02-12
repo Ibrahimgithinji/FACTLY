@@ -119,7 +119,7 @@ class FactCheckingService:
             api_sources.append("newsldr")
 
         result = VerificationResult(
-            original_claim=claim,
+            claim=claim,
             claim_reviews=claim_reviews,
             related_news=related_news,
             source_reliability=source_reliability,

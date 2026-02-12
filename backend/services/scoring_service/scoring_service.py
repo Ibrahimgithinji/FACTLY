@@ -100,7 +100,7 @@ class ScoringService:
         Returns:
             Complete Factly Score™ result
         """
-        logger.info(f"Calculating enhanced Factly Score™ for claim: {verification_result.original_claim[:100]}...")
+        logger.info(f"Calculating enhanced Factly Score™ for claim: {verification_result.claim[:100]}...")
 
         # Track processing time
         start_time = time.time()
@@ -121,7 +121,7 @@ class ScoringService:
         components.append(evidence_score)
 
         # 4. Content Analysis (10%)
-        content_score = self._calculate_content_analysis(text_content or verification_result.original_claim)
+        content_score = self._calculate_content_analysis(text_content or verification_result.claim)
         components.append(content_score)
 
         # Calculate final weighted score
@@ -152,7 +152,7 @@ class ScoringService:
             evidence_summary=evidence_summary,
             timestamp=datetime.now(),
             metadata={
-                'original_claim': verification_result.original_claim,
+                'original_claim': verification_result.claim,
                 'api_sources': verification_result.api_sources,
                 'processing_timestamp': datetime.now().isoformat(),
                 'total_claim_reviews': len(verification_result.claim_reviews),

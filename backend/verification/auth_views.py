@@ -214,9 +214,14 @@ FACTLY Team
                 logger.info(f"Password reset email sent successfully to: {email}")
             except Exception as email_error:
                 logger.error(f"Error sending password reset email: {email_error}")
-                # Check if email credentials are not configured
-                if settings.EMAIL_HOST_USER in ['', 'your-email@gmail.com'] or \
-                   settings.EMAIL_HOST_PASSWORD in ['', 'your-app-specific-password']:
+                # Check if email credentials are not configured or look like placeholders
+                hu = (settings.EMAIL_HOST_USER or '').lower()
+                hp = (settings.EMAIL_HOST_PASSWORD or '').lower()
+                looks_like_placeholder = (
+                    hu == '' or 'your' in hu or 'example' in hu or 'app' in hu or
+                    hp == '' or 'your' in hp or 'example' in hp or 'app' in hp
+                )
+                if looks_like_placeholder:
                     logger.warning(
                         "Email credentials appear to be not properly configured. "
                         "Using fallback backend (console output). "

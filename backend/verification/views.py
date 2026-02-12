@@ -455,16 +455,6 @@ class VerificationView(APIView):
                 },
                 "evidence": evidence_items,
                 "sources": sources_list,
-                "claims": [
-                    {
-                        "id": f"claim_{i}",
-                        "text": claim.text,
-                        "type": claim.claim_type.value if hasattr(claim.claim_type, 'value') else str(claim.claim_type),
-                        "confidence": claim.confidence,
-                        "verifiable": claim.is_verifiable
-                    }
-                    for i, claim in enumerate(factly_score.claims)
-                ] if factly_score.claims else [],
                 "processing_time": processing_time
             }
             
