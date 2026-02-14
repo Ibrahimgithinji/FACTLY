@@ -45,7 +45,7 @@ const ResultsPage = () => (
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router future={{ v7_relativeSplatPath: true }}>
         <div className="App">
           <Navbar />
           <main id="main-content" className="app-main" role="main">
