@@ -185,7 +185,7 @@ class ForgotPasswordView(APIView):
             )
             
             # Send email with reset link
-            reset_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password/{token}"
+            reset_link = f"{settings.FRONTEND_URL}/reset-password/{token}"
             
             subject = 'Password Reset Request - FACTLY'
             message = f"""
@@ -212,31 +212,12 @@ FACTLY Team
                     fail_silently=False,
                 )
                 logger.info(f"Password reset email sent successfully to: {email}")
+                logger.debug(f"Reset link: {reset_link}")
             except Exception as email_error:
-                logger.error(f"Error sending password reset email: {email_error}")
-                # Check if email credentials are not configured or look like placeholders
-                hu = (settings.EMAIL_HOST_USER or '').lower()
-                hp = (settings.EMAIL_HOST_PASSWORD or '').lower()
-                looks_like_placeholder = (
-                    hu == '' or 'your' in hu or 'example' in hu or 'app' in hu or
-                    hp == '' or 'your' in hp or 'example' in hp or 'app' in hp
-                )
-                if looks_like_placeholder:
-                    logger.warning(
-                        "Email credentials appear to be not properly configured. "
-                        "Using fallback backend (console output). "
-                        "Reset token has been created and logged."
-                    )
-                    # Log the reset link for development purposes
-                    logger.warning(f"=== PASSWORD RESET LINK (DEVELOPMENT MODE) ===")
-                    logger.warning(f"User: {user.email}")
-                    logger.warning(f"Reset Link: {reset_link}")
-                    logger.warning(f"Token: {token}")
-                    logger.warning(f"Expires at: {expires_at}")
-                    logger.warning("==========================================")
-                else:
-                    # Re-raise if credentials seem configured
-                    raise
+                logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
+                # Still succeed since token was created
+                # User can get link from logs in development mode
+                pass
             
             return Response(
                 {'message': 'If an account exists with this email, a password reset link has been sent.'},

@@ -84,3 +84,30 @@ class FallbackEmailBackend(SMTPBackend):
             except Exception as console_error:
                 logger.error(f'Error sending emails via console backend: {console_error}')
                 raise
+
+class DevelopmentEmailBackend(FallbackEmailBackend):
+    """
+    Email backend optimized for development.
+    Logs all emails including password reset tokens for easy testing.
+    """
+    
+    def send_messages(self, email_messages):
+        """
+        Send messages and log them for development/debugging.
+        """
+        if not email_messages:
+            return 0
+        
+        # Log all emails being sent for development purposes
+        for message in email_messages:
+            logger.info(f"\n{'='*60}")
+            logger.info(f"EMAIL MESSAGE (Development Mode)")
+            logger.info(f"{'='*60}")
+            logger.info(f"To: {', '.join(message.to)}")
+            logger.info(f"From: {message.from_email}")
+            logger.info(f"Subject: {message.subject}")
+            logger.info(f"\nBody:\n{message.body}")
+            logger.info(f"{'='*60}\n")
+        
+        # Then try to send normally
+        return super().send_messages(email_messages)

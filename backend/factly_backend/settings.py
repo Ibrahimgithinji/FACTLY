@@ -170,7 +170,7 @@ SECURE_CONTENT_SECURITY_POLICY = {
 
 # Email configuration for password reset and notifications
 # Use custom fallback backend that handles invalid credentials gracefully
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'verification.email_backend.DevelopmentEmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
@@ -180,6 +180,9 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@factly.com')
 
 # Password reset token expiration time (in hours)
 PASSWORD_RESET_TIMEOUT_HOURS = int(os.getenv('PASSWORD_RESET_TIMEOUT_HOURS', 24))
+
+# Frontend URL for password reset links
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 
 # CORS configuration: enable and set origins via ALLOWED_CORS env variable (comma-separated)
 # Default: allow localhost for development only
