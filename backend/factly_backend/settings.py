@@ -31,9 +31,10 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-factly-secret-key-c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 
-# Configure allowed hosts via environment variable (comma-separated). Default: empty list.
+# Configure allowed hosts via environment variable (comma-separated). Default: allow localhost for development.
+# If no ALLOWED_HOSTS is set, default to localhost and 127.0.0.1 for development.
 _allowed = os.getenv('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else []
+ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -169,7 +170,7 @@ SECURE_CONTENT_SECURITY_POLICY = {
 
 # Email configuration for password reset and notifications
 # Use custom fallback backend that handles invalid credentials gracefully
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'verification.email_backend.FallbackEmailBackend')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
