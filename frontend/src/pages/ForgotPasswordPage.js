@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
@@ -9,7 +9,7 @@ const ForgotPasswordPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [resetLink, setResetLink] = useState(null);
-  const [showDevLink, setShowDevLink] = useState(false);
+  const navigate = useNavigate();
 
   const { forgotPassword, getResetLink } = useAuth();
 
@@ -59,7 +59,6 @@ const ForgotPasswordPage = () => {
           const linkResult = await getResetLink(email);
           if (linkResult.success) {
             setResetLink(linkResult.resetLink);
-            setShowDevLink(true);
           }
         }
       } else {
@@ -78,6 +77,12 @@ const ForgotPasswordPage = () => {
     }
   };
 
+  const handleUseDevLink = () => {
+    if (resetLink) {
+      navigate(resetLink.replace('http://localhost:3000', ''));
+    }
+  };
+
   const handleCopyLink = () => {
     if (resetLink) {
       navigator.clipboard.writeText(resetLink).then(() => {
@@ -85,6 +90,12 @@ const ForgotPasswordPage = () => {
       }).catch(err => {
         console.error('Failed to copy link:', err);
       });
+    }
+  };
+
+  const handleOpenInNewTab = () => {
+    if (resetLink) {
+      window.open(resetLink, '_blank');
     }
   };
 
@@ -108,39 +119,97 @@ const ForgotPasswordPage = () => {
             </div>
           )}
 
-          {showDevLink && resetLink && (
+          {resetLink && (
             <div
-              className="auth-success"
               style={{
-                backgroundColor: '#f0f8ff',
-                border: '1px solid #4a90e2',
-                borderRadius: '4px',
-                padding: '12px',
-                marginBottom: '16px'
+                backgroundColor: '#e8f5e9',
+                border: '2px solid #4caf50',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '20px'
               }}
               role="alert"
             >
-              <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>
-                🔧 Development Mode: Reset Link
+              <p style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: '#2e7d32' }}>
+                🔧 Development Mode: Password Reset Link
               </p>
-              <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>
-                {resetLink}
-              </p>
-              <button
-                type="button"
-                onClick={handleCopyLink}
+              <div
                 style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  backgroundColor: '#4a90e2',
-                  color: '#fff',
-                  border: 'none',
+                  backgroundColor: '#fff',
+                  border: '1px solid #4caf50',
                   borderRadius: '4px',
-                  cursor: 'pointer'
+                  padding: '12px',
+                  marginBottom: '12px',
+                  wordBreak: 'break-all',
+                  fontSize: '13px',
+                  fontFamily: 'monospace',
+                  color: '#1b5e20'
                 }}
               >
-                Copy Link
-              </button>
+                {resetLink}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleUseDevLink}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#4caf50',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    flex: '1',
+                    minWidth: '140px'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#388e3c'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#4caf50'}
+                >
+                  ✓ Use This Link
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenInNewTab}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#2196f3',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    flex: '1',
+                    minWidth: '140px'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#1976d2'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#2196f3'}
+                >
+                  🔗 Open in New Tab
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#ff9800',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    flex: '1',
+                    minWidth: '140px'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#f57c00'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#ff9800'}
+                >
+                  📋 Copy Link
+                </button>
+              </div>
             </div>
           )}
 
