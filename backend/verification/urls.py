@@ -12,6 +12,7 @@ urlpatterns = [
     path('auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
     path('auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
+    path('auth/get-reset-link/', auth_views.GetResetLinkView.as_view(), name='get_reset_link'),  # Development only
     
     # Standard verification endpoints
     path('verify/', views.VerificationView.as_view(), name='verify'),

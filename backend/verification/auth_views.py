@@ -333,3 +333,66 @@ class ResetPasswordView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+class GetResetLinkView(APIView):
+    """
+    Development-only endpoint to retrieve reset link for testing.
+    In production, this endpoint should be disabled or require admin authentication.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """
+        Get the reset link for a user (development only).
+        This is useful for testing the password reset flow without email setup.
+        """
+        # Security: Only allow in development mode
+        if not os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes'):
+            return Response(
+                {'error': 'This endpoint is only available in development mode'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        email = request.data.get('email')
+        
+        if not email:
+            return Response(
+                {'error': 'Email is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Get the most recent valid reset token for this user
+            user = User.objects.get(email=email)
+            reset_token = PasswordResetToken.objects.filter(
+                user=user,
+                is_used=False
+            ).order_by('-created_at').first()
+            
+            if not reset_token or not reset_token.is_valid():
+                return Response(
+                    {'error': 'No valid reset token found. Request a password reset first.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            reset_link = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}"
+            
+            return Response({
+                'email': user.email,
+                'reset_link': reset_link,
+                'token': reset_token.token,
+                'expires_at': reset_token.expires_at,
+                'message': 'DEVELOPMENT: Copy the reset_link to your browser to test password reset'
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error retrieving reset link: {e}")
+            return Response(
+                {'error': 'Unable to retrieve reset link'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

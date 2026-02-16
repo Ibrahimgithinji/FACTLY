@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
   FORGOT_PASSWORD: `${API_BASE_URL}/api/auth/forgot-password/`,
   VERIFY_RESET_TOKEN: `${API_BASE_URL}/api/auth/verify-reset-token/`,
   RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password/`,
+  GET_RESET_LINK: `${API_BASE_URL}/api/auth/get-reset-link/`,  // Development: Get reset link for testing
   VERIFY: `${API_BASE_URL}/api/verify/`,
   HISTORY: `${API_BASE_URL}/api/history/`,
   USER: `${API_BASE_URL}/api/user/`,

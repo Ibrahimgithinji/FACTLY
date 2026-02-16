@@ -8,8 +8,10 @@ const ForgotPasswordPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [resetLink, setResetLink] = useState(null);
+  const [showDevLink, setShowDevLink] = useState(false);
 
-  const { forgotPassword } = useAuth();
+  const { forgotPassword, getResetLink } = useAuth();
 
   const validateEmail = useCallback((email) => {
     if (!email.trim()) {
@@ -26,11 +28,13 @@ const ForgotPasswordPage = () => {
     setEmail(value);
     setErrors((prev) => ({ ...prev, email: '' }));
     setSubmitStatus(null);
+    setResetLink(null);
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitStatus(null);
+    setResetLink(null);
 
     const emailError = validateEmail(email);
     if (emailError) {
@@ -49,6 +53,15 @@ const ForgotPasswordPage = () => {
           message: 'If an account exists with this email, a password reset link has been sent. Please check your inbox.',
         });
         setEmail('');
+        
+        // In development mode, also try to get the reset link for testing
+        if (process.env.NODE_ENV === 'development') {
+          const linkResult = await getResetLink(email);
+          if (linkResult.success) {
+            setResetLink(linkResult.resetLink);
+            setShowDevLink(true);
+          }
+        }
       } else {
         setSubmitStatus({
           type: 'error',
@@ -62,6 +75,16 @@ const ForgotPasswordPage = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (resetLink) {
+      navigator.clipboard.writeText(resetLink).then(() => {
+        alert('Reset link copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy link:', err);
+      });
     }
   };
 
@@ -82,6 +105,42 @@ const ForgotPasswordPage = () => {
               aria-live="assertive"
             >
               {submitStatus.message}
+            </div>
+          )}
+
+          {showDevLink && resetLink && (
+            <div
+              className="auth-success"
+              style={{
+                backgroundColor: '#f0f8ff',
+                border: '1px solid #4a90e2',
+                borderRadius: '4px',
+                padding: '12px',
+                marginBottom: '16px'
+              }}
+              role="alert"
+            >
+              <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>
+                🔧 Development Mode: Reset Link
+              </p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>
+                {resetLink}
+              </p>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: '#4a90e2',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Copy Link
+              </button>
             </div>
           )}
 

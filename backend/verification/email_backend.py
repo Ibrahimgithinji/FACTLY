@@ -91,7 +91,16 @@ class DevelopmentEmailBackend(FallbackEmailBackend):
     """
     Email backend optimized for development.
     Logs all emails including password reset tokens for easy testing.
+    Automatically uses console backend for development.
     """
+    
+    def open(self):
+        """
+        Always use console backend in development mode.
+        This bypasses SMTP entirely for reliable email logging.
+        """
+        self._use_console = True
+        return False
     
     def send_messages(self, email_messages):
         """
@@ -99,6 +108,10 @@ class DevelopmentEmailBackend(FallbackEmailBackend):
         """
         if not email_messages:
             return 0
+        
+        # Use console backend for development
+        from django.core.mail.backends.console import EmailBackend as ConsoleBackend
+        console_backend = ConsoleBackend()
         
         # Log all emails being sent for development purposes
         for message in email_messages:
@@ -111,5 +124,5 @@ class DevelopmentEmailBackend(FallbackEmailBackend):
             logger.info(f"\nBody:\n{message.body}")
             logger.info(f"{'='*60}\n")
         
-        # Then try to send normally
-        return super().send_messages(email_messages)
+        # Send via console backend
+        return console_backend.send_messages(email_messages)

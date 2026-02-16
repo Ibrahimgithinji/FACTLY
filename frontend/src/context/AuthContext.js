@@ -169,6 +169,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const getResetLink = async (email) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.GET_RESET_LINK, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to get reset link');
+      }
+
+      const data = await response.json();
+      return { success: true, resetLink: data.reset_link, token: data.token, expiresAt: data.expires_at };
+    } catch (err) {
+      console.error('Get reset link error:', err);
+      return { success: false, error: err.message || 'Failed to get reset link' };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -179,13 +202,4 @@ export const AuthProvider = ({ children }) => {
     forgotPassword,
     verifyResetToken,
     resetPassword,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export default AuthContext;
+    getResetLink,
