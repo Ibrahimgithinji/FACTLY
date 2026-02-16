@@ -202,4 +202,13 @@ export const AuthProvider = ({ children }) => {
     forgotPassword,
     verifyResetToken,
     resetPassword,
-    getResetLink,
+    getResetLink,  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthContext;

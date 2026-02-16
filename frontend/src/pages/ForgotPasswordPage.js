@@ -43,24 +43,26 @@ const ForgotPasswordPage = () => {
     }
 
     setIsSubmitting(true);
+    const emailToUse = email;  // Capture email before async calls
 
     try {
-      const result = await forgotPassword(email);
+      const result = await forgotPassword(emailToUse);
 
       if (result.success) {
         setSubmitStatus({
           type: 'success',
           message: 'If an account exists with this email, a password reset link has been sent. Please check your inbox.',
         });
-        setEmail('');
         
         // In development mode, also try to get the reset link for testing
         if (process.env.NODE_ENV === 'development') {
-          const linkResult = await getResetLink(email);
+          const linkResult = await getResetLink(emailToUse);  // Use captured email
           if (linkResult.success) {
             setResetLink(linkResult.resetLink);
           }
         }
+        
+        setEmail('');  // Clear after getting dev link
       } else {
         setSubmitStatus({
           type: 'error',

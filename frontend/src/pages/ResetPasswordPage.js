@@ -42,7 +42,9 @@ const ResetPasswordPage = () => {
       });
       setIsVerifying(false);
     }
-  }, [token, verifyResetToken]);
+    // Only run when the token changes, not on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const calculatePasswordStrength = useCallback((password) => {
     if (!password) return '';
