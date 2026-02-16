@@ -215,9 +215,12 @@ FACTLY Team
                 logger.debug(f"Reset link: {reset_link}")
             except Exception as email_error:
                 logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
-                # Still succeed since token was created
-                # User can get link from logs in development mode
-                pass
+                # Delete the token since we couldn't send the email
+                reset_token.delete()
+                return Response(
+                    {'error': 'Unable to send password reset email. Please check your email configuration or try again later.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
             
             return Response(
                 {'message': 'If an account exists with this email, a password reset link has been sent.'},

@@ -31,8 +31,8 @@ class FallbackEmailBackend(SMTPBackend):
             v = (value or '').lower()
             if v == '':
                 return True
-            # catch common placeholder patterns
-            if 'your' in v or 'example' in v or 'app' in v or 'password' in v:
+            # catch common placeholder patterns (only match obvious placeholders)
+            if v == 'your-email@example.com' or v == 'your-smtp-password-or-app-password':
                 return True
             return False
 
@@ -46,9 +46,11 @@ class FallbackEmailBackend(SMTPBackend):
             self.connection = None
             # We'll use console output instead
             self._use_console = True
+            self._console_messages = []  # Store messages for logging
             return False
         
         self._use_console = False
+        self._console_messages = []
         # Try to open SMTP connection
         try:
             return super().open()
