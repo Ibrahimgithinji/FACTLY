@@ -12,6 +12,8 @@ from .google_fact_check import GoogleFactCheckClient
 from .newsldr_api import NewsLdrClient
 from .unified_schema import VerificationResult, ClaimReview, RelatedNews, SourceReliability
 from .cache_manager import CacheManager
+from .evidence_search_service import EvidenceSearchService
+from .evidence_search_service import EvidenceSearchService
 
 logger = logging.getLogger(__name__)
 
@@ -31,26 +33,30 @@ class FactCheckingService:
         # Get API keys from environment
         self.google_api_key = os.getenv('GOOGLE_FACT_CHECK_API_KEY')
         self.newsldr_api_key = os.getenv('NEWSLDR_API_KEY')
+        self.newsapi_key = os.getenv('NEWSAPI_KEY')
         
         # Initialize Google Fact Check client (will raise ValueError if no API key)
         self.google_client = None
-        if self.google_api_key:
+        if self.google_api_key and self.google_api_key != 'your_google_api_key_here':
             try:
                 self.google_client = GoogleFactCheckClient(api_key=self.google_api_key, cache_manager=self.cache)
             except ValueError as e:
                 logger.warning(f"Google Fact Check client not initialized: {e}")
         else:
-            logger.warning("GOOGLE_FACT_CHECK_API_KEY not set - Google Fact Check disabled")
+            logger.warning("GOOGLE_FACT_CHECK_API_KEY not set or is placeholder - Google Fact Check disabled")
         
         # Initialize NewsLdr client (will raise ValueError if no API key)
         self.newsldr_client = None
-        if self.newsldr_api_key:
+        if self.newsldr_api_key and self.newsldr_api_key != 'your_newsldr_api_key_here':
             try:
                 self.newsldr_client = NewsLdrClient(api_key=self.newsldr_api_key, cache_manager=self.cache)
             except ValueError as e:
                 logger.warning(f"NewsLdr client not initialized: {e}")
         else:
-            logger.warning("NEWSLDR_API_KEY not set - NewsLdr disabled")
+            logger.warning("NEWSLDR_API_KEY not set or is placeholder - NewsLdr disabled")
+        
+        # Initialize evidence search service for fallback
+        self.evidence_search = EvidenceSearchService(cache_manager=self.cache)
         
         # Also check if clients were initialized successfully
         self._check_clients_ready()
@@ -59,7 +65,8 @@ class FactCheckingService:
         """Log which API clients are ready for use."""
         google_ready = "Google Fact Check" if self.google_client else "NOT AVAILABLE"
         newsldr_ready = "NewsLdr" if self.newsldr_client else "NOT AVAILABLE"
-        logger.info(f"API Clients Ready - Google Fact Check: {google_ready}, NewsLdr: {newsldr_ready}")
+        evidence_ready = "Evidence Search" if self.evidence_search else "NOT AVAILABLE"
+        logger.info(f"API Clients Ready - Google Fact Check: {google_ready}, NewsLdr: {newsldr_ready}, Evidence Search: {evidence_ready}")
 
     def verify_claim(self, claim: str, language: str = "en") -> VerificationResult:
         """
@@ -96,6 +103,27 @@ class FactCheckingService:
         else:
             logger.warning("NewsLdr client not available")
 
+        # If primary APIs failed, use EvidenceSearchService as fallback
+        if not claim_reviews and not related_news:
+            logger.info("Primary APIs unavailable, using EvidenceSearchService fallback...")
+            try:
+                evidence_collection = self.evidence_search.search_evidence(claim, language, max_results_per_source=10)
+                # Convert evidence items to RelatedNews format
+                for item in evidence_collection.evidence_items:
+                    if item.published_date:
+                        related_news.append(RelatedNews(
+                            title=item.title,
+                            url=item.url or '',
+                            source=item.source,
+                            publish_date=item.published_date,
+                            relevance_score=item.relevance_score,
+                            sentiment=item.metadata.get('sentiment'),
+                            metadata=item.metadata
+                        ))
+                logger.info(f"Found {len(evidence_collection.evidence_items)} evidence items from fallback search")
+            except Exception as e:
+                logger.error(f"EvidenceSearchService fallback failed: {e}")
+
         # Get source reliability (if we have sources from news)
         source_reliability = None
         if related_news and self.newsldr_client:
@@ -117,6 +145,8 @@ class FactCheckingService:
             api_sources.append("google_fact_check")
         if related_news:
             api_sources.append("newsldr")
+        if not claim_reviews and not related_news:
+            api_sources.append("evidence_search_fallback")
 
         result = VerificationResult(
             claim=claim,

@@ -7,6 +7,7 @@ tokenization, stop-word removal, and language detection.
 
 import re
 import logging
+import os
 from typing import List, Optional, Dict, Any
 from langdetect import detect, LangDetectException
 import nltk
@@ -15,16 +16,34 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 
 logger = logging.getLogger(__name__)
 
-# Download required NLTK data
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+# Configure NLTK data path for Windows compatibility
+if os.name == 'nt':  # Windows
+    nltk.data.path.insert(0, os.path.join(os.environ.get('APPDATA', ''), 'nltk_data'))
+else:
+    nltk.data.path.insert(0, os.path.expanduser('~/nltk_data'))
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
+# Download required NLTK data with error handling
+def _download_nltk_data():
+    """Download required NLTK data with proper error handling."""
+    resources = [
+        ('tokenizers/punkt', 'punkt'),
+        ('tokenizers/punkt_tab', 'punkt_tab'),
+        ('corpora/stopwords', 'stopwords'),
+        ('corpora/averaged_perceptron_tagger', 'averaged_perceptron_tagger'),
+    ]
+    
+    for resource_path, package_name in resources:
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            try:
+                logger.info(f"Downloading NLTK data: {package_name}")
+                nltk.download(package_name, quiet=True)
+            except Exception as e:
+                logger.warning(f"Failed to download {package_name}: {e}")
+
+# Initialize NLTK data on module load
+_download_nltk_data()
 
 
 class TextPreprocessor:
