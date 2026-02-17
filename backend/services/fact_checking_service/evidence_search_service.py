@@ -44,6 +44,31 @@ class EvidenceCollection:
     agreement_score: float  # How much do sources agree
     coverage_gaps: List[str]  # Missing evidence types
     timestamp: datetime
+    data_freshness: Optional[str] = "unknown"  # How recent is the data
+    sources_used: Optional[List[str]] = None  # Which sources were successfully queried
+    errors: Optional[List[str]] = None  # Any errors encountered
+
+    def __post_init__(self):
+        """Initialize optional fields if not provided."""
+        if self.sources_used is None:
+            self.sources_used = []
+        if self.errors is None:
+            self.errors = []
+
+    def get_data_age_hours(self) -> float:
+        """Get the age of the data in hours."""
+        if not self.timestamp:
+            return float('inf')
+        age = datetime.now() - self.timestamp
+        return age.total_seconds() / 3600
+
+    def is_fresh(self, threshold_hours: float = 12) -> bool:
+        """Check if the data is still fresh based on threshold."""
+        return self.get_data_age_hours() <= threshold_hours
+
+    def needs_refresh(self, max_age_hours: float = 24) -> bool:
+        """Check if the data needs to be refreshed."""
+        return self.get_data_age_hours() > max_age_hours
 
 
 class EvidenceSearchService:
@@ -59,8 +84,13 @@ class EvidenceSearchService:
 
     # Trusted news domains for credibility assessment
     TRUSTED_NEWS_DOMAINS = {
+        # Major international news agencies
         'reuters.com': 0.95,
         'apnews.com': 0.95,
+        'ap.org': 0.95,
+        'afp.com': 0.93,
+        
+        # Established news outlets
         'bbc.com': 0.92,
         'bbc.co.uk': 0.92,
         'npr.org': 0.90,
@@ -68,11 +98,46 @@ class EvidenceSearchService:
         'washingtonpost.com': 0.88,
         'theguardian.com': 0.87,
         'cnn.com': 0.85,
+        'foxnews.com': 0.80,
+        'msnbc.com': 0.82,
+        'nbcnews.com': 0.86,
+        'abcnews.go.com': 0.85,
+        'cbsnews.com': 0.85,
+        
+        # Fact-checking organizations
         'politifact.com': 0.95,
         'snopes.com': 0.93,
         'factcheck.org': 0.94,
-        'ap.org': 0.95,
+        'politiwatch.org': 0.90,
+        'truthordfiction.com': 0.85,
+        
+        # Regional trusted sources
+        'aljazeera.com': 0.87,
+        'dw.com': 0.88,
+        'theglobeandmail.com': 0.88,
+        'CBCnews': 0.87,
+        'news.google.com': 0.85,
+        
+        # Business/Financial
+        'bloomberg.com': 0.90,
+        'wsj.com': 0.88,
+        'ft.com': 0.90,
+        'economist.com': 0.90,
+        
+        # Science/Health
+        'nature.com': 0.92,
+        'sciencemag.org': 0.92,
+        'nih.gov': 0.93,
+        'who.int': 0.92,
+        'cdc.gov': 0.92,
     }
+
+    # Fallback search endpoints when primary APIs fail
+    FALLBACK_SOURCES = [
+        {'name': 'NewsAPI', 'enabled': True, 'priority': 1},
+        {'name': 'Bing News', 'enabled': False, 'priority': 2},
+        {'name': 'DuckDuckGo', 'enabled': False, 'priority': 3},
+    ]
 
     def __init__(self, cache_manager: Optional[CacheManager] = None):
         """
@@ -83,11 +148,16 @@ class EvidenceSearchService:
         """
         self.cache = cache_manager or CacheManager()
         self.rate_limiter = RateLimiter()
+        
+        # Data freshness settings
+        self.max_data_age_hours = 24  # Consider data stale after 24 hours
+        self.refresh_threshold_hours = 12  # Refresh if data older than this
 
         # API keys
         self.google_api_key = os.getenv('GOOGLE_FACT_CHECK_API_KEY')
         self.newsldr_api_key = os.getenv('NEWSLDR_API_KEY')
         self.newsapi_key = os.getenv('NEWSAPI_KEY')
+        self.bing_api_key = os.getenv('BING_NEWS_API_KEY')
 
         # Initialize API clients
         from .google_fact_check import GoogleFactCheckClient
@@ -107,10 +177,12 @@ class EvidenceSearchService:
         google_status = "READY" if self.google_client else "NOT AVAILABLE"
         newsldr_status = "READY" if self.newsldr_client else "NOT AVAILABLE"
         newsapi_status = "READY" if self.newsapi_key else "NOT AVAILABLE"
-        logger.info(f"EvidenceSearchService initialized - Google: {google_status}, NewsLdr: {newsldr_status}, NewsAPI: {newsapi_status}")
+        bing_status = "READY" if self.bing_api_key else "NOT AVAILABLE (requires BING_NEWS_API_KEY)"
+        logger.info(f"EvidenceSearchService initialized - Google: {google_status}, NewsLdr: {newsldr_status}, NewsAPI: {newsapi_status}, Bing: {bing_status}")
 
     def search_evidence(self, claim: str, language: str = "en",
-                        max_results_per_source: int = 10) -> EvidenceCollection:
+                        max_results_per_source: int = 10,
+                        force_refresh: bool = False) -> EvidenceCollection:
         """
         Search for evidence across multiple sources.
 
@@ -118,14 +190,25 @@ class EvidenceSearchService:
             claim: The claim to search evidence for
             language: Language code
             max_results_per_source: Maximum results per API
+            force_refresh: Force refresh even if cached data exists
 
         Returns:
             EvidenceCollection with results from all sources
         """
         logger.info(f"Searching evidence for claim: {claim[:100]}...")
 
+        # Check for cached data first (unless force refresh)
+        if not force_refresh:
+            cache_key = {'claim': claim, 'language': language}
+            cached = self.cache.get('evidence_collection', cache_key)
+            if cached and isinstance(cached, EvidenceCollection):
+                if cached.is_fresh(self.refresh_threshold_hours):
+                    logger.info("Returning fresh cached evidence")
+                    return cached
+
         all_evidence = []
         search_errors = []
+        sources_successfully_used = []
 
         # Search Google Fact Check
         if self.google_client:
@@ -134,6 +217,7 @@ class EvidenceSearchService:
                     claim, language, max_results_per_source
                 )
                 all_evidence.extend(google_evidence)
+                sources_successfully_used.append('Google Fact Check')
                 logger.info(f"Found {len(google_evidence)} items from Google Fact Check")
             except Exception as e:
                 logger.error(f"Google Fact Check search failed: {e}")
@@ -146,6 +230,7 @@ class EvidenceSearchService:
                     claim, max_results_per_source
                 )
                 all_evidence.extend(newsldr_evidence)
+                sources_successfully_used.append('NewsLdr')
                 logger.info(f"Found {len(newsldr_evidence)} items from NewsLdr")
             except Exception as e:
                 logger.error(f"NewsLdr search failed: {e}")
@@ -158,10 +243,24 @@ class EvidenceSearchService:
                     claim, language, max_results_per_source
                 )
                 all_evidence.extend(newsapi_evidence)
+                sources_successfully_used.append('NewsAPI')
                 logger.info(f"Found {len(newsapi_evidence)} items from NewsAPI")
             except Exception as e:
                 logger.error(f"NewsAPI search failed: {e}")
                 search_errors.append(f"NewsAPI: {str(e)}")
+
+        # Search Bing News as additional fallback
+        if self.bing_api_key:
+            try:
+                bing_evidence = self._search_bing_news(
+                    claim, language, max_results_per_source
+                )
+                all_evidence.extend(bing_evidence)
+                sources_successfully_used.append('Bing News')
+                logger.info(f"Found {len(bing_evidence)} items from Bing News")
+            except Exception as e:
+                logger.error(f"Bing News search failed: {e}")
+                search_errors.append(f"Bing News: {str(e)}")
 
         # Calculate diversity and agreement
         diversity_score = self._calculate_source_diversity(all_evidence)
@@ -174,14 +273,26 @@ class EvidenceSearchService:
             reverse=True
         )
 
-        return EvidenceCollection(
+        # Determine data freshness
+        data_freshness = self._determine_data_freshness(all_evidence)
+
+        result = EvidenceCollection(
             claim=claim,
             evidence_items=all_evidence,
             source_diversity_score=diversity_score,
             agreement_score=agreement_score,
             coverage_gaps=coverage_gaps,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
+            data_freshness=data_freshness,
+            sources_used=sources_successfully_used,
+            errors=search_errors
         )
+
+        # Cache the result
+        cache_key = {'claim': claim, 'language': language}
+        self.cache.set('evidence_collection', cache_key, result)
+
+        return result
 
     def _search_google_fact_check(self, claim: str, language: str,
                                    max_results: int) -> List[EvidenceItem]:
@@ -435,3 +546,99 @@ class EvidenceSearchService:
 
         # Default moderate credibility
         return 0.5
+
+    def _determine_data_freshness(self, evidence_items: List[EvidenceItem]) -> str:
+        """
+        Determine how fresh the evidence data is based on publication dates.
+        
+        Returns:
+            Freshness string: 'fresh', 'moderate', 'stale', or 'unknown'
+        """
+        if not evidence_items:
+            return 'unknown'
+        
+        # Get the most recent publication date
+        recent_dates = []
+        for item in evidence_items:
+            if item.published_date:
+                age_hours = (datetime.now() - item.published_date).total_seconds() / 3600
+                recent_dates.append(age_hours)
+        
+        if not recent_dates:
+            return 'unknown'
+        
+        min_age = min(recent_dates)
+        
+        if min_age <= 6:
+            return 'fresh'
+        elif min_age <= 24:
+            return 'moderate'
+        else:
+            return 'stale'
+
+    def _search_bing_news(self, claim: str, language: str, max_results: int) -> List[EvidenceItem]:
+        """
+        Search Bing News API as an additional fallback source.
+        
+        Requires BING_NEWS_API_KEY environment variable.
+        """
+        cache_key = {
+            'query': claim,
+            'language': language,
+            'max_results': max_results,
+            'source': 'bing'
+        }
+
+        cached = self.cache.get('bing_news', cache_key)
+        if cached:
+            return cached
+
+        url = "https://api.bing.microsoft.com/v7.0/news/search"
+        headers = {
+            'Ocp-Apim-Subscription-Key': self.bing_api_key
+        }
+        params = {
+            'q': claim,
+            'setLang': language,
+            'sortBy': 'Relevance',
+            'count': min(max_results, 50),
+            'mkt': 'en-US'
+        }
+
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+
+        evidence_items = []
+        for article in data.get('value', []):
+            domain = self._extract_domain(article.get('url', ''))
+            credibility = self.TRUSTED_NEWS_DOMAINS.get(domain, 0.5)
+
+            # Parse date
+            published_date = None
+            date_str = article.get('datePublished', '')
+            if date_str:
+                try:
+                    published_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                except:
+                    pass
+
+            evidence = EvidenceItem(
+                source=article.get('provider', [{}])[0].get('name', 'Bing News'),
+                source_type="news",
+                title=article.get('name', ''),
+                content=article.get('description', ''),
+                url=article.get('url'),
+                published_date=published_date,
+                credibility_score=credibility,
+                relevance_score=0.5,
+                verdict=None,
+                metadata={
+                    'domain': domain,
+                    'bing_category': article.get('category')
+                }
+            )
+            evidence_items.append(evidence)
+
+        self.cache.set('bing_news', cache_key, evidence_items)
+        return evidence_items
