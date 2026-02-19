@@ -22,25 +22,44 @@ class FallbackEmailBackend(SMTPBackend):
         """
         Open connection to SMTP server.
         Falls back to console backend if credentials are placeholders or invalid.
+        
+        Enhanced placeholder detection to catch common development mistakes:
+        - Values containing 'your-email' (e.g., your-email@gmail.com)
+        - Values containing 'your-smtp-password' or 'your-app-password'
+        - Values containing 'example.com' domains
         """
         # Check if using placeholder or clearly non-configured credentials
         host_user = settings.EMAIL_HOST_USER
         host_password = settings.EMAIL_HOST_PASSWORD
 
         def _looks_like_placeholder(value):
+            """
+            Check if a value looks like a placeholder rather than real credentials.
+            Returns True for:
+            - Empty strings
+            - Common placeholder patterns like 'your-email', 'your-app-password', etc.
+            """
             v = (value or '').lower()
             if v == '':
                 return True
-            # catch common placeholder patterns (only match obvious placeholders)
-            if v == 'your-email@example.com' or v == 'your-smtp-password-or-app-password':
-                return True
+            # catch common placeholder patterns
+            placeholder_patterns = [
+                'your-email',      # matches your-email@gmail.com, your-email@example.com
+                'your-smtp-password',
+                'your-app-password',
+                'example.com',     # matches any@example.com placeholders
+            ]
+            for pattern in placeholder_patterns:
+                if pattern in v:
+                    return True
             return False
 
         if _looks_like_placeholder(host_user) or _looks_like_placeholder(host_password):
             logger.warning(
-                'Email credentials appear to be placeholders. '
-                'Using console backend for development. '
-                'Configure EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in .env for production.'
+                f'Email credentials appear to be placeholders or not configured. '
+                f'EMAIL_HOST_USER: {host_user}, EMAIL_HOST_PASSWORD: [REDACTED]. '
+                f'Using console backend for development. '
+                f'Configure EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in .env for production.'
             )
             # Switch to console backend
             self.connection = None
