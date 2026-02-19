@@ -159,8 +159,10 @@ class ForgotPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Use case-insensitive email lookup to handle case variations
+        # e.g., user@Example.com and USER@EXAMPLE.COM will match the same account
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             # For security, don't reveal if email exists
             logger.warning(f"Password reset attempt for non-existent email: {email}")
