@@ -44,10 +44,18 @@ const ForgotPasswordPage = () => {
       const result = await forgotPassword(email);
 
       if (result.success) {
-        setSubmitStatus({
-          type: 'success',
-          message: 'Password reset link has been sent to your email. Please check your inbox and click the link to reset your password.',
-        });
+        if (result.development_mode && result.reset_link) {
+          setSubmitStatus({
+            type: 'success',
+            message: 'Development mode: Click the link below to reset your password (normally this would be sent via email).',
+            reset_link: result.reset_link,
+          });
+        } else {
+          setSubmitStatus({
+            type: 'success',
+            message: 'Password reset link has been sent to your email. Please check your inbox and click the link to reset your password.',
+          });
+        }
         setEmail('');
       } else {
         setSubmitStatus({
@@ -81,7 +89,19 @@ const ForgotPasswordPage = () => {
               role="alert"
               aria-live="assertive"
             >
-              {submitStatus.message}
+              <p>{submitStatus.message}</p>
+              {submitStatus.reset_link && (
+                <p>
+                  <a 
+                    href={submitStatus.reset_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#007bff', textDecoration: 'underline' }}
+                  >
+                    Click here to reset your password
+                  </a>
+                </p>
+              )}
             </div>
           )}
 
