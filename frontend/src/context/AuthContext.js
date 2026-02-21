@@ -116,7 +116,12 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.error || 'Failed to send reset email');
       }
 
-      return { success: true, message: data.message };
+      return { 
+        success: true, 
+        message: data.message,
+        reset_link: data.reset_link,
+        development_mode: data.development_mode
+      };
     } catch (err) {
       console.error('Forgot password error:', err);
       return { success: false, error: err.message || 'Failed to send reset email' };
