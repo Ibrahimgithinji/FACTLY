@@ -21,51 +21,41 @@ class FallbackEmailBackend(SMTPBackend):
     def open(self):
         """
         Open connection to SMTP server.
-        Falls back to console backend if credentials are placeholders or invalid.
+        Falls back to console backend if SMTP credentials are invalid or connection fails.
         
-        Enhanced placeholder detection to catch common development mistakes:
-        - Values containing 'your-email' (e.g., your-email@gmail.com)
-        - Values containing 'your-smtp-password' or 'your-app-password'
-        - Values containing 'example.com' domains
+        Enhanced to be less restrictive - only fall back on actual connection failure,
+        not just because credentials look like placeholders.
         """
-        # Check if using placeholder or clearly non-configured credentials
+        # Check email settings
         host_user = settings.EMAIL_HOST_USER
         host_password = settings.EMAIL_HOST_PASSWORD
 
-        def _looks_like_placeholder(value):
+        def _is_empty_or_invalid(value):
             """
-            Check if a value looks like a placeholder rather than real credentials.
-            Returns True for:
-            - Empty strings
-            - Common placeholder patterns like 'your-email', 'your-app-password', etc.
+            Check if a value is empty or clearly invalid.
+            Only returns True for truly invalid values, not just placeholders.
             """
-            v = (value or '').lower()
+            v = (value or '').strip()
             if v == '':
                 return True
-            # catch common placeholder patterns
-            placeholder_patterns = [
-                'your-email',      # matches your-email@gmail.com, your-email@example.com
-                'your-smtp-password',
-                'your-app-password',
-                'example.com',     # matches any@example.com placeholders
-            ]
-            for pattern in placeholder_patterns:
-                if pattern in v:
-                    return True
+            # Only check for completely invalid/empty-looking values
+            # Don't reject based on 'your-email' patterns - that's too restrictive
+            if len(v) < 5:  # Too short to be real
+                return True
             return False
 
-        if _looks_like_placeholder(host_user) or _looks_like_placeholder(host_password):
+        # Check for truly invalid credentials (empty or too short)
+        if _is_empty_or_invalid(host_user) or _is_empty_or_invalid(host_password):
             logger.warning(
-                f'Email credentials appear to be placeholders or not configured. '
+                f'Email credentials are missing or invalid. '
                 f'EMAIL_HOST_USER: {host_user}, EMAIL_HOST_PASSWORD: [REDACTED]. '
                 f'Using console backend for development. '
                 f'Configure EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in .env for production.'
             )
             # Switch to console backend
             self.connection = None
-            # We'll use console output instead
             self._use_console = True
-            self._console_messages = []  # Store messages for logging
+            self._console_messages = []
             return False
         
         self._use_console = False
