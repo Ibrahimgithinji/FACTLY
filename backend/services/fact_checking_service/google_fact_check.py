@@ -55,7 +55,7 @@ class GoogleFactCheckClient:
         }
 
         # Check cache first
-        cached_result = self.cache.get('google_fact_check', cache_key)
+        cached_result = self.cache.get('google_fact_check', cache_key, data_type='fact_check')
         if cached_result:
             logger.info("Returning cached Google Fact Check results")
             return cached_result
@@ -63,7 +63,7 @@ class GoogleFactCheckClient:
         # Make API call with rate limiting
         try:
             result = self.rate_limiter.google_api_call(self._search_claims_api, query, language, max_results)
-            self.cache.set('google_fact_check', cache_key, result)
+            self.cache.set('google_fact_check', cache_key, result, data_type='fact_check')
             return result
         except Exception as e:
             logger.error(f"Error searching Google Fact Check claims: {e}")

@@ -422,7 +422,7 @@ class DirectSourceVerifier:
         
         # Check cache first
         cache_key = f"fact_check_{hash(claim)}"
-        cached = self.cache.get(cache_key)
+        cached = self.cache.get('direct_verifier', {'key': cache_key}, data_type='fact_check')
         if cached:
             return cached
         
@@ -443,7 +443,7 @@ class DirectSourceVerifier:
             metadata={'method': 'fact_check_lookup'}
         )
         
-        self.cache.set(cache_key, result, ttl=3600)
+        self.cache.set('direct_verifier', {'key': cache_key}, result, data_type='fact_check')
         return result
     
     def _verify_via_official_source(self, source_name: str, source_url: Optional[str],
@@ -454,7 +454,7 @@ class DirectSourceVerifier:
         
         # Check cache first
         cache_key = f"official_{hash(claim)}"
-        cached = self.cache.get(cache_key)
+        cached = self.cache.get('direct_verifier', {'key': cache_key}, data_type='official')
         if cached:
             return cached
         
@@ -488,7 +488,7 @@ class DirectSourceVerifier:
             metadata={'method': 'official_lookup'}
         )
         
-        self.cache.set(cache_key, result, ttl=3600)
+        self.cache.set('direct_verifier', {'key': cache_key}, result, data_type='official')
         return result
     
     def _verify_via_academic_source(self, source_name: str, source_url: Optional[str],
@@ -498,7 +498,7 @@ class DirectSourceVerifier:
         
         # Check cache first
         cache_key = f"academic_{hash(claim)}"
-        cached = self.cache.get(cache_key)
+        cached = self.cache.get('direct_verifier', {'key': cache_key}, data_type='academic')
         if cached:
             return cached
         
@@ -517,7 +517,7 @@ class DirectSourceVerifier:
             metadata={'method': 'academic_lookup'}
         )
         
-        self.cache.set(cache_key, result, ttl=3600)
+        self.cache.set('direct_verifier', {'key': cache_key}, result, data_type='academic')
         return result
     
     def _verify_via_general_source(self, source_name: str, source_url: Optional[str],

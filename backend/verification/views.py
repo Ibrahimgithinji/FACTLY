@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -182,6 +183,15 @@ class EnhancedVerificationView(APIView):
                     "recommended_verdict": result.cross_source_analysis.recommended_verdict if result.cross_source_analysis else "Unknown",
                     "uncertainty_factors": result.cross_source_analysis.uncertainty_factors if result.cross_source_analysis else []
                 } if result.cross_source_analysis else None,
+                
+                # Data freshness information
+                "data_freshness": {
+                    "verification_timestamp": result.timestamp.isoformat(),
+                    "most_recent_evidence_age_hours": self._calculate_evidence_age(result),
+                    "realtime_sources_used": any(source in result.api_sources_used for source in ['Real-Time News', 'NewsAPI', 'Bing News']),
+                    "cache_status": "fresh" if self._is_data_fresh(result) else "stale",
+                    "data_age_warning": self._get_data_age_warning(result)
+                },
                 
                 "api_sources_used": result.api_sources_used,
                 "processing_time_ms": result.processing_time_ms,
@@ -466,13 +476,42 @@ class VerificationView(APIView):
                 {"error": f"Verification failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-def health_check(request):
-    """Health check endpoint to verify backend is running."""
-    from django.http import JsonResponse
-    return JsonResponse({
-        "status": "healthy",
-        "service": "Factly Backend",
-        "version": "1.0.0"
-    })
+    
+    def _calculate_evidence_age(self, result) -> float:
+        """Calculate the age of the most recent evidence in hours."""
+        if not result.evidence_collection or not result.evidence_collection.evidence_items:
+            return float('inf')
+        
+        # Find the most recent evidence
+        most_recent = max(
+            (item for item in result.evidence_collection.evidence_items 
+             if item.published_date),
+            key=lambda x: x.published_date,
+            default=None
+        )
+        
+        if most_recent and most_recent.published_date:
+            age = datetime.now() - most_recent.published_date.replace(tzinfo=None)
+            return age.total_seconds() / 3600
+        
+        return float('inf')
+    
+    def _is_data_fresh(self, result) -> bool:
+        """Check if the verification data is considered fresh."""
+        evidence_age = self._calculate_evidence_age(result)
+        return evidence_age <= 24  # Consider fresh if evidence is less than 24 hours old
+    
+    def _get_data_age_warning(self, result) -> str:
+        """Get a warning message about data age."""
+        evidence_age = self._calculate_evidence_age(result)
+        
+        if evidence_age <= 1:
+            return "Data is very recent (less than 1 hour old)"
+        elif evidence_age <= 6:
+            return "Data is recent (less than 6 hours old)"
+        elif evidence_age <= 24:
+            return "Data is moderately recent (less than 24 hours old)"
+        elif evidence_age <= 72:
+            return "Data is somewhat stale (1-3 days old) - consider verifying with current sources"
+        else:
+            return "Data is stale (more than 3 days old) - strongly recommend fresh verification"
