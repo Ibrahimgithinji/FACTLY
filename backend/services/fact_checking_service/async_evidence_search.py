@@ -227,7 +227,7 @@ class AsyncEvidenceSearchService:
 
         # Check cache first
         cache_key = {'query': claim, 'language': language, 'max_results': max_results}
-        cached = self.cache.get('google_fact_check', cache_key)
+        cached = self.cache.get('google_fact_check', cache_key, data_type='fact_check')
         if cached:
             return APICallResult(
                 source='google_fact_check',
@@ -254,7 +254,7 @@ class AsyncEvidenceSearchService:
                 evidence_items = self._parse_google_results(data, claim)
                 
                 # Cache results
-                self.cache.set('google_fact_check', cache_key, evidence_items)
+                self.cache.set('google_fact_check', cache_key, evidence_items, data_type='fact_check')
                 
                 return APICallResult(
                     source='google_fact_check',
@@ -291,7 +291,7 @@ class AsyncEvidenceSearchService:
 
         # Check cache
         cache_key = {'query': claim, 'max_results': max_results, 'endpoint': 'related_news'}
-        cached = self.cache.get('newsldr', cache_key)
+        cached = self.cache.get('newsldr', cache_key, data_type='news')
         if cached:
             return APICallResult(
                 source='newsldr',
@@ -315,7 +315,7 @@ class AsyncEvidenceSearchService:
                 data = await response.json()
                 
                 evidence_items = self._parse_newsldr_results(data)
-                self.cache.set('newsldr', cache_key, evidence_items)
+                self.cache.set('newsldr', cache_key, evidence_items, data_type='news')
                 
                 return APICallResult(
                     source='newsldr',
@@ -353,7 +353,7 @@ class AsyncEvidenceSearchService:
 
         # Check cache
         cache_key = {'query': claim, 'language': language, 'max_results': max_results}
-        cached = self.cache.get('newsapi', cache_key)
+        cached = self.cache.get('newsapi', cache_key, data_type='news')
         if cached:
             return APICallResult(
                 source='newsapi',
@@ -378,7 +378,7 @@ class AsyncEvidenceSearchService:
                 data = await response.json()
                 
                 evidence_items = self._parse_newsapi_results(data)
-                self.cache.set('newsapi', cache_key, evidence_items)
+                self.cache.set('newsapi', cache_key, evidence_items, data_type='news')
                 
                 return APICallResult(
                     source='newsapi',

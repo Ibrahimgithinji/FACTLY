@@ -54,7 +54,7 @@ class NewsLdrClient:
         }
 
         # Check cache first
-        cached_result = self.cache.get('newsldr', cache_key)
+        cached_result = self.cache.get('newsldr', cache_key, data_type='news')
         if cached_result:
             logger.info("Returning cached NewsLdr related news results")
             return cached_result
@@ -62,7 +62,7 @@ class NewsLdrClient:
         # Make API call with rate limiting
         try:
             result = self.rate_limiter.newsldr_api_call(self._get_related_news_api, query, max_results)
-            self.cache.set('newsldr', cache_key, result)
+            self.cache.set('newsldr', cache_key, result, data_type='news')
             return result
         except Exception as e:
             logger.error(f"Error getting NewsLdr related news: {e}")
@@ -129,7 +129,7 @@ class NewsLdrClient:
         }
 
         # Check cache first
-        cached_result = self.cache.get('newsldr', cache_key)
+        cached_result = self.cache.get('newsldr', cache_key, data_type='official')
         if cached_result:
             logger.info("Returning cached NewsLdr source reliability result")
             return cached_result
@@ -137,7 +137,7 @@ class NewsLdrClient:
         # Make API call with rate limiting
         try:
             result = self.rate_limiter.newsldr_api_call(self._get_source_reliability_api, source_name)
-            self.cache.set('newsldr', cache_key, result)
+            self.cache.set('newsldr', cache_key, result, data_type='official')
             return result
         except Exception as e:
             logger.error(f"Error getting NewsLdr source reliability: {e}")

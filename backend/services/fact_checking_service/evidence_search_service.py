@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from .unified_schema import ClaimReview, RelatedNews, SourceReliability, PublisherCredibility
 from .cache_manager import CacheManager
 from .rate_limiter import RateLimiter
+from .real_time_news_service import RealTimeNewsService
 
 logger = logging.getLogger(__name__)
 
@@ -172,13 +173,16 @@ class EvidenceSearchService:
             api_key=self.newsldr_api_key,
             cache_manager=self.cache
         ) if self.newsldr_api_key else None
+
+        self.realtime_news_client = RealTimeNewsService(cache_manager=self.cache)
         
         # Log which clients are available
         google_status = "READY" if self.google_client else "NOT AVAILABLE"
         newsldr_status = "READY" if self.newsldr_client else "NOT AVAILABLE"
         newsapi_status = "READY" if self.newsapi_key else "NOT AVAILABLE"
         bing_status = "READY" if self.bing_api_key else "NOT AVAILABLE (requires BING_NEWS_API_KEY)"
-        logger.info(f"EvidenceSearchService initialized - Google: {google_status}, NewsLdr: {newsldr_status}, NewsAPI: {newsapi_status}, Bing: {bing_status}")
+        realtime_status = "READY"
+        logger.info(f"EvidenceSearchService initialized - Google: {google_status}, NewsLdr: {newsldr_status}, NewsAPI: {newsapi_status}, Bing: {bing_status}, RealTime: {realtime_status}")
 
     def search_evidence(self, claim: str, language: str = "en",
                         max_results_per_source: int = 10,
@@ -200,7 +204,7 @@ class EvidenceSearchService:
         # Check for cached data first (unless force refresh)
         if not force_refresh:
             cache_key = {'claim': claim, 'language': language}
-            cached = self.cache.get('evidence_collection', cache_key)
+            cached = self.cache.get('evidence_collection', cache_key, data_type='fact_check')
             if cached and isinstance(cached, EvidenceCollection):
                 if cached.is_fresh(self.refresh_threshold_hours):
                     logger.info("Returning fresh cached evidence")
@@ -235,6 +239,18 @@ class EvidenceSearchService:
             except Exception as e:
                 logger.error(f"NewsLdr search failed: {e}")
                 search_errors.append(f"NewsLdr: {str(e)}")
+
+        # Search Real-Time News (highest priority for current information)
+        try:
+            realtime_evidence = self._search_realtime_news(
+                claim, max_results_per_source
+            )
+            all_evidence.extend(realtime_evidence)
+            sources_successfully_used.append('Real-Time News')
+            logger.info(f"Found {len(realtime_evidence)} items from Real-Time News")
+        except Exception as e:
+            logger.error(f"Real-Time News search failed: {e}")
+            search_errors.append(f"Real-Time News: {str(e)}")
 
         # Search NewsAPI as fallback
         if self.newsapi_key:
@@ -290,7 +306,7 @@ class EvidenceSearchService:
 
         # Cache the result
         cache_key = {'claim': claim, 'language': language}
-        self.cache.set('evidence_collection', cache_key, result)
+        self.cache.set('evidence_collection', cache_key, result, data_type='fact_check')
 
         return result
 
@@ -354,6 +370,36 @@ class EvidenceSearchService:
 
         return evidence_items
 
+    def _search_realtime_news(self, claim: str, max_results: int) -> List[EvidenceItem]:
+        """Search real-time news sources for current information."""
+        realtime_news = self.realtime_news_client.get_real_time_news(
+            claim, max_results=max_results, max_age_hours=12  # Only very recent news
+        )
+
+        evidence_items = []
+        for news_item in realtime_news:
+            # Convert RealTimeNewsItem to EvidenceItem
+            evidence = EvidenceItem(
+                source=news_item.source,
+                source_type='news',
+                title=news_item.title,
+                content=news_item.content,
+                url=news_item.url,
+                published_date=news_item.published_date,
+                credibility_score=news_item.credibility_score,
+                relevance_score=news_item.relevance_score,
+                verdict=None,
+                metadata={
+                    'freshness_score': news_item.freshness_score,
+                    'data_age_hours': (datetime.now() - news_item.published_date).total_seconds() / 3600,
+                    'api_source': news_item.metadata.get('api', 'unknown'),
+                    'is_realtime': True
+                }
+            )
+            evidence_items.append(evidence)
+
+        return evidence_items
+
     def _search_newsapi(self, claim: str, language: str, max_results: int) -> List[EvidenceItem]:
         """Search NewsAPI as a fallback news source."""
         cache_key = {
@@ -363,7 +409,7 @@ class EvidenceSearchService:
             'source': 'newsapi'
         }
 
-        cached = self.cache.get('newsapi', cache_key)
+        cached = self.cache.get('newsapi', cache_key, data_type='news')
         if cached:
             return cached
 
@@ -412,7 +458,7 @@ class EvidenceSearchService:
             )
             evidence_items.append(evidence)
 
-        self.cache.set('newsapi', cache_key, evidence_items)
+        self.cache.set('newsapi', cache_key, evidence_items, data_type='news')
         return evidence_items
 
     def _extract_domain(self, url: str) -> str:
@@ -589,7 +635,7 @@ class EvidenceSearchService:
             'source': 'bing'
         }
 
-        cached = self.cache.get('bing_news', cache_key)
+        cached = self.cache.get('bing_news', cache_key, data_type='news')
         if cached:
             return cached
 
@@ -640,5 +686,5 @@ class EvidenceSearchService:
             )
             evidence_items.append(evidence)
 
-        self.cache.set('bing_news', cache_key, evidence_items)
+        self.cache.set('bing_news', cache_key, evidence_items, data_type='news')
         return evidence_items

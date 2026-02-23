@@ -84,7 +84,7 @@ class FastVerificationOrchestrator:
         # Check cache first
         if use_cache and self.enable_caching:
             cache_key = {'text': text, 'language': language}
-            cached = self.cache.get('fast_verification', cache_key)
+            cached = self.cache.get('fast_verification', cache_key, data_type='realtime')
             if cached:
                 logger.info("Returning cached verification result")
                 cached['cached'] = True
@@ -164,7 +164,7 @@ class FastVerificationOrchestrator:
 
         # Cache result
         if use_cache and self.enable_caching:
-            self.cache.set('fast_verification', cache_key, result.__dict__)
+            self.cache.set('fast_verification', cache_key, result.__dict__, data_type='realtime')
 
         logger.info(f"Fast verification completed in {processing_time:.2f}s, score: {adjusted_score}")
         return result
