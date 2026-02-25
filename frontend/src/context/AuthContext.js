@@ -118,9 +118,7 @@ export const AuthProvider = ({ children }) => {
 
       return { 
         success: true, 
-        message: data.message,
-        reset_link: data.reset_link,
-        development_mode: data.development_mode
+        message: data.message
       };
     } catch (err) {
       console.error('Forgot password error:', err);

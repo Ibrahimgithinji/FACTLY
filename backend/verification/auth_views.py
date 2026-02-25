@@ -218,36 +218,12 @@ FACTLY Team
             except Exception as email_error:
                 logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
                 
-                # In development mode, return the reset link so developers can test
-                if settings.DEBUG:
-                    return Response(
-                        {
-                            'message': 'Password reset email could not be sent (check SMTP configuration). '
-                                       'Reset link for development:',
-                            'reset_link': reset_link,
-                            'token': token,
-                            'development_mode': True
-                        },
-                        status=status.HTTP_200_OK
-                    )
-                else:
-                    # Production: Delete the token since we couldn't send the email
-                    reset_token.delete()
-                    return Response(
-                        {'error': 'Unable to send password reset email. Please check your email configuration or try again later.'},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
-            
-            # Always include reset link in DEBUG mode for easy testing
-            if settings.DEBUG:
+                # Log the reset link for development debugging
+                logger.info(f"Password reset link for development: {reset_link}")
+                
+                # Always return generic success message, never expose reset link in API response
                 return Response(
-                    {
-                        'message': 'Password reset link generated. '
-                                   'In production, this would be sent via email.',
-                        'reset_link': reset_link,
-                        'token': token,
-                        'development_mode': True
-                    },
+                    {'message': 'If an account exists with this email, a password reset link has been sent.'},
                     status=status.HTTP_200_OK
                 )
             
