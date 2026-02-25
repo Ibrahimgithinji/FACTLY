@@ -519,7 +519,7 @@ class VerificationView(APIView):
 
 def health_check(request):
     """Health check endpoint for monitoring."""
-    return Response({
+    response = Response({
         "status": "healthy",
         "service": "Factly API",
         "version": "2.0.0",
@@ -531,3 +531,6 @@ def health_check(request):
             "Configurable caching"
         ]
     }, status=status.HTTP_200_OK)
+    # Ensure JSON response header
+    response['Content-Type'] = 'application/json'
+    return response

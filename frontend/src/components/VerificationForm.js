@@ -76,9 +76,37 @@ const VerificationForm = () => {
 
       clearTimeout(timeoutId);
 
+      // CRITICAL: Check Content-Type BEFORE calling response.json()
+      const contentType = response.headers.get('content-type') || '';
+      
+      if (!contentType.includes('application/json')) {
+        // Response is not JSON - might be HTML error page (404, 500, etc.)
+        const responseText = await response.text();
+        const errorPreview = responseText.substring(0, 200);
+        
+        console.error('Non-JSON API response:', {
+          status: response.status,
+          contentType,
+          responsePreview: errorPreview
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: Server returned ${response.status} - ${response.statusText}`);
+        }
+        throw new Error('Invalid response format from server. Expected JSON.');
+      }
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server error: ${response.status}`);
+        // Try to parse error response
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
       }
 
       const data = await response.json();

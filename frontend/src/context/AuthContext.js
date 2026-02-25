@@ -37,6 +37,19 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Login error: Non-JSON response received:', text.substring(0, 500));
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       if (!response.ok) {
         let errorMessage = 'Login failed';
         try {
@@ -56,6 +69,14 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       console.error('Login error:', err);
+      
+      if (err.message && (
+        err.message.includes('Server error') || 
+        err.message.includes('Invalid response')
+      )) {
+        return { success: false, error: err.message };
+      }
+      
       return { success: false, error: err.message || 'Login failed. Please try again.' };
     }
   };
@@ -69,6 +90,19 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify({ name, email, password }),
       });
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Signup error: Non-JSON response received:', text.substring(0, 500));
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        throw new Error('Invalid response from server. Please try again.');
+      }
 
       if (!response.ok) {
         let errorMessage = 'Signup failed';
@@ -89,6 +123,14 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       console.error('Signup error:', err);
+      
+      if (err.message && (
+        err.message.includes('Server error') || 
+        err.message.includes('Invalid response')
+      )) {
+        return { success: false, error: err.message };
+      }
+      
       return { success: false, error: err.message || 'Signup failed. Please try again.' };
     }
   };
@@ -110,10 +152,25 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email }),
       });
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // Response is not JSON - handle HTML or other error pages
+        const text = await response.text();
+        console.error('Forgot password error: Non-JSON response received:', text.substring(0, 500));
+        
+        if (!response.ok) {
+          // Server returned an error HTML page (404, 500, etc.)
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send reset email');
+        throw new Error(data.error || data.message || 'Failed to send reset email');
       }
 
       return { 
@@ -122,7 +179,21 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (err) {
       console.error('Forgot password error:', err);
-      return { success: false, error: err.message || 'Failed to send reset email' };
+      
+      // Re-throw if it's already our error
+      if (err.message && (
+        err.message.includes('Server error') || 
+        err.message.includes('Invalid response') ||
+        err.message.includes('Failed to send reset email')
+      )) {
+        return { success: false, error: err.message };
+      }
+      
+      // Handle network errors or JSON parsing errors
+      return { 
+        success: false, 
+        error: err.message || 'Network error. Please check your connection and try again.' 
+      };
     }
   };
 
@@ -136,15 +207,37 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ token }),
       });
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Verify reset token error: Non-JSON response received:', text.substring(0, 500));
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Invalid reset token');
+        throw new Error(error.error || error.message || 'Invalid reset token');
       }
 
       const data = await response.json();
       return { success: true, email: data.email };
     } catch (err) {
       console.error('Verify reset token error:', err);
+      
+      if (err.message && (
+        err.message.includes('Server error') || 
+        err.message.includes('Invalid response') ||
+        err.message.includes('Invalid reset token')
+      )) {
+        return { success: false, error: err.message };
+      }
+      
       return { success: false, error: err.message || 'Invalid or expired reset link' };
     }
   };
@@ -159,16 +252,38 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ token, new_password: newPassword, confirm_password: confirmPassword }),
       });
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Reset password error: Non-JSON response received:', text.substring(0, 500));
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to reset password');
+        throw new Error(error.error || error.message || 'Failed to reset password');
       }
 
       const data = await response.json();
       return { success: true, message: data.message };
     } catch (err) {
       console.error('Reset password error:', err);
-      return { success: false, error: err.message || 'Failed to reset password' };
+      
+      if (err.message && (
+        err.message.includes('Server error') || 
+        err.message.includes('Invalid response') ||
+        err.message.includes('Failed to reset password')
+      )) {
+        return { success: false, error: err.message };
+      }
+      
+      return { success: false, error: err.message || 'Failed to reset password. Please try again.' };
     }
   };
 
