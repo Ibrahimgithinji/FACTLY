@@ -515,3 +515,19 @@ class VerificationView(APIView):
             return "Data is somewhat stale (1-3 days old) - consider verifying with current sources"
         else:
             return "Data is stale (more than 3 days old) - strongly recommend fresh verification"
+
+
+def health_check(request):
+    """Health check endpoint for monitoring."""
+    return Response({
+        "status": "healthy",
+        "service": "Factly API",
+        "version": "2.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "features": [
+            "Enhanced fact-checking with real-time news",
+            "Multi-source verification",
+            "Data freshness indicators",
+            "Configurable caching"
+        ]
+    }, status=status.HTTP_200_OK)
