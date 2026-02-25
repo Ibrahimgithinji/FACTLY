@@ -10,8 +10,9 @@ const getApiBaseUrl = () => {
     return envUrl;
   }
   
-  // Default to localhost:8000 for development
-  return 'http://localhost:8000';
+  // In development with proxy, use relative URLs
+  // In production, this should be the full URL
+  return '';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
