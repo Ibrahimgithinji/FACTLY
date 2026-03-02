@@ -159,6 +159,37 @@ export const AuthProvider = ({ children }) => {
         const text = await response.text();
         console.error('Forgot password error: Non-JSON response received:', text.substring(0, 500));
         
+        // Try to extract useful error information from HTML response
+        let extractedError = null;
+        
+        // Look for Django error page patterns
+        if (response.status === 500) {
+          // Extract exception value or error message from Django error page
+          const exceptionMatch = text.match(/<pre class="exception_value">(.*?)<\/pre>/s);
+          if (exceptionMatch && exceptionMatch[1]) {
+            extractedError = exceptionMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+          }
+          
+          // Also check for specific error messages in the page
+          if (!extractedError) {
+            const errorSectionMatch = text.match(/<h1[^>]*>(.*?)<\/h1>/s);
+            if (errorSectionMatch && errorSectionMatch[1]) {
+              extractedError = errorSectionMatch[1].trim();
+            }
+          }
+          
+          // Provide helpful message based on common Django 500 errors
+          if (extractedError) {
+            if (extractedError.includes('DisallowedHost')) {
+              throw new Error('Server configuration error. Please contact support or try again later.');
+            }
+            if (extractedError.includes('Invalid HTTP_HOST')) {
+              throw new Error('Server configuration error. Please contact support or try again later.');
+            }
+            throw new Error(`Server error: ${extractedError.substring(0, 200)}`);
+          }
+        }
+        
         if (!response.ok) {
           // Server returned an error HTML page (404, 500, etc.)
           throw new Error(`Server error: ${response.status} ${response.statusText}`);
