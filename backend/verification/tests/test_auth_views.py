@@ -28,6 +28,60 @@ class PasswordResetTests(TestCase):
         sent = mail.outbox[0]
         self.assertIn(token_obj.token, sent.body)
 
+    # --- authentication tests ---
+    def test_login_success(self):
+        url = reverse('verification:login')
+        resp = self.client.post(url, {
+            'email': self.user_email,
+            'password': self.user_password
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn('access', data)
+        self.assertIn('refresh', data)
+        self.assertEqual(data['user']['email'], self.user_email)
+
+    def test_login_invalid_credentials(self):
+        url = reverse('verification:login')
+        resp = self.client.post(url, {
+            'email': self.user_email,
+            'password': 'wrongpass'
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 401)
+
+    def test_login_case_insensitive_email(self):
+        url = reverse('verification:login')
+        mixed_email = self.user_email.upper()
+        resp = self.client.post(url, {
+            'email': mixed_email,
+            'password': self.user_password
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data['user']['email'], self.user_email)
+
+    def test_signup_creates_user_and_returns_tokens(self):
+        url = reverse('verification:signup')
+        resp = self.client.post(url, {
+            'name': 'New User',
+            'email': 'newuser@example.com',
+            'password': 'secure123'
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 201)
+        data = resp.json()
+        self.assertIn('access', data)
+        self.assertEqual(data['user']['email'], 'newuser@example.com')
+
+    def test_signup_duplicate_email_case_insensitive(self):
+        url = reverse('verification:signup')
+        resp = self.client.post(url, {
+            'name': 'Another',
+            'email': self.user_email.upper(),
+            'password': 'anotherpass'
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Email already registered', resp.json().get('error', ''))
+
     def test_forgot_password_nonexistent_email(self):
         url = reverse('verification:forgot_password')
         resp = self.client.post(url, {'email': 'noone@nowhere.com'}, content_type='application/json')
