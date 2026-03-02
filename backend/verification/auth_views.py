@@ -36,8 +36,9 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # perform case-insensitive lookup so email casing doesn't block login
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             logger.warning(f"Login attempt with non-existent email: {email}")
             return Response(
@@ -45,6 +46,7 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
+        # make sure username is still used for Django authentication
         user = authenticate(username=user.username, password=password)
         if not user:
             logger.warning(f"Failed login attempt for user: {email}")
@@ -74,6 +76,9 @@ class SignupView(APIView):
         name = request.data.get('name', '')
         email = request.data.get('email')
         password = request.data.get('password')
+        # normalize email to lowercase for consistency and to avoid duplicates
+        if email:
+            email = email.strip().lower()
         
         # Validate
         if not email or not password or not name:
@@ -88,7 +93,8 @@ class SignupView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if User.objects.filter(email=email).exists():
+        # check for existing account with same email (case-insensitive)
+        if User.objects.filter(email__iexact=email).exists():
             return Response(
                 {'error': 'Email already registered'},
                 status=status.HTTP_400_BAD_REQUEST
