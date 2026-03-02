@@ -34,7 +34,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 # Configure allowed hosts via environment variable (comma-separated). Default: allow localhost for development.
 # If no ALLOWED_HOSTS is set, default to localhost and 127.0.0.1 for development.
 _allowed = os.getenv('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else ['localhost', '127.0.0.1', 'testserver', '0.0.0.0']
 
 
 # Application definition

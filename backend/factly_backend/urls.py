@@ -38,36 +38,55 @@ def json_error_response(request, status_code, message):
 
 def custom_404(request, exception):
     """Custom 404 error handler that returns JSON for API requests."""
-    response = json_error_response(request, 404, 'Endpoint not found')
-    if response:
-        return response
+    # Check if it's an API request - include the path in the error message for debugging
+    if request.path.startswith('/api/'):
+        from django.http import JsonResponse
+        return JsonResponse(
+            {'error': f'Endpoint not found: {request.path}'},
+            status=404
+        )
     
     from django.views.defaults import page_not_found
     return page_not_found(request, exception)
 
 def custom_500(request):
     """Custom 500 error handler that returns JSON for API requests."""
-    response = json_error_response(request, 500, 'Internal server error')
-    if response:
-        return response
+    # Always return JSON for API requests - this is critical for frontend error handling
+    if request.path.startswith('/api/'):
+        from django.http import JsonResponse
+        return JsonResponse(
+            {'error': 'Internal server error. Please try again later.'},
+            status=500
+        )
     
     from django.views.defaults import server_error
     return server_error(request)
 
 def custom_400(request, exception):
     """Custom 400 error handler that returns JSON for API requests."""
-    response = json_error_response(request, 400, 'Bad request')
-    if response:
-        return response
+    if request.path.startswith('/api/'):
+        from django.http import JsonResponse
+        # Include exception message for debugging but sanitize it
+        error_msg = str(exception) if hasattr(exception, '__str__') else 'Bad request'
+        # Don't expose sensitive error details in production
+        if not settings.DEBUG:
+            error_msg = 'Bad request'
+        return JsonResponse(
+            {'error': error_msg},
+            status=400
+        )
     
     from django.views.defaults import bad_request
     return bad_request(request, exception)
 
 def custom_403(request, exception):
     """Custom 403 error handler that returns JSON for API requests."""
-    response = json_error_response(request, 403, 'Permission denied')
-    if response:
-        return response
+    if request.path.startswith('/api/'):
+        from django.http import JsonResponse
+        return JsonResponse(
+            {'error': 'Permission denied'},
+            status=403
+        )
     
     from django.views.defaults import permission_denied
     return permission_denied(request, exception)
