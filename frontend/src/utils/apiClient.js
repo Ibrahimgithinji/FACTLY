@@ -5,9 +5,24 @@
  * - Proper status code checking
  * - Consistent error response handling
  * - Network error handling
+ * - Automatic token refresh
  */
 
 import { API_ENDPOINTS } from './api';
+
+// Token storage keys
+const ACCESS_TOKEN_KEY = 'authToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+// Storage helpers
+const getStoredToken = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error('Error reading from localStorage:', e);
+    return null;
+  }
+};
 
 /**
  * Parse response safely - checks Content-Type before parsing JSON
@@ -36,23 +51,89 @@ const parseResponse = async (response) => {
 };
 
 /**
- * Make a POST request with proper error handling
+ * Try to refresh the access token
+ * @returns {boolean} True if refresh was successful
+ */
+const tryRefreshToken = async () => {
+  const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
+  if (!refreshToken) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(API_ENDPOINTS.REFRESH, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    if (data.access) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('Token refresh failed:', e);
+    return false;
+  }
+};
+
+/**
+ * Make a POST request with proper error handling and token refresh
  * @param {string} url - API endpoint URL
  * @param {Object} data - Request body data
  * @param {Object} options - Additional fetch options
  * @returns {Object} Response data with success status
  */
 export const apiPost = async (url, data, options = {}) => {
+  // Get current access token
+  let accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+  
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         ...options.headers,
       },
       body: JSON.stringify(data),
       ...options,
     });
+
+    // If unauthorized and we have a refresh token, try to refresh
+    if (response.status === 401 && accessToken) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        // Retry the request with new token
+        accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+        const retryResponse = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            ...options.headers,
+          },
+          body: JSON.stringify(data),
+          ...options,
+        });
+        
+        const result = await parseResponse(retryResponse);
+        
+        if (!retryResponse.ok) {
+          throw new Error(result.error || result.message || 'Request failed');
+        }
+        
+        return { success: true, data: result };
+      }
+    }
 
     const result = await parseResponse(response);
     
@@ -88,22 +169,52 @@ export const apiPost = async (url, data, options = {}) => {
 };
 
 /**
- * Make a GET request with proper error handling
+ * Make a GET request with proper error handling and token refresh
  * @param {string} url - API endpoint URL
  * @param {Object} options - Additional fetch options
  * @returns {Object} Response data with success status
  */
 export const apiGet = async (url, options = {}) => {
+  // Get current access token
+  let accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+  
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         ...options.headers,
       },
       ...options,
     });
 
+    // If unauthorized and we have a refresh token, try to refresh
+    if (response.status === 401 && accessToken) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        // Retry the request with new token
+        accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+        const retryResponse = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            ...options.headers,
+          },
+          ...options,
+        });
+        
+        const result = await parseResponse(retryResponse);
+        
+        if (!retryResponse.ok) {
+          throw new Error(result.error || result.message || 'Request failed');
+        }
+        
+        return { success: true, data: result };
+      }
+    }
+    
     const result = await parseResponse(response);
     
     if (!response.ok) {

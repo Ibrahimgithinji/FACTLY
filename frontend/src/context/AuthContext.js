@@ -1,7 +1,80 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { API_ENDPOINTS } from '../utils/api';
 
 const AuthContext = createContext(null);
+
+// Token storage keys
+const ACCESS_TOKEN_KEY = 'authToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+const USER_KEY = 'user';
+
+// Token refresh threshold - refresh if token expires in less than this many minutes
+const TOKEN_REFRESH_THRESHOLD_MINUTES = 5;
+
+// Helper to get token expiration time from JWT (without verification)
+const getTokenExpiration = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? new Date(payload.exp * 1000) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+// Check if token is expired or about to expire
+const isTokenExpiringSoon = (token) => {
+  if (!token) return true;
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return false; // Can't determine, assume valid
+  
+  const now = new Date();
+  const threshold = new Date(now.getTime() + TOKEN_REFRESH_THRESHOLD_MINUTES * 60 * 1000);
+  return expiration < threshold;
+};
+
+// Storage helpers (using localStorage for persistence across sessions)
+const getStoredToken = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error('Error reading from localStorage:', e);
+    return null;
+  }
+};
+
+const setStoredToken = (key, value) => {
+  try {
+    if (value) {
+      localStorage.setItem(key, value);
+    } else {
+      localStorage.removeItem(key);
+    }
+  } catch (e) {
+    console.error('Error writing to localStorage:', e);
+  }
+};
+
+const getStoredUser = () => {
+  try {
+    const userStr = localStorage.getItem(USER_KEY);
+    return userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('Error reading user from localStorage:', e);
+    return null;
+  }
+};
+
+const setStoredUser = (user) => {
+  try {
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_KEY);
+    }
+  } catch (e) {
+    console.error('Error writing user to localStorage:', e);
+  }
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -17,15 +90,120 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on mount
-    const token = sessionStorage.getItem('authToken');
-    const storedUser = sessionStorage.getItem('user');
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+    // Check for existing tokens on mount - use localStorage for persistence
+    const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+    const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
+    const storedUser = getStoredUser();
+    
+    if (accessToken && storedUser) {
+      setUser(storedUser);
       setIsAuthenticated(true);
+    } else if (refreshToken && storedUser) {
+      // If we have refresh token but no access token, try to refresh
+      // This handles cases where access token expired but refresh token is still valid
+      refreshAccessToken(refreshToken, storedUser);
     }
     setIsLoading(false);
   }, []);
+
+  // Function to refresh access token using refresh token
+  const refreshAccessToken = useCallback(async (refreshToken, userData) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.REFRESH, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Token refresh failed: Non-JSON response');
+        // Clear tokens and log out
+        setStoredToken(ACCESS_TOKEN_KEY, null);
+        setStoredToken(REFRESH_TOKEN_KEY, null);
+        setStoredUser(null);
+        setUser(null);
+        setIsAuthenticated(false);
+        return false;
+      }
+
+      if (!response.ok) {
+        console.error('Token refresh failed with status:', response.status);
+        // Clear tokens and log out
+        setStoredToken(ACCESS_TOKEN_KEY, null);
+        setStoredToken(REFRESH_TOKEN_KEY, null);
+        setStoredUser(null);
+        setUser(null);
+        setIsAuthenticated(false);
+        return false;
+      }
+
+      const data = await response.json();
+      
+      if (data.access) {
+        // Store new access token
+        setStoredToken(ACCESS_TOKEN_KEY, data.access);
+        setUser(userData);
+        setIsAuthenticated(true);
+        return true;
+      }
+      
+      return false;
+    } catch (err) {
+      console.error('Token refresh error:', err);
+      // Clear tokens and log out on error
+      setStoredToken(ACCESS_TOKEN_KEY, null);
+      setStoredToken(REFRESH_TOKEN_KEY, null);
+      setStoredUser(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      return false;
+    }
+  }, []);
+
+  // Function to get valid access token (refreshes if needed)
+  const getValidAccessToken = useCallback(async () => {
+    const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+    const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
+    
+    if (!accessToken) {
+      // No access token, try to refresh
+      if (refreshToken) {
+        const success = await refreshAccessToken(refreshToken, getStoredUser());
+        if (success) {
+          return getStoredToken(ACCESS_TOKEN_KEY);
+        }
+      }
+      return null;
+    }
+    
+    // Check if token is expiring soon
+    if (isTokenExpiringSoon(accessToken) && refreshToken) {
+      await refreshAccessToken(refreshToken, getStoredUser());
+      return getStoredToken(ACCESS_TOKEN_KEY);
+    }
+    
+    return accessToken;
+  }, [refreshAccessToken]);
+
+  // Set up periodic token refresh check
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Check token validity every minute
+    const checkInterval = setInterval(() => {
+      const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+      const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
+      
+      if (accessToken && isTokenExpiringSoon(accessToken) && refreshToken) {
+        refreshAccessToken(refreshToken, getStoredUser());
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(checkInterval);
+  }, [isAuthenticated, refreshAccessToken]);
 
   const login = async (email, password) => {
     try {
@@ -62,8 +240,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      sessionStorage.setItem('authToken', data.access);
-      sessionStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Store both access and refresh tokens using localStorage for persistence
+      setStoredToken(ACCESS_TOKEN_KEY, data.access);
+      setStoredToken(REFRESH_TOKEN_KEY, data.refresh);
+      setStoredUser(data.user);
+      
       setUser(data.user);
       setIsAuthenticated(true);
       return { success: true };
@@ -116,8 +298,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      sessionStorage.setItem('authToken', data.access);
-      sessionStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Store both access and refresh tokens using localStorage for persistence
+      setStoredToken(ACCESS_TOKEN_KEY, data.access);
+      setStoredToken(REFRESH_TOKEN_KEY, data.refresh);
+      setStoredUser(data.user);
+      
       setUser(data.user);
       setIsAuthenticated(true);
       return { success: true };
@@ -136,8 +322,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('user');
+    // Clear tokens from localStorage
+    setStoredToken(ACCESS_TOKEN_KEY, null);
+    setStoredToken(REFRESH_TOKEN_KEY, null);
+    setStoredUser(null);
+    
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -328,6 +517,7 @@ export const AuthProvider = ({ children }) => {
     forgotPassword,
     verifyResetToken,
     resetPassword,
+    getValidAccessToken,
   };
 
   return (
