@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   VERIFY_RESET_TOKEN: `${API_BASE_URL}/api/auth/verify-reset-token/`,
   RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password/`,
   VERIFY: `${API_BASE_URL}/api/verify/`,
+  ENHANCED_VERIFY: `${API_BASE_URL}/api/verify/enhanced/`,
   HISTORY: `${API_BASE_URL}/api/history/`,
   USER: `${API_BASE_URL}/api/user/`,
 };

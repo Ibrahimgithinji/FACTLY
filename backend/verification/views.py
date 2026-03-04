@@ -4,6 +4,7 @@ from datetime import datetime
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 from .serializers import VerificationRequestSerializer, VerificationResponseSerializer
 from services.nlp_service import TextPreprocessor, URLExtractionService
@@ -17,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class EnhancedVerificationView(APIView):
     """API view for enhanced content verification with direct source verification."""
+    
+    # Allow public access for verification (no authentication required)
+    permission_classes = [AllowAny]
     
     # Simple in-memory rate limiting
     _rate_limit_storage = {}
@@ -234,6 +238,9 @@ class EnhancedVerificationView(APIView):
 
 class VerificationView(APIView):
     """API view for content verification using Factly Score™."""
+    
+    # Allow public access for verification (no authentication required)
+    permission_classes = [AllowAny]
     
     # Simple in-memory rate limiting (requests per IP)
     _rate_limit_storage = {}

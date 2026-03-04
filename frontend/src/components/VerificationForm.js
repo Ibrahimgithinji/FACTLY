@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../utils/api';
+import { apiPost } from '../utils/apiClient';
 import './VerificationForm.css';
 
 const VerificationForm = () => {
@@ -9,6 +11,7 @@ const VerificationForm = () => {
   const [error, setError] = useState(null);
   const [charCount, setCharCount] = useState(0);
   const navigate = useNavigate();
+  const { getValidAccessToken, isAuthenticated } = useAuth();
 
   const MAX_CHARS = 5000;
 
@@ -53,9 +56,6 @@ const VerificationForm = () => {
     setError(null);
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for URL extraction
-
       // Detect if input is a URL
       const isUrl = isValidUrl(input.trim());
       
@@ -65,51 +65,14 @@ const VerificationForm = () => {
 
       console.log('Sending request to API:', isUrl ? 'URL mode' : 'Text mode');
 
-      const response = await fetch(API_ENDPOINTS.VERIFY, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      // CRITICAL: Check Content-Type BEFORE calling response.json()
-      const contentType = response.headers.get('content-type') || '';
+      // Use the apiClient which handles authentication automatically
+      const result = await apiPost(API_ENDPOINTS.VERIFY, requestBody);
       
-      if (!contentType.includes('application/json')) {
-        // Response is not JSON - might be HTML error page (404, 500, etc.)
-        const responseText = await response.text();
-        const errorPreview = responseText.substring(0, 200);
-        
-        console.error('Non-JSON API response:', {
-          status: response.status,
-          contentType,
-          responsePreview: errorPreview
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: Server returned ${response.status} - ${response.statusText}`);
-        }
-        throw new Error('Invalid response format from server. Expected JSON.');
+      if (!result.success) {
+        throw new Error(result.error || 'Verification failed');
       }
 
-      if (!response.ok) {
-        // Try to parse error response
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-        
-        throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = result.data;
       console.log('API Response received:', {
         factlyScore: data.factly_score?.factly_score || data.factly_score?.score,
         classification: data.factly_score?.classification
@@ -141,11 +104,7 @@ const VerificationForm = () => {
       
       navigate('/results');
     } catch (err) {
-      if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.');
-      } else {
-        setError(err.message || 'Verification failed. Please try again.');
-      }
+      setError(err.message || 'Verification failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
