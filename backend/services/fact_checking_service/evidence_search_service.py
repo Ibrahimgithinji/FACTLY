@@ -85,13 +85,14 @@ class EvidenceSearchService:
 
     # Trusted news domains for credibility assessment
     TRUSTED_NEWS_DOMAINS = {
-        # Major international news agencies
+        # Major international news agencies - Highest credibility
         'reuters.com': 0.95,
         'apnews.com': 0.95,
         'ap.org': 0.95,
         'afp.com': 0.93,
+        'upi.com': 0.90,
         
-        # Established news outlets
+        # Established news outlets - High credibility
         'bbc.com': 0.92,
         'bbc.co.uk': 0.92,
         'npr.org': 0.90,
@@ -104,13 +105,19 @@ class EvidenceSearchService:
         'nbcnews.com': 0.86,
         'abcnews.go.com': 0.85,
         'cbsnews.com': 0.85,
+        'usatoday.com': 0.82,
+        'latimes.com': 0.82,
+        'chicagotribune.com': 0.80,
         
-        # Fact-checking organizations
+        # Fact-checking organizations - Highest trust
         'politifact.com': 0.95,
         'snopes.com': 0.93,
         'factcheck.org': 0.94,
         'politiwatch.org': 0.90,
         'truthordfiction.com': 0.85,
+        'hoaxslayer.com': 0.85,
+        'leadstories.com': 0.88,
+        'boomlive.in': 0.85,
         
         # Regional trusted sources
         'aljazeera.com': 0.87,
@@ -118,26 +125,43 @@ class EvidenceSearchService:
         'theglobeandmail.com': 0.88,
         'CBCnews': 0.87,
         'news.google.com': 0.85,
+        'euronews.com': 0.85,
+        'scmp.com': 0.82,
+        'asia.nikkei.com': 0.85,
         
-        # Business/Financial
+        # Business/Financial - High credibility
         'bloomberg.com': 0.90,
         'wsj.com': 0.88,
         'ft.com': 0.90,
         'economist.com': 0.90,
+        'forbes.com': 0.85,
+        'businessinsider.com': 0.83,
+        'marketwatch.com': 0.82,
         
-        # Science/Health
+        # Science/Health - Authoritative sources
         'nature.com': 0.92,
         'sciencemag.org': 0.92,
         'nih.gov': 0.93,
         'who.int': 0.92,
         'cdc.gov': 0.92,
+        'mayoclinic.org': 0.90,
+        'webmd.com': 0.78,
+        'medicalnewstoday.com': 0.80,
+        
+        # Government sources - Official
+        'whitehouse.gov': 0.90,
+        'state.gov': 0.90,
+        'congress.gov': 0.90,
+        'gov.uk': 0.90,
+        'europa.eu': 0.88,
     }
 
     # Fallback search endpoints when primary APIs fail
     FALLBACK_SOURCES = [
         {'name': 'NewsAPI', 'enabled': True, 'priority': 1},
-        {'name': 'Bing News', 'enabled': False, 'priority': 2},
-        {'name': 'DuckDuckGo', 'enabled': False, 'priority': 3},
+        {'name': 'Bing News', 'enabled': True, 'priority': 2},
+        {'name': 'RSS Feeds', 'enabled': True, 'priority': 3},
+        {'name': 'DuckDuckGo', 'enabled': False, 'priority': 4},
     ]
 
     def __init__(self, cache_manager: Optional[CacheManager] = None):
