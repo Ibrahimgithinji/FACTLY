@@ -21,6 +21,7 @@ export const API_BASE_URL = getApiBaseUrl();
 export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/api/auth/login/`,
   SIGNUP: `${API_BASE_URL}/api/auth/signup/`,
+  REFRESH: `${API_BASE_URL}/api/auth/refresh/`,
   FORGOT_PASSWORD: `${API_BASE_URL}/api/auth/forgot-password/`,
   VERIFY_RESET_TOKEN: `${API_BASE_URL}/api/auth/verify-reset-token/`,
   RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password/`,
