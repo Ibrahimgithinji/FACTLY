@@ -3,14 +3,16 @@ Enhanced Verification Orchestrator
 
 Enhanced orchestration service that coordinates comprehensive verification:
 1. Claim extraction from input text
-2. Direct multi-source verification against authoritative sources
-3. Cross-source analysis with rigorous validation
-4. Factly Score™ calculation with verification weights
-5. Summary generation with transparent verification steps
-6. Complete verification tracking for transparency
+2. Real-time global information verification (Grok-style)
+3. Direct multi-source verification against authoritative sources
+4. Cross-source analysis with rigorous validation
+5. Factly Score™ calculation with verification weights
+6. Summary generation with transparent verification steps
+7. Real-time updates and trending analysis
 
 This enhanced orchestrator ensures every result reflects verified, up-to-date
-information confirmed through direct examination of multiple reliable sources.
+information confirmed through direct examination of multiple reliable global sources,
+with real-time monitoring for information changes and emergence.
 """
 
 import logging
@@ -23,6 +25,9 @@ from services.nlp_service.text_preprocessing import TextPreprocessor
 from services.fact_checking_service.evidence_search_service import EvidenceSearchService, EvidenceCollection
 from services.fact_checking_service.cross_source_analyzer import CrossSourceAnalyzer, CrossSourceAnalysis
 from services.fact_checking_service.direct_source_verifier import DirectSourceVerifier, SourceVerificationReport
+from services.fact_checking_service.real_time_verification_engine import (
+    RealTimeVerificationEngine, RealTimeVerificationResult
+)
 from services.scoring_service.scoring_service import ScoringService, FactlyScoreResult
 from services.fact_checking_service.unified_schema import VerificationResult
 from services.fact_checking_service.cache_manager import CacheManager
@@ -117,15 +122,17 @@ class EnhancedVerificationSummary:
 
 class EnhancedVerificationOrchestrator:
     """
-    Enhanced orchestrator for comprehensive FACTLY verification.
+    Enhanced orchestrator for comprehensive FACTLY verification (Grok-style).
     
     Key enhancements over standard verification:
-    1. Direct source verification against authoritative databases
-    2. Complete verification trace for transparency
-    3. Verified/unverified data point tracking
-    4. Primary vs secondary source classification
-    5. Discrepancy reporting
-    6. Methodological transparency
+    1. Real-time global information verification across 30+ sources
+    2. Direct source verification against authoritative databases
+    3. Complete verification trace for transparency
+    4. Verified/unverified data point tracking
+    5. Primary vs secondary source classification
+    6. Discrepancy reporting
+    7. Methodological transparency
+    8. Real-time trending and consensus analysis
     """
     
     def __init__(self, cache_manager: Optional[CacheManager] = None):
@@ -143,9 +150,10 @@ class EnhancedVerificationOrchestrator:
         self.evidence_search = EvidenceSearchService(cache_manager=self.cache)
         self.cross_source_analyzer = CrossSourceAnalyzer()
         self.direct_verifier = DirectSourceVerifier(cache_manager=self.cache)
+        self.real_time_engine = RealTimeVerificationEngine(cache_manager=self.cache)
         self.scoring_service = ScoringService()
         
-        logger.info("EnhancedVerificationOrchestrator initialized")
+        logger.info("EnhancedVerificationOrchestrator initialized with real-time verification")
     
     def verify(self, text: str, language: str = "en",
                require_direct_verification: bool = True) -> EnhancedVerificationResult:
@@ -199,11 +207,49 @@ class EnhancedVerificationOrchestrator:
             # Return partial result
             return self._create_error_result(text, str(e), start_time)
         
-        # Step 2: Direct source verification
+        # Step 2: Real-time global verification (Grok-style)
         step2_start = time.time()
         step2 = self._record_step(
-            2, "Direct Source Verification", 
-            "Verifying claims against authoritative sources",
+            2, "Real-Time Global Verification", 
+            "Searching across 30+ global news, academic, and data sources",
+            "in_progress", None
+        )
+        
+        realtime_verification: Optional[RealTimeVerificationResult] = None
+        try:
+            claim_to_verify = primary_claim.text if primary_claim else cleaned_text
+            realtime_verification = self.real_time_engine.verify_claim_realtime(
+                claim_to_verify,
+                languages=['en'],
+                regions=['global']
+            )
+            
+            step2.result = {
+                'sources_checked': realtime_verification.sources_found,
+                'confidence': realtime_verification.confidence_score,
+                'freshness': realtime_verification.freshness.value,
+                'consensus': realtime_verification.global_consensus,
+                'trending_score': realtime_verification.trending_score,
+                'primary_sources_found': len(realtime_verification.primary_sources),
+                'conflicting_info': len(realtime_verification.conflicting_information)
+            }
+            step2.status = "completed"
+            logger.info(f"Real-time verification: {realtime_verification.global_consensus} "
+                       f"(confidence: {realtime_verification.confidence_score:.2%})")
+            
+        except Exception as e:
+            step2.result = {'error': str(e), 'note': 'Real-time verification unavailable'}
+            step2.status = "failed"
+            logger.warning(f"Real-time verification failed: {e}")
+        
+        step2.duration_ms = (time.time() - step2_start) * 1000
+        verification_steps.append(step2)
+        
+        # Step 3: Direct source verification
+        step3_start = time.time()
+        step3 = self._record_step(
+            3, "Direct Source Verification", 
+            "Verifying claims against authoritative databases and official sources",
             "in_progress", None
         )
         
@@ -212,7 +258,7 @@ class EnhancedVerificationOrchestrator:
             claim_to_verify = primary_claim.text if primary_claim else cleaned_text
             direct_verification_report = self.direct_verifier.verify_claim_directly(claim_to_verify)
             
-            step2.result = {
+            step3.result = {
                 'sources_consulted': direct_verification_report.sources_consulted,
                 'primary_sources': direct_verification_report.primary_sources_found,
                 'secondary_sources': direct_verification_report.secondary_sources_found,
@@ -221,20 +267,20 @@ class EnhancedVerificationOrchestrator:
                 'data_points_unverified': len(direct_verification_report.unverified_data_points),
                 'discrepancies': len(direct_verification_report.discrepancies_found)
             }
-            step2.status = "completed"
+            step3.status = "completed"
             
         except Exception as e:
-            step2.result = {'error': str(e)}
-            step2.status = "failed"
+            step3.result = {'error': str(e)}
+            step3.status = "failed"
             logger.warning(f"Direct verification failed: {e}")
         
-        step2.duration_ms = (time.time() - step2_start) * 1000
-        verification_steps.append(step2)
+        step3.duration_ms = (time.time() - step3_start) * 1000
+        verification_steps.append(step3)
         
-        # Step 3: Multi-source evidence search
-        step3_start = time.time()
-        step3 = self._record_step(
-            3, "Multi-Source Evidence Search",
+        # Step 4: Multi-source evidence search
+        step4_start = time.time()
+        step4 = self._record_step(
+            4, "Multi-Source Evidence Search",
             "Gathering evidence from news and fact-check sources",
             "in_progress", None
         )
@@ -246,26 +292,26 @@ class EnhancedVerificationOrchestrator:
                 claim_to_verify, language=language
             )
             
-            step3.result = {
+            step4.result = {
                 'evidence_items_found': len(evidence_collection.evidence_items),
                 'source_diversity_score': evidence_collection.source_diversity_score,
                 'agreement_score': evidence_collection.agreement_score,
                 'coverage_gaps': evidence_collection.coverage_gaps
             }
-            step3.status = "completed"
+            step4.status = "completed"
             
         except Exception as e:
-            step3.result = {'error': str(e)}
-            step3.status = "failed"
+            step4.result = {'error': str(e)}
+            step4.status = "failed"
             logger.error(f"Evidence search failed: {e}")
         
-        step3.duration_ms = (time.time() - step3_start) * 1000
-        verification_steps.append(step3)
+        step4.duration_ms = (time.time() - step4_start) * 1000
+        verification_steps.append(step4)
         
-        # Step 4: Cross-source analysis
-        step4_start = time.time()
-        step4 = self._record_step(
-            4, "Cross-Source Analysis",
+        # Step 5: Cross-source analysis
+        step5_start = time.time()
+        step5 = self._record_step(
+            5, "Cross-Source Analysis",
             "Analyzing consensus and conflicts between sources",
             "in_progress", None
         )
