@@ -179,6 +179,18 @@
   color: #e74c3c;
 }
 
+.error-detail {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 10px 0;
+}
+
+.help-text {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 10px 0;
+}
+
 .retry-button {
   background: #e74c3c;
   color: white;
@@ -191,6 +203,20 @@
 
 .retry-button:hover {
   background: #c0392b;
+}
+
+.demo-notice {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.demo-notice p {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 10px;
 }
 
 .empty-state {

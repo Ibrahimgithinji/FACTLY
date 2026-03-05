@@ -32,6 +32,25 @@ const GlobeIcon = () => (
   </svg>
 );
 
+// Get API URL from environment or use default
+const getApiUrl = () => {
+  // Try multiple ways to get the API URL
+  const envUrl = process.env.REACT_APP_API_URL;
+  const prodUrl = process.env.REACT_APP_PROD_API_URL;
+  
+  // Try to get from window if available (set by webpack)
+  const windowApiUrl = window.REACT_APP_API_URL;
+  
+  // Default to common development URLs
+  const defaultUrls = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+  ];
+  
+  // Return the first available URL
+  return envUrl || prodUrl || windowApiUrl || defaultUrls[0];
+};
+
 const TrendingTopics = ({ onTopicClick }) => {
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [globalEvents, setGlobalEvents] = useState([]);
@@ -39,8 +58,48 @@ const TrendingTopics = ({ onTopicClick }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [apiUrl, setApiUrl] = useState(() => getApiUrl());
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  // Try different API endpoints
+  const fetchWithFallback = useCallback(async (endpoint) => {
+    const endpoints = [
+      `${apiUrl}${endpoint}`,
+      `http://localhost:8000${endpoint}`,
+      `http://127.0.0.1:8000${endpoint}`,
+    ];
+    
+    let lastError = null;
+    
+    for (const url of endpoints) {
+      try {
+        console.log(`Trying API endpoint: ${url}`);
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          // Update API URL if we found a working one
+          const baseUrl = url.replace(endpoint, '');
+          if (baseUrl !== apiUrl) {
+            setApiUrl(baseUrl);
+            console.log(`Working API found: ${baseUrl}`);
+          }
+          return await response.json();
+        }
+        
+        console.log(`Endpoint ${url} returned status: ${response.status}`);
+      } catch (err) {
+        lastError = err;
+        console.log(`Endpoint ${url} failed: ${err.message}`);
+      }
+    }
+    
+    throw lastError || new Error('All API endpoints failed');
+  }, [apiUrl]);
 
   const fetchTrendingData = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -51,18 +110,7 @@ const TrendingTopics = ({ onTopicClick }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/verification/trending/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch trending topics: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await fetchWithFallback('/api/verification/trending/');
       
       if (data.trending_topics) {
         setTrendingTopics(data.trending_topics);
@@ -78,12 +126,12 @@ const TrendingTopics = ({ onTopicClick }) => {
 
     } catch (err) {
       console.error('Error fetching trending topics:', err);
-      setError(err.message || 'Failed to load trending topics');
+      setError(err.message || 'Failed to load trending topics. Make sure the backend server is running.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [API_BASE_URL]);
+  }, [fetchWithFallback]);
 
   // Initial fetch
   useEffect(() => {
@@ -101,12 +149,10 @@ const TrendingTopics = ({ onTopicClick }) => {
   const handleRefresh = () => {
     fetchTrendingData(true);
     
-    // Also trigger backend refresh
-    fetch(`${API_BASE_URL}/api/verification/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task: 'all' }),
-    }).catch(err => console.error('Failed to trigger refresh:', err));
+    // Also trigger backend refresh (non-blocking)
+    fetchWithFallback('/api/verification/refresh/')
+      .then(() => console.log('Backend refresh triggered'))
+      .catch(err => console.log('Backend refresh failed:', err.message));
   };
 
   // Handle topic click
@@ -144,12 +190,35 @@ const TrendingTopics = ({ onTopicClick }) => {
   if (error && trendingTopics.length === 0) {
     return (
       <div className="trending-topics-container">
+        <div className="trending-header">
+          <h3 className="trending-title">
+            <TrendingIcon />
+            Trending Topics
+          </h3>
+        </div>
         <div className="error-state">
           <p>Unable to load trending topics</p>
-          <p>{error}</p>
+          <p className="error-detail">{error}</p>
+          <p className="help-text">Make sure the backend server is running on port 8000</p>
           <button className="retry-button" onClick={() => fetchTrendingData()}>
             Try Again
           </button>
+        </div>
+        
+        {/* Show demo data while backend is unavailable */}
+        <div className="demo-notice">
+          <p>Showing demo topics for preview:</p>
+          <div className="topics-list">
+            {['Climate Change', 'Election 2024', 'Economy', 'Technology', 'Healthcare'].map((topic, idx) => (
+              <button
+                key={idx}
+                className="topic-item"
+                onClick={() => handleTopicClick(topic)}
+              >
+                {topic}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
