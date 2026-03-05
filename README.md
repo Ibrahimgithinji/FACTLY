@@ -7,11 +7,14 @@ FACTLY is a comprehensive AI-powered platform designed to verify the credibility
 ### 🎯 Key Features
 
 - **Factly Score™ Algorithm**: Proprietary weighted scoring system combining NLP analysis, fact-check databases, and source credibility assessment
-- **Multi-Source Verification**: Integrates with Google Fact Check API and NewsLdr for comprehensive claim verification
-- **Real-time Analysis**: Instant credibility assessment with detailed evidence breakdown
-- **Interactive Web Interface**: User-friendly React-based frontend for easy content verification
+- **Multi-Source Verification**: Integrates with Google Fact Check API, NewsLdr, and 7+ major news sources for comprehensive verification
+- **Real-Time World Updates**: Automatically stays current with breaking news and global events through 24/7 news monitoring
+- **Trending Topics & Global Events**: Live-updating trending topics extracted from world news with regional event digests
+- **Instant Credibility Assessment**: Real-time analysis with detailed evidence breakdown and data freshness indicators
+- **Interactive Web Interface**: User-friendly React-based frontend with auto-refreshing trending topics
 - **Advanced NLP Processing**: Text preprocessing, language detection, and bias analysis
-- **Caching System**: Optimized performance with intelligent response caching
+- **Intelligent Caching**: Smart cache management with 5-30 minute TTLs ensuring fresh data
+- **Distributed Processing**: Celery-powered background tasks running 24/7 for continuous updates
 - **Modular Architecture**: Microservices-based design for scalability and maintainability
 
 ### 🏗️ Architecture Components
@@ -149,6 +152,71 @@ MAX_API_REQUESTS_PER_MINUTE=60
    npm run build
    # Serve the build directory with a web server (nginx, Apache, etc.)
    ```
+
+## ♻️ Real-Time Updates & Current Information
+
+FACTLY automatically stays updated with current world information through a 24/7 real-time monitoring system:
+
+### Automatic Background Tasks
+- **Breaking News Monitor** (every 5 minutes): Fetches latest news from 7+ major sources
+- **Trending Topics** (every 10 minutes): Extracts trending topics from world news
+- **Global Events Digest** (every 30 minutes): Regional event summaries
+- **Cache Refresh** (every hour): Maintains data freshness
+
+### Real-Time Data Sources
+- **RSS Feeds**: BBC, CNN, Reuters, AP, NYT, Guardian, Al Jazeera
+- **News APIs**: NewsAPI, Google News API
+- **Breaking News**: Twitter/X API integration
+- **Fact Check Databases**: Google Fact Check API, NewsLdr
+
+### How to Enable Real-Time Updates
+
+1. **Install Redis** (message broker and cache):
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install redis-server
+   sudo systemctl start redis-server
+   
+   # macOS
+   brew install redis
+   brew services start redis
+   
+   # Docker
+   docker run -d -p 6379:6379 redis:latest
+   ```
+
+2. **Start Celery Worker** (background job processor):
+   ```bash
+   cd backend
+   celery -A factly_backend worker --loglevel=info
+   ```
+
+3. **Start Celery Beat** (scheduler):
+   ```bash
+   cd backend
+   celery -A factly_backend beat --loglevel=info
+   ```
+
+4. **View Trending Topics** (auto-updating every 5 minutes):
+   - Frontend automatically displays trending topics
+   - Manual refresh available via button
+   - API endpoint: `GET /api/verification/trending/`
+
+### Monitoring Real-Time Updates
+```bash
+# Check active tasks
+celery -A factly_backend inspect active
+
+# Monitor task execution in real-time
+celery -A factly_backend events
+
+# Trigger manual refresh
+curl -X POST http://localhost:8000/api/verification/refresh/ \
+  -H "Content-Type: application/json" \
+  -d '{"task": "all"}'
+```
+
+📖 **Full Real-Time Guide**: See [REALTIME_UPDATE_GUIDE.md](REALTIME_UPDATE_GUIDE.md) for detailed setup and troubleshooting.
 
 ## 📚 API Documentation
 
