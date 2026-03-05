@@ -16,88 +16,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings
-import json
 
-def json_error_response(request, status_code, message):
-    """
-    Create a JSON error response for API requests.
-    Falls back to HTML response for non-API requests.
-    """
-    from django.http import JsonResponse, HttpResponseNotFound
-    
-    # Check if this looks like an API request
-    if request.path.startswith('/api/'):
-        return JsonResponse(
-            {'error': message},
-            status=status_code
-        )
-    
-    # Fall back to default HTML error for non-API routes
-    return None
-
-def custom_404(request, exception):
-    """Custom 404 error handler that returns JSON for API requests."""
-    # Check if it's an API request - include the path in the error message for debugging
-    if request.path.startswith('/api/'):
-        from django.http import JsonResponse
-        return JsonResponse(
-            {'error': f'Endpoint not found: {request.path}'},
-            status=404
-        )
-    
-    from django.views.defaults import page_not_found
-    return page_not_found(request, exception)
-
-def custom_500(request):
-    """Custom 500 error handler that returns JSON for API requests."""
-    # Always return JSON for API requests - this is critical for frontend error handling
-    if request.path.startswith('/api/'):
-        from django.http import JsonResponse
-        return JsonResponse(
-            {'error': 'Internal server error. Please try again later.'},
-            status=500
-        )
-    
-    from django.views.defaults import server_error
-    return server_error(request)
-
-def custom_400(request, exception):
-    """Custom 400 error handler that returns JSON for API requests."""
-    if request.path.startswith('/api/'):
-        from django.http import JsonResponse
-        # Include exception message for debugging but sanitize it
-        error_msg = str(exception) if hasattr(exception, '__str__') else 'Bad request'
-        # Don't expose sensitive error details in production
-        if not settings.DEBUG:
-            error_msg = 'Bad request'
-        return JsonResponse(
-            {'error': error_msg},
-            status=400
-        )
-    
-    from django.views.defaults import bad_request
-    return bad_request(request, exception)
-
-def custom_403(request, exception):
-    """Custom 403 error handler that returns JSON for API requests."""
-    if request.path.startswith('/api/'):
-        from django.http import JsonResponse
-        return JsonResponse(
-            {'error': 'Permission denied'},
-            status=403
-        )
-    
-    from django.views.defaults import permission_denied
-    return permission_denied(request, exception)
+# Import health check views
+from .health_checks import (
+    liveness_check,
+    readiness_check,
+    startup_check,
+    comprehensive_health_check,
+)
 
 urlpatterns = [
+    # Django Admin
     path('admin/', admin.site.urls),
+    
+    # API Endpoints
     path('api/', include('verification.urls')),
+    
+    # Health Check Endpoints (Kubernetes probes)
+    path('health/', comprehensive_health_check, name='health_check'),
+    path('health/live/', liveness_check, name='liveness_check'),
+    path('health/ready/', readiness_check, name='readiness_check'),
+    path('health/startup/', startup_check, name='startup_check'),
 ]
-
-# Register custom error handlers
-handler404 = custom_404
-handler500 = custom_500
-handler400 = custom_400
-handler403 = custom_403

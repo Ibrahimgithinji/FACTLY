@@ -97,6 +97,135 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validation
 
+# =============================================================================
+# CELERY CONFIGURATION - Distributed Task Processing
+# =============================================================================
+
+# Broker Configuration (Redis Cluster)
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
+
+# Serialization
+CELERY_ACCEPT_CONTENT = ['json', 'msgpack']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Timezone
+CELERY_TIMEZONE = 'UTC'
+CELERY_ENABLE_UTC = True
+
+# Task Execution Settings
+CELERY_TASK_ALWAYS_EAGER = False  # Never run tasks synchronously in production
+CELERY_TASK_STORE_EAGER_RESULT = False
+CELERY_TASK_IGNORE_RESULT = False
+CELERY_TASK_TRACK_STARTED = True
+
+# Time Limits (prevent runaway tasks)
+CELERY_TASK_TIME_LIMIT = 600  # 10 minutes hard limit
+CELERY_TASK_SOFT_TIME_LIMIT = 540  # 9 minutes soft limit (gives 1min cleanup)
+
+# Task Acknowledgment (ensure tasks don't get lost)
+CELERY_TASK_ACKS_LATE = True  # Ack after task completes, not before
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue if worker dies
+
+# Rate Limiting (prevent overwhelming external APIs)
+CELERY_TASK_DEFAULT_RATE_LIMIT = '100/s'
+
+# Worker Concurrency (auto-detect CPU cores)
+CELERY_WORKER_CONCURRENCY = int(os.getenv('CELERY_WORKER_CONCURRENCY', '4'))
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Better for long-running tasks
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart workers to prevent memory leaks
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 250000  # 250MB (restart if exceeded)
+
+# Result Backend Settings
+CELERY_RESULT_EXPIRES = 86400  # 24 hours
+CELERY_RESULT_EXTENDED = True
+
+# Broker Connection Retry
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+CELERY_BROKER_CONNECTION_TIMEOUT = 30
+
+# Redis-Specific Settings
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'visibility_timeout': 43200,  # 12 hours (tasks must complete within this)
+    'queue_order_strategy': 'priority',
+    'master_name': 'factly-redis-master',  # For Redis Sentinel
+}
+
+# Redis Result Backend Transport
+CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {
+    'retry_on_timeout': True,
+    'socket_connect_timeout': 30,
+    'socket_timeout': 30,
+}
+
+# Task Routes (direct tasks to specific queues)
+CELERY_TASK_ROUTES = {
+    'services.tasks.verification.*': {'queue': 'verification'},
+    'services.tasks.ingestion.*': {'queue': 'ingestion'},
+    'services.tasks.analysis.*': {'queue': 'analysis'},
+    'services.tasks.high_priority.*': {'queue': 'high_priority'},
+    'services.tasks.low_priority.*': {'queue': 'low_priority'},
+}
+
+# Default Queue
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+
+# =============================================================================
+# CACHE CONFIGURATION - Redis Cluster
+# =============================================================================
+
+# Parse Redis cluster nodes from environment
+REDIS_CLUSTER_NODES = os.getenv('REDIS_CLUSTER_NODES', 'localhost:6379').split(',')
+REDIS_LOCATION = [f'redis://{node}' for node in REDIS_CLUSTER_NODES]
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_LOCATION if len(REDIS_LOCATION) > 1 else REDIS_LOCATION[0],
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.HerdClient' if len(REDIS_LOCATION) > 1 else 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
+            'CONNECTION_POOL_CLASS_KWARGS': {
+                'max_connections': 50,
+                'timeout': 20,
+            },
+            'SERIALIZER': 'django_redis.serializers.json.JSONSerializer',
+            'IGNORE_EXCEPTIONS': True,  # Don't fail if Redis is temporarily unavailable
+        },
+        'KEY_PREFIX': 'factly',
+        'TIMEOUT': 300,  # 5 minutes default
+    },
+    'verification_results': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_LOCATION[0] if REDIS_LOCATION else 'redis://localhost:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
+            'CONNECTION_POOL_CLASS_KWARGS': {
+                'max_connections': 20,
+                'timeout': 20,
+            },
+        },
+        'KEY_PREFIX': 'verification',
+        'TIMEOUT': 86400,  # 24 hours
+    },
+    'session_cache': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_LOCATION[0] if REDIS_LOCATION else 'redis://localhost:6379/2',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'session',
+        'TIMEOUT': 3600,  # 1 hour
+    },
+}
+
+# Session Configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'session_cache'
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',

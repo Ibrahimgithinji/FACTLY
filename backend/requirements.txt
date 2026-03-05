@@ -18,3 +18,35 @@ newspaper3k>=0.2.8
 lxml>=4.9.0
 lxml_html_clean>=0.4.0
 langdetect>=1.0.9
+
+# Enterprise Scale Dependencies
+celery[redis]>=5.3.0
+redis>=5.0.0
+django-redis>=5.4.0
+psycopg2-binary>=2.9.0
+gunicorn>=21.2.0
+uvicorn[standard]>=0.24.0
+whitenoise>=6.6.0
+
+# LLM Integration
+openai>=1.0.0
+anthropic>=0.8.0
+google-generativeai>=0.3.0
+
+# Monitoring & Metrics
+prometheus-client>=0.19.0
+django-prometheus>=2.3.0
+python-json-logger>=2.0.0
+
+# NLP & Multi-language
+spacy>=3.7.0
+langid>=1.1.6
+polyglot>=16.7.4
+
+# API & Security
+djangorestframework-api-key>=2.3.0
+django-ratelimit2>=0.5.0
+
+# Production Enhancements
+hiredis>=2.2.0
+msgpack>=1.0.0

@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { Suspense, lazy, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -16,6 +16,7 @@ const VerificationForm = lazy(() => import('./components/VerificationForm'));
 const ScoreDisplay = lazy(() => import('./components/ScoreDisplay'));
 const EvidencePanel = lazy(() => import('./components/EvidencePanel'));
 const CredibilityChart = lazy(() => import('./components/CredibilityChart'));
+const TrendingTopics = lazy(() => import('./components/TrendingTopics'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -42,6 +43,24 @@ const ResultsPage = () => (
   </div>
 );
 
+// Home page with trending topics
+const HomePage = () => {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const handleTopicClick = (topic) => {
+    setSearchQuery(topic);
+    // Navigate to verification with the topic
+    navigate('/results', { state: { topic } });
+  };
+  
+  return (
+    <div className="home-container">
+      <TrendingTopics onTopicClick={handleTopicClick} />
+    </div>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -58,6 +77,14 @@ function App() {
                   <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                   <Route 
                     path="/" 
+                    element={
+                      <ProtectedRoute>
+                        <HomePage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/verify" 
                     element={
                       <ProtectedRoute>
                         <VerificationForm />

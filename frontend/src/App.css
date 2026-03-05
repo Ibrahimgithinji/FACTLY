@@ -49,6 +49,13 @@
   padding: 0 var(--content-padding);
 }
 
+/* Home Page */
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 /* ============================================
    Results Page Layout
    ============================================ */
