@@ -147,6 +147,125 @@ class RealTimeNewsService:
         logger.info(f"Found {len(result)} real-time news items")
         return result
 
+    def get_regional_news(self, query: str, region: str, sources: List[str],
+                          languages: List[str] = None, max_results: int = 20,
+                          max_age_hours: int = 24) -> List[Dict[str, Any]]:
+        """
+        Get real-time news for a specific region.
+        
+        Args:
+            query: Search query
+            region: Region identifier
+            sources: List of source domains to query
+            languages: List of language codes
+            max_results: Maximum number of results
+            max_age_hours: Maximum age of news
+        
+        Returns:
+            List of news items as dictionaries
+        """
+        logger.info(f"Fetching regional news for {region}: {query}")
+        
+        all_news = []
+        
+        # Fetch from NewsAPI with regional focus
+        if self.newsapi_key:
+            try:
+                newsapi_results = self._fetch_newsapi(
+                    query, max_results=max_results//2,
+                    sources=','.join(sources[:5]) if sources else None
+                )
+                all_news.extend([self._news_item_to_dict(item) for item in newsapi_results])
+            except Exception as e:
+                logger.error(f"NewsAPI fetch failed for {region}: {e}")
+        
+        # Fetch from RSS feeds for this region
+        rss_results = self._fetch_regional_rss(region, query, max_results=max_results//2)
+        all_news.extend([self._news_item_to_dict(item) for item in rss_results])
+        
+        # Filter by language if specified
+        if languages:
+            all_news = [
+                n for n in all_news
+                if n.get('language', 'en') in languages
+            ]
+        
+        # Sort by freshness and relevance
+        all_news.sort(key=lambda x: x.get('freshness_score', 0) + x.get('relevance_score', 0), reverse=True)
+        
+        return all_news[:max_results]
+    
+    def _news_item_to_dict(self, item: RealTimeNewsItem) -> Dict[str, Any]:
+        """Convert RealTimeNewsItem to dictionary."""
+        return {
+            'title': item.title,
+            'content': item.content,
+            'url': item.url,
+            'published_date': item.published_date.isoformat(),
+            'source': item.source,
+            'freshness_score': item.freshness_score,
+            'relevance_score': item.relevance_score,
+            'credibility_score': item.credibility_score,
+            'metadata': item.metadata,
+            'language': item.metadata.get('language', 'en'),
+        }
+    
+    def _fetch_regional_rss(self, region: str, query: str, max_results: int = 10) -> List[RealTimeNewsItem]:
+        """Fetch news from RSS feeds specific to a region."""
+        # Regional RSS feed mappings
+        regional_feeds = {
+            'north_america': ['bbc', 'cnn', 'reuters', 'ap'],
+            'europe': ['bbc', 'guardian', 'reuters'],
+            'asia_pacific': ['bbc', 'reuters'],
+            'middle_east': ['aljazeera', 'reuters'],
+            'africa': ['bbc', 'aljazeera'],
+            'latin_america': ['bbc', 'reuters'],
+            'south_asia': ['bbc', 'reuters'],
+        }
+        
+        feeds = regional_feeds.get(region, ['bbc', 'reuters'])
+        results = []
+        
+        for feed_key in feeds:
+            if feed_key in self.RSS_FEEDS:
+                try:
+                    feed_results = self._fetch_single_rss(self.RSS_FEEDS[feed_key], query, max_results=5)
+                    results.extend(feed_results)
+                except Exception as e:
+                    logger.error(f"RSS fetch failed for {feed_key}: {e}")
+        
+        return results
+    
+    def _fetch_single_rss(self, feed_url: str, query: str, max_results: int) -> List[RealTimeNewsItem]:
+        """Fetch from a single RSS feed."""
+        results = []
+        try:
+            feed = feedparser.parse(feed_url)
+            for entry in feed.entries[:max_results]:
+                text_content = f"{entry.title} {getattr(entry, 'description', '')}".lower()
+                if query.lower() not in text_content:
+                    continue
+                
+                published_date = self._parse_rss_date(entry)
+                hours_old = (datetime.now() - published_date).total_seconds() / 3600
+                freshness_score = max(0, 1 - (hours_old / 24))
+                
+                results.append(RealTimeNewsItem(
+                    title=entry.title,
+                    content=getattr(entry, 'description', ''),
+                    url=entry.link,
+                    published_date=published_date,
+                    source=feed.feed.title if hasattr(feed.feed, 'title') else 'RSS',
+                    freshness_score=freshness_score,
+                    relevance_score=0.7,
+                    credibility_score=0.8,
+                    metadata={'source_type': 'rss'}
+                ))
+        except Exception as e:
+            logger.error(f"RSS feed error: {e}")
+        
+        return results
+
     def _fetch_newsapi(self, query: str, max_results: int) -> List[RealTimeNewsItem]:
         """Fetch from NewsAPI."""
         try:

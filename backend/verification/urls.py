@@ -19,6 +19,11 @@ urlpatterns = [
     path('verify/enhanced/', views.EnhancedVerificationView.as_view(), name='verify_enhanced'),
     path('health/', views.health_check, name='health_check'),
     
+    # Trending topics and global events endpoints
+    path('trending/', views.TrendingTopicsView.as_view(), name='trending_topics'),
+    path('global-events/', views.TrendingTopicsView.as_view(), name='global_events'),
+    path('refresh/', views.RefreshDataView.as_view(), name='refresh_data'),
+    
     # Fast verification endpoints (async, optimized)
     # path('verify/fast/', fast_views.FastVerificationView.as_view(), name='verify_fast'),
     # path('verify/batch/', fast_views.BatchFastVerificationView.as_view(), name='verify_batch'),

@@ -535,9 +535,120 @@ def health_check(request):
             "Enhanced fact-checking with real-time news",
             "Multi-source verification",
             "Data freshness indicators",
-            "Configurable caching"
+            "Configurable caching",
+            "Real-time trending topics",
+            "Global events digest"
         ]
     }, status=status.HTTP_200_OK)
     # Ensure JSON response header
     response['Content-Type'] = 'application/json'
     return response
+
+
+class TrendingTopicsView(APIView):
+    """
+    API view for fetching trending topics and global events.
+    
+    Provides real-time trending topics extracted from news sources
+    and regional global events digest.
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        """
+        Get trending topics and global events.
+        
+        Returns:
+        - trending_topics: List of trending topics with scores
+        - global_events: Regional news digest
+        - last_updated: Timestamp of last update
+        - refresh_status: Status of background refresh tasks
+        """
+        try:
+            # Import the refresh tasks module
+            from services.tasks.refresh_tasks import get_trending_topics, get_global_events
+            
+            # Get trending topics
+            trending_data = get_trending_topics()
+            
+            # Get global events
+            global_events = get_global_events()
+            
+            # Get cache stats
+            from services.fact_checking_service.cache_manager import CacheManager
+            cache_manager = CacheManager()
+            cache_stats = cache_manager.get_stats()
+            
+            response_data = {
+                "trending_topics": trending_data.get('topics', []),
+                "global_events": global_events,
+                "last_updated": trending_data.get('last_updated').isoformat() if trending_data.get('last_updated') else None,
+                "data_source": trending_data.get('source', 'memory'),
+                "cache_stats": cache_stats,
+                "status": "success"
+            }
+            
+            logger.info("Trending topics and global events fetched successfully")
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.exception("Failed to fetch trending topics")
+            return Response(
+                {"error": f"Failed to fetch trending topics: {str(e)}", "status": "error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class RefreshDataView(APIView):
+    """
+    API view for triggering manual data refresh.
+    
+    Allows manual triggering of background data refresh tasks.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """
+        Trigger data refresh tasks.
+        
+        Request body (optional):
+        - task: Which task to run ('trending', 'global_events', 'all')
+        - force: Force refresh even if cache is valid
+        """
+        try:
+            task_type = request.data.get('task', 'all')
+            force = request.data.get('force', False)
+            
+            from services.tasks.refresh_tasks import (
+                update_trending_topics,
+                update_global_events,
+                refresh_realtime_data
+            )
+            
+            results = {}
+            
+            if task_type in ['trending', 'all']:
+                result = update_trending_topics.delay() if hasattr(update_trending_topics, 'delay') else update_trending_topics()
+                results['trending'] = {"status": "triggered", "task_id": str(result) if hasattr(result, 'id') else "completed"}
+            
+            if task_type in ['global_events', 'all']:
+                result = update_global_events.delay() if hasattr(update_global_events, 'delay') else update_global_events()
+                results['global_events'] = {"status": "triggered", "task_id": str(result) if hasattr(result, 'id') else "completed"}
+            
+            if task_type in ['realtime', 'all']:
+                result = refresh_realtime_data.delay() if hasattr(refresh_realtime_data, 'delay') else refresh_realtime_data()
+                results['realtime'] = {"status": "triggered", "task_id": str(result) if hasattr(result, 'id') else "completed"}
+            
+            return Response({
+                "status": "success",
+                "message": f"Refresh tasks triggered for: {task_type}",
+                "tasks": results,
+                "timestamp": datetime.now().isoformat()
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.exception("Failed to trigger refresh tasks")
+            return Response(
+                {"error": f"Failed to trigger refresh: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
