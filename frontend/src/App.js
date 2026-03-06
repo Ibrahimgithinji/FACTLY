@@ -17,6 +17,7 @@ const ScoreDisplay = lazy(() => import('./components/ScoreDisplay'));
 const EvidencePanel = lazy(() => import('./components/EvidencePanel'));
 const CredibilityChart = lazy(() => import('./components/CredibilityChart'));
 const TrendingTopics = lazy(() => import('./components/TrendingTopics'));
+const RealTimeVerification = lazy(() => import('./components/RealTimeVerification'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -36,6 +37,8 @@ const PageLoader = () => (
 const ResultsPage = () => (
   <div className="results-container">
     <ScoreDisplay />
+    {/* add real-time verification panel under the score for richer context */}
+    <RealTimeVerification />
     <div className="results-grid">
       <EvidencePanel />
       <CredibilityChart />
@@ -56,6 +59,8 @@ const HomePage = () => {
   
   return (
     <div className="home-container">
+      {/* verification form is now part of the home landing page */}
+      <VerificationForm />
       <TrendingTopics onTopicClick={handleTopicClick} />
     </div>
   );
@@ -83,6 +88,7 @@ function App() {
                       </ProtectedRoute>
                     } 
                   />
+                  {/* previously there was a dedicated /verify route; it's still available but now the form is shown on home page too */}
                   <Route 
                     path="/verify" 
                     element={

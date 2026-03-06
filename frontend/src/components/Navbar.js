@@ -85,8 +85,10 @@ const Navbar = () => {
 
   // Navigation items based on auth state
   const getNavItems = () => {
+    // provide both a dedicated verify page and a home/trending page
     const items = [
-      { path: '/', label: 'Verify', icon: '🔍', exact: true },
+      { path: '/verify', label: 'Verify', icon: '🔍' },
+      { path: '/', label: 'Trending', icon: '📈', exact: true }
     ];
 
     if (isAuthenticated) {
