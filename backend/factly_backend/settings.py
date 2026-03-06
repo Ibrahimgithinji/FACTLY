@@ -173,58 +173,33 @@ CELERY_TASK_ROUTES = {
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 # =============================================================================
-# CACHE CONFIGURATION - Redis Cluster
+# CACHE CONFIGURATION - Local Memory Cache (Development)
 # =============================================================================
-
-# Parse Redis cluster nodes from environment
-REDIS_CLUSTER_NODES = os.getenv('REDIS_CLUSTER_NODES', 'localhost:6379').split(',')
-REDIS_LOCATION = [f'redis://{node}' for node in REDIS_CLUSTER_NODES]
 
 CACHES = {
     'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_LOCATION if len(REDIS_LOCATION) > 1 else REDIS_LOCATION[0],
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,
         'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.HerdClient' if len(REDIS_LOCATION) > 1 else 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
-            'CONNECTION_POOL_CLASS_KWARGS': {
-                'max_connections': 50,
-                'timeout': 20,
-            },
-            'SERIALIZER': 'django_redis.serializers.json.JSONSerializer',
-            'IGNORE_EXCEPTIONS': True,  # Don't fail if Redis is temporarily unavailable
-        },
-        'KEY_PREFIX': 'factly',
-        'TIMEOUT': 300,  # 5 minutes default
+            'MAX_ENTRIES': 1000
+        }
     },
     'verification_results': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_LOCATION[0] if REDIS_LOCATION else 'redis://localhost:6379/1',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
-            'CONNECTION_POOL_CLASS_KWARGS': {
-                'max_connections': 20,
-                'timeout': 20,
-            },
-        },
-        'KEY_PREFIX': 'verification',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'verification-results',
         'TIMEOUT': 86400,  # 24 hours
     },
     'session_cache': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_LOCATION[0] if REDIS_LOCATION else 'redis://localhost:6379/2',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'session',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'session-cache',
         'TIMEOUT': 3600,  # 1 hour
     },
 }
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'session_cache'
+SESSION_CACHE_ALIAS = 'default'
 
 AUTH_PASSWORD_VALIDATORS = [
     {

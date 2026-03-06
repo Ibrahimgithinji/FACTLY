@@ -24,6 +24,11 @@ urlpatterns = [
     path('global-events/', views.TrendingTopicsView.as_view(), name='global_events'),
     path('refresh/', views.RefreshDataView.as_view(), name='refresh_data'),
     
+    # Trends and Analytics (stub endpoints)
+    path('trends/', views.TrendsAPIView.as_view(), name='trends'),
+    path('trends/collect/', views.TrendsCollectAPIView.as_view(), name='trends_collect'),
+    path('analytics/', views.AnalyticsAPIView.as_view(), name='analytics'),
+    
     # Fast verification endpoints (async, optimized)
     # path('verify/fast/', fast_views.FastVerificationView.as_view(), name='verify_fast'),
     # path('verify/batch/', fast_views.BatchFastVerificationView.as_view(), name='verify_batch'),
