@@ -202,7 +202,9 @@ const TrendingTopics = ({ onTopicClick }) => {
       }
 
       const data = await response.json();
-      setTrends(data.results || []);
+      // Handle both response formats: {results: [...]} and {trends: [...]}
+      const trendsData = data.results || data.trends || [];
+      setTrends(trendsData);
       
     } catch (err) {
       console.error('Error fetching trends:', err);
