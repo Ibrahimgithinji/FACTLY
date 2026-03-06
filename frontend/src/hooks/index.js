@@ -5,6 +5,7 @@
 
 export * from './useAccessibility';
 export * from './usePerformance';
+export * from './useIntelligentFetch';
 
 // Default export for convenience
 export { default as accessibilityHooks } from './useAccessibility';
