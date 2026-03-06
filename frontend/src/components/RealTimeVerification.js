@@ -13,25 +13,44 @@ import React, { useState, useCallback } from 'react';
 import './RealTimeVerification.css';
 
 const RealTimeVerification = ({ verificationData }) => {
+  const [data, setData] = useState(verificationData || null);
   const [expandedSources, setExpandedSources] = useState(false);
   const [expandedTimeline, setExpandedTimeline] = useState(false);
 
-  if (!verificationData) {
+  // If parent didn't supply data, try to load from sessionStorage (shared result)
+  useEffect(() => {
+    if (!verificationData) {
+      const stored = sessionStorage.getItem('factCheckResult');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.realtime_verification) {
+            setData(parsed.realtime_verification);
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
+    }
+  }, [verificationData]);
+
+  if (!data) {
     return <div className="realtime-verification">No verification data available</div>;
   }
 
   const {
-    verified,
-    confidence_score,
-    freshness,
-    global_consensus,
-    trending_score,
-    sources_found,
-    primary_sources,
-    conflicting_information,
-    supporting_information,
-    verification_timeline
-  } = verificationData;
+    verified = false,
+    confidence_score = 0,
+    freshness = 'unknown',
+    global_consensus = 'unverified',
+    trending_score = 0,
+    sources_found = 0,
+    primary_sources = [],
+    conflicting_information = [],
+    supporting_information = [],
+    verification_timeline = []
+  } = data || {};  // guard if data is unexpectedly null
+
 
   const getConfidenceColor = (score) => {
     if (score >= 0.8) return '#10b981';  // Green
@@ -109,7 +128,7 @@ const RealTimeVerification = ({ verificationData }) => {
           <div className="stat-icon">✅</div>
           <div className="stat-content">
             <div className="stat-label">Supporting</div>
-            <div className="stat-value">{supporting_information.length} sources</div>
+            <div className="stat-value">{(supporting_information || []).length} sources</div>
           </div>
         </div>
 
@@ -117,7 +136,7 @@ const RealTimeVerification = ({ verificationData }) => {
           <div className="stat-icon">⚠️</div>
           <div className="stat-content">
             <div className="stat-label">Conflicting</div>
-            <div className="stat-value">{conflicting_information.length} sources</div>
+            <div className="stat-value">{(conflicting_information || []).length} sources</div>
           </div>
         </div>
       </div>
@@ -136,7 +155,7 @@ const RealTimeVerification = ({ verificationData }) => {
 
         {expandedSources && (
           <div className="sources-list">
-            {primary_sources.map((source, idx) => (
+            {(primary_sources || []).map((source, idx) => (
               <div key={idx} className="source-item primary">
                 <div className="source-header">
                   <span className="source-name">{source.source}</span>
@@ -158,7 +177,7 @@ const RealTimeVerification = ({ verificationData }) => {
         <div className="info-section supporting">
           <div className="section-label">✅ Supporting Information</div>
           <div className="info-list">
-            {supporting_information.map((item, idx) => (
+            {(supporting_information || []).map((item, idx) => (
               <div key={idx} className="info-item">
                 <span className="info-source">{item.source}</span>
                 <p className="info-text">{item.info?.substring(0, 150)}...</p>
@@ -173,7 +192,7 @@ const RealTimeVerification = ({ verificationData }) => {
         <div className="info-section conflicting">
           <div className="section-label">⚠️ Conflicting Information</div>
           <div className="info-list">
-            {conflicting_information.map((item, idx) => (
+            {(conflicting_information || []).map((item, idx) => (
               <div key={idx} className="info-item conflicting-item">
                 <span className="info-source">{item.source}</span>
                 <p className="info-text">{item.info?.substring(0, 150)}...</p>
@@ -198,7 +217,7 @@ const RealTimeVerification = ({ verificationData }) => {
 
           {expandedTimeline && (
             <div className="timeline">
-              {verification_timeline.map((event, idx) => (
+              {(verification_timeline || []).map((event, idx) => (
                 <div key={idx} className="timeline-item">
                   <div className="timeline-time">
                     {new Date(event.timestamp).toLocaleString()}
