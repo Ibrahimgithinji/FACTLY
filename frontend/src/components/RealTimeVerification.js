@@ -9,7 +9,7 @@
  * - Verification timeline
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import './RealTimeVerification.css';
 
 const RealTimeVerification = ({ verificationData }) => {
