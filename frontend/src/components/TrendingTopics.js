@@ -47,6 +47,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import './TrendingTopics.css';
+import { useIntelligentFetch } from '../hooks/useIntelligentFetch';
 
 // SVG Icons
 const TrendingIcon = () => (
@@ -159,9 +160,6 @@ const REGION_NAMES = {
 const TrendingTopics = ({ onTopicClick }) => {
   // State
   const [trends, setTrends] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState(null);
   const [apiUrl] = useState(() => getApiUrl());
   
   // Filters
@@ -172,61 +170,95 @@ const TrendingTopics = ({ onTopicClick }) => {
   // Analytics
   const [analytics, setAnalytics] = useState(null);
 
+  // Build the URL with filters
+  const getTrendsUrl = useCallback(() => {
+    const params = new URLSearchParams();
+    if (regionFilter) params.append('region', regionFilter);
+    if (riskFilter) params.append('risk_level', riskFilter);
+    if (statusFilter) params.append('verification_status', statusFilter);
+    params.append('limit', '50');
+    return `${apiUrl}/api/trends/?${params.toString()}`;
+  }, [apiUrl, regionFilter, riskFilter, statusFilter]);
+
+  // Intelligent fetch for trends with retry, caching, and error handling
+  const {
+    data: trendsData,
+    isLoading: trendsLoading,
+    isRefreshing: trendsRefreshing,
+    error: trendsError,
+    errorInfo: trendsErrorInfo,
+    status: trendsStatus,
+    dataSource: trendsDataSource,
+    lastFetchTime: trendsLastFetch,
+    refresh: refreshTrends,
+    retry: retryTrends
+  } = useIntelligentFetch(getTrendsUrl(), {
+    useCache: true,
+    retryAttempts: 3,
+    retryDelay: 1500,
+    autoFetch: false,
+    dataFormat: 'auto',
+    onSuccess: (parsedData, rawData) => {
+      console.log('Trends fetched successfully:', parsedData.length, 'items');
+      console.log('Data source:', trendsDataSource);
+      console.log('Raw API response:', rawData);
+    },
+    onError: (error, info) => {
+      console.error('Trends fetch error:', error.message);
+      if (info.usedFallback) {
+        console.log('Using cached data as fallback');
+      }
+    }
+  });
+
+  // Intelligent fetch for analytics
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+    dataSource: analyticsDataSource,
+    refresh: refreshAnalytics
+  } = useIntelligentFetch(`${apiUrl}/api/analytics/`, {
+    useCache: true,
+    retryAttempts: 3,
+    retryDelay: 1000,
+    autoFetch: false,
+    dataFormat: 'auto'
+  });
+
+  // Update trends state when data changes
+  useEffect(() => {
+    if (trendsData) {
+      setTrends(trendsData);
+    }
+  }, [trendsData]);
+
+  // Update analytics state when data changes
+  useEffect(() => {
+    if (analyticsData) {
+      setAnalytics(analyticsData);
+    }
+  }, [analyticsData]);
+
+  // Combined loading state
+  const isLoading = trendsLoading || analyticsLoading;
+  const isRefreshing = trendsRefreshing;
+  const error = trendsError || analyticsError;
+
   // Fetch trends from API
   const fetchTrends = useCallback(async (showRefreshing = false) => {
-    if (showRefreshing) setIsRefreshing(true);
-    else setIsLoading(true);
-    setError(null);
-
-    try {
-      // Build query params
-      const params = new URLSearchParams();
-      if (regionFilter) params.append('region', regionFilter);
-      if (riskFilter) params.append('risk_level', riskFilter);
-      if (statusFilter) params.append('verification_status', statusFilter);
-      params.append('limit', '50');
-
-      const url = `${apiUrl}/api/trends/?${params.toString()}`;
-      console.log('Fetching trends from:', url);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      // Handle both response formats: {results: [...]} and {trends: [...]}
-      const trendsData = data.results || data.trends || [];
-      setTrends(trendsData);
-      
-    } catch (err) {
-      console.error('Error fetching trends:', err);
-      setError(err.message || 'Failed to load trending topics');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+    if (showRefreshing) {
+      await refreshTrends();
+    } else {
+      await refreshTrends();
     }
-  }, [apiUrl, regionFilter, riskFilter, statusFilter]);
+    await refreshAnalytics();
+  }, [refreshTrends, refreshAnalytics]);
 
   // Fetch analytics
   const fetchAnalytics = useCallback(async () => {
-    try {
-      const response = await fetch(`${apiUrl}/api/analytics/`);
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data);
-      }
-    } catch (err) {
-      console.error('Error fetching analytics:', err);
-    }
-  }, [apiUrl]);
+    await refreshAnalytics();
+  }, [refreshAnalytics]);
 
   // Initial fetch
   useEffect(() => {
@@ -254,6 +286,18 @@ const TrendingTopics = ({ onTopicClick }) => {
       body: JSON.stringify({ regions: ['global', 'africa', 'us', 'europe', 'india'] }),
     }).catch(err => console.log('Collection trigger:', err.message));
   };
+
+  // Get data source display text
+  const getDataSourceDisplay = () => {
+    switch (trendsDataSource) {
+      case 'api': return { label: 'Live', color: '#16a34a' };
+      case 'cache': return { label: 'Cached', color: '#2563eb' };
+      case 'fallback': return { label: 'Offline', color: '#ca8a04' };
+      default: return { label: 'Unknown', color: '#6b7280' };
+    }
+  };
+
+  const dataSourceDisplay = getDataSourceDisplay();
 
   // Handle filter change
   const handleFilterChange = (filterType, value) => {
@@ -343,14 +387,47 @@ const TrendingTopics = ({ onTopicClick }) => {
           <TrendingIcon />
           AI Trend Discovery
         </h3>
-        <button 
-          className="refresh-button" 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshIcon />
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
+        <div className="header-actions">
+          {/* Data Source Status Indicator */}
+          {trendsDataSource && (
+            <div 
+              className="data-source-indicator" 
+              style={{ 
+                backgroundColor: `${dataSourceDisplay.color}20`,
+                color: dataSourceDisplay.color,
+                borderColor: dataSourceDisplay.color
+              }}
+              title={`Data source: ${dataSourceDisplay.label}`}
+            >
+              <span 
+                className="source-dot" 
+                style={{ backgroundColor: dataSourceDisplay.color }}
+              />
+              {dataSourceDisplay.label}
+            </div>
+          )}
+          {/* Sync Status */}
+          {isRefreshing && (
+            <div className="sync-status syncing">
+              <div className="mini-spinner"></div>
+              Syncing...
+            </div>
+          )}
+          {/* Last Updated */}
+          {trendsLastFetch && !isRefreshing && (
+            <div className="last-updated">
+              Updated: {new Date(trendsLastFetch).toLocaleTimeString()}
+            </div>
+          )}
+          <button 
+            className="refresh-button" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshIcon />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* Analytics Summary */}
