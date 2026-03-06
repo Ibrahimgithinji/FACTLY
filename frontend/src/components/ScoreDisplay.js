@@ -44,7 +44,8 @@ const ScoreDisplay = () => {
   useEffect(() => {
     if (!result || !isVisible) return;
 
-    const targetScore = Math.round(result.score * 100);
+    // Handle different API response formats
+    const targetScore = result.factly_score?.factly_score ?? result.factly_score?.score ?? result.score ?? 0;
     const duration = 1500;
     const steps = 60;
     const increment = targetScore / steps;
@@ -73,7 +74,16 @@ const ScoreDisplay = () => {
   }
 
   const { score, confidence, factors = {} } = result;
-  const scorePercentage = Math.round(score * 100);
+  
+  // Handle different API response formats
+  const actualScore = result.factly_score?.factly_score ?? result.factly_score?.score ?? score ?? 0;
+  const actualConfidence = result.factly_score?.confidence_level ? 
+    (result.factly_score.confidence_level === 'High' ? 0.9 : 
+     result.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) : 
+    (confidence ?? 0.5);
+  const actualFactors = result.factly_score?.components ?? factors;
+  
+  const scorePercentage = Math.round(actualScore);
 
   const getScoreColor = (score) => {
     if (score >= 0.8) return 'high';
@@ -88,8 +98,8 @@ const ScoreDisplay = () => {
     return 'Not Credible';
   };
 
-  const scoreClass = getScoreColor(score);
-  const scoreLabel = getScoreLabel(score);
+  const scoreClass = getScoreColor(actualScore / 100);
+  const scoreLabel = getScoreLabel(actualScore / 100);
 
   return (
     <div 
