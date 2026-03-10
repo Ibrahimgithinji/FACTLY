@@ -7,6 +7,7 @@ Provides fallback functionality when email credentials are not properly configur
 import logging
 from django.core.mail.backends.smtp import EmailBackend as SMTPBackend
 from django.core.mail.backends.console import EmailBackend as ConsoleBackend
+from django.core.mail.backends.filebased import EmailBackend as FileBasedEmailBackend
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class FallbackEmailBackend(SMTPBackend):
             return super().open()
         except Exception as e:
             logger.error(f'Failed to open SMTP connection: {e}')
-            logger.warning('Falling back to console email backend')
+            logger.warning('Falling back to file-based email backend')
             self._use_console = True
             self.connection = None
             return False
@@ -77,23 +78,34 @@ class FallbackEmailBackend(SMTPBackend):
         if not email_messages:
             return 0
         
-        # If we need to use console backend, do that
+        # If we need to use file backend fallback, do that
         if getattr(self, '_use_console', False):
-            console_backend = ConsoleBackend()
-            return console_backend.send_messages(email_messages)
+            try:
+                logger.info('=== Using file-based email backend ===')
+                file_backend = FileBasedEmailBackend(file_path=settings.EMAIL_FILE_PATH)
+                logger.info(f'FileBackend created, path: {settings.EMAIL_FILE_PATH}')
+                file_backend.open()
+                logger.info('FileBackend opened')
+                result = file_backend.send_messages(email_messages)
+                logger.info(f'Email saved, result: {result}')
+                file_backend.close()
+                return result
+            except Exception as fb_error:
+                logger.error(f'File backend error: {fb_error}', exc_info=True)
+                raise
         
         # Otherwise try SMTP
         try:
             return super().send_messages(email_messages)
         except Exception as e:
             logger.error(f'Error sending emails via SMTP: {e}')
-            logger.info('Retrying with console backend')
-            # Fallback to console
-            console_backend = ConsoleBackend()
+            logger.info('Retrying with file backend')
+            # Fallback to file-based
+            file_backend = FileBasedEmailBackend(file_path=settings.EMAIL_FILE_PATH)
             try:
-                return console_backend.send_messages(email_messages)
-            except Exception as console_error:
-                logger.error(f'Error sending emails via console backend: {console_error}')
+                return file_backend.send_messages(email_messages)
+            except Exception as file_error:
+                logger.error(f'Error sending emails via file backend: {file_error}')
                 raise
 
 class DevelopmentEmailBackend(FallbackEmailBackend):
