@@ -21,6 +21,7 @@ urlpatterns = [
     
     # Trending topics and global events endpoints
     path('trending/', views.TrendingTopicsView.as_view(), name='trending_topics'),
+    path('trending/live/', views.LiveTrendingStoriesView.as_view(), name='live_trending_stories'),
     path('global-events/', views.TrendingTopicsView.as_view(), name='global_events'),
     path('refresh/', views.RefreshDataView.as_view(), name='refresh_data'),
     

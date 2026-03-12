@@ -45,6 +45,12 @@ app.conf.beat_schedule = {
         'schedule': 900.0,  # 15 minutes
         'options': {'queue': 'ingestion'}
     },
+    # Update trending stories every 10 minutes (NewsAPI + NewsData.io)
+    'update-trending-stories': {
+        'task': 'services.tasks.update_trending.update_trending_stories',
+        'schedule': 600.0,  # 10 minutes
+        'options': {'queue': 'ingestion'}
+    },
     # Clear old cache entries every hour
     'cleanup-old-cache': {
         'task': 'services.tasks.cleanup_cache',
