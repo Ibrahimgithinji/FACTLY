@@ -614,6 +614,152 @@ class TrendingTopicsView(APIView):
             )
 
 
+class LiveTrendingStoriesView(APIView):
+    """
+    API view for fetching live trending stories from NewsAPI/NewsData.io.
+    
+    Uses Redis caching for 10-minute intervals.
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        """
+        Get live trending stories from Redis cache or fresh fetch.
+        
+        Returns:
+        - trending_stories: List of live trending stories
+        """
+        import json
+        import os
+        
+        try:
+            # Try Redis first
+            import redis
+            redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+            cached = redis_client.get("trending_stories_cache")
+            
+            if cached:
+                data = json.loads(cached)
+                logger.info("Returning cached trending stories")
+                return Response({"trending_stories": data}, status=status.HTTP_200_OK)
+            
+        except (redis.ConnectionError, ImportError):
+            # Redis not available or not installed, continue to fetch fresh data
+            pass
+        except Exception as e:
+            logger.warning(f"Redis error: {e}")
+        
+        # If no cache, fetch fresh data directly (bypass celery task)
+        stories = self._fetch_live_stories()
+        
+        return Response({"trending_stories": stories}, status=status.HTTP_200_OK)
+    
+    def _fetch_live_stories(self):
+        """Fetch live stories directly without celery dependency."""
+        import os
+        import requests
+        from datetime import datetime
+        
+        stories = []
+        newsapi_key = os.getenv("NEWSAPI_KEY")
+        newsdata_key = os.getenv("NEWSDATA_IO_KEY")
+        
+        # Fetch from NewsAPI if key available
+        if newsapi_key:
+            try:
+                response = requests.get(
+                    "https://newsapi.org/v2/top-headlines",
+                    params={"country": "us", "apiKey": newsapi_key, "pageSize": 10},
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    for article in data.get("articles", []):
+                        stories.append({
+                            "title": article.get("title", ""),
+                            "description": article.get("description", ""),
+                            "url": article.get("url", ""),
+                            "source": article.get("source", {}).get("name", ""),
+                            "publishedAt": article.get("publishedAt", ""),
+                            "api_source": "newsapi"
+                        })
+            except Exception as e:
+                logger.warning(f"NewsAPI fetch error: {e}")
+        
+        # Fetch from NewsData.io if key available
+        if newsdata_key:
+            try:
+                response = requests.get(
+                    "https://newsdata.io/api/1/news",
+                    params={"apikey": newsdata_key, "country": "us", "pageSize": 10},
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    for article in data.get("results", []):
+                        stories.append({
+                            "title": article.get("title", ""),
+                            "description": article.get("description", ""),
+                            "url": article.get("link", ""),
+                            "source": article.get("source_id", ""),
+                            "publishedAt": article.get("pubDate", ""),
+                            "api_source": "newsdata"
+                        })
+            except Exception as e:
+                logger.warning(f"NewsData.io fetch error: {e}")
+        
+        # If no stories fetched, return fallback demo data
+        if not stories:
+            stories = self._get_demo_stories()
+        
+        return stories
+    
+    def _get_demo_stories(self):
+        """Return demo stories when no API keys configured."""
+        return [
+            {
+                "title": "Breaking: Major Climate Summit Reaches Historic Agreement",
+                "description": "World leaders announce unprecedented commitment to carbon reduction goals.",
+                "url": "https://example.com/climate-summit",
+                "source": "Global News Network",
+                "publishedAt": datetime.now().isoformat(),
+                "api_source": "demo"
+            },
+            {
+                "title": "Technology Breakthrough in Renewable Energy Storage",
+                "description": "Scientists develop new battery technology with 10x capacity.",
+                "url": "https://example.com/energy-storage",
+                "source": "Tech Today",
+                "publishedAt": datetime.now().isoformat(),
+                "api_source": "demo"
+            },
+            {
+                "title": "Global Health Organization Updates Vaccination Guidelines",
+                "description": "New recommendations based on latest research findings.",
+                "url": "https://example.com/health-update",
+                "source": "Health News",
+                "publishedAt": datetime.now().isoformat(),
+                "api_source": "demo"
+            },
+            {
+                "title": "Economic Report Shows Strong Market Growth",
+                "description": "Quarterly earnings exceed analyst expectations across sectors.",
+                "url": "https://example.com/market-growth",
+                "source": "Financial Times",
+                "publishedAt": datetime.now().isoformat(),
+                "api_source": "demo"
+            },
+            {
+                "title": "Space Agency Announces New Mars Mission Timeline",
+                "description": "Ambitious plans for crewed mission revealed.",
+                "url": "https://example.com/mars-mission",
+                "source": "Space News",
+                "publishedAt": datetime.now().isoformat(),
+                "api_source": "demo"
+            }
+        ]
+
+
 class RefreshDataView(APIView):
     """
     API view for triggering manual data refresh.
@@ -825,7 +971,7 @@ class TrendsAPIView(APIView):
         - limit: Number of trends to return (default: 50)
         - region: Filter by region (default: global)
         - risk_level: Filter by risk level
-        - verification_status: Filter by verification status
+        - verification_status: Filter by verification status (default: verified, true)
         """
         try:
             limit = int(request.query_params.get('limit', 50))
@@ -885,11 +1031,11 @@ class TrendsAPIView(APIView):
             # Fallback: Use demo data when no real data is available
             filtered_demo = self.DEMO_TRENDS.copy()
             
-            if region:
-                filtered_demo = [t for t in filtered_demo if t['primary_region'] == region]
-            if risk_level:
-                filtered_demo = [t for t in filtered_demo if t['risk_level'] == risk_level]
-            if verification_status:
+            # Filter for verified stories by default (as per requirement: "verified stories")
+            if not verification_status:
+                # Default to showing verified stories only
+                filtered_demo = [t for t in filtered_demo if t['verification_status'] in ['verified', 'true']]
+            elif verification_status:
                 filtered_demo = [t for t in filtered_demo if t['verification_status'] == verification_status]
             
             total = len(filtered_demo)
