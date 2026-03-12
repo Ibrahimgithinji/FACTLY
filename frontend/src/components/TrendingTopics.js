@@ -245,13 +245,9 @@ const TrendingTopics = ({ onTopicClick }) => {
   const isRefreshing = trendsRefreshing;
   const error = trendsError || analyticsError;
 
-  // Fetch trends from API
-  const fetchTrends = useCallback(async (showRefreshing = false) => {
-    if (showRefreshing) {
-      await refreshTrends();
-    } else {
-      await refreshTrends();
-    }
+  // Fetch trends from API (optimized to avoid duplicate calls)
+  const fetchTrends = useCallback(async () => {
+    await refreshTrends();
     await refreshAnalytics();
   }, [refreshTrends, refreshAnalytics]);
 
@@ -265,11 +261,10 @@ const TrendingTopics = ({ onTopicClick }) => {
     fetchTrends();
     fetchAnalytics();
     
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 60 seconds (optimized from 30s)
     const intervalId = setInterval(() => {
       fetchTrends();
-      fetchAnalytics();
-    }, 30000);
+    }, 60000);
     
     return () => clearInterval(intervalId);
   }, [fetchTrends, fetchAnalytics]);

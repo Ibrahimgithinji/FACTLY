@@ -33,6 +33,146 @@ from services.fact_checking_service.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
 
+# Demo data for when external APIs are unavailable
+DEMO_TRENDS = [
+    {
+        'id': 1,
+        'topic': 'Global Climate Summit Reaches Historic Agreement on Carbon Emissions',
+        'keywords': ['climate', 'carbon', 'emissions', 'summit', 'environment'],
+        'source_platforms': ['news_api', 'twitter', 'reddit'],
+        'engagement_score': 87.5,
+        'engagement_velocity': 12.3,
+        'risk_level': 'low',
+        'misinformation_risk_score': 15.2,
+        'priority_score': 13.3,
+        'verification_status': 'verified',
+        'factly_score': 92,
+        'primary_region': 'global',
+        'predicted_trend_score': 89.0,
+        'first_detected': '2026-03-12T10:00:00Z',
+        'last_updated': '2026-03-12T18:00:00Z',
+    },
+    {
+        'id': 2,
+        'topic': 'New Study Links Social Media Usage to Increased Anxiety in Teenagers',
+        'keywords': ['social media', 'mental health', 'anxiety', 'teenagers', 'study'],
+        'source_platforms': ['news_api', 'reddit'],
+        'engagement_score': 76.2,
+        'engagement_velocity': 8.5,
+        'risk_level': 'medium',
+        'misinformation_risk_score': 35.8,
+        'priority_score': 27.3,
+        'verification_status': 'pending',
+        'factly_score': None,
+        'primary_region': 'us',
+        'predicted_trend_score': 72.5,
+        'first_detected': '2026-03-12T08:30:00Z',
+        'last_updated': '2026-03-12T17:30:00Z',
+    },
+    {
+        'id': 3,
+        'topic': 'BREAKING: Major Technology Company Announces Revolutionary AI Assistant',
+        'keywords': ['AI', 'technology', 'assistant', 'breaking'],
+        'source_platforms': ['twitter', 'reddit', 'news_api'],
+        'engagement_score': 94.8,
+        'engagement_velocity': 25.6,
+        'risk_level': 'low',
+        'misinformation_risk_score': 22.1,
+        'priority_score': 21.0,
+        'verification_status': 'processing',
+        'factly_score': None,
+        'primary_region': 'global',
+        'predicted_trend_score': 95.2,
+        'first_detected': '2026-03-12T14:00:00Z',
+        'last_updated': '2026-03-12T18:45:00Z',
+    },
+    {
+        'id': 4,
+        'topic': 'Unverified Claims About Miracle Cure Spread Across Social Media',
+        'keywords': ['miracle cure', 'health', 'misinformation', 'social media'],
+        'source_platforms': ['twitter', 'tiktok'],
+        'engagement_score': 68.4,
+        'engagement_velocity': 15.7,
+        'risk_level': 'critical',
+        'misinformation_risk_score': 89.3,
+        'priority_score': 61.1,
+        'verification_status': 'false',
+        'factly_score': 12,
+        'primary_region': 'global',
+        'predicted_trend_score': 65.8,
+        'first_detected': '2026-03-12T09:15:00Z',
+        'last_updated': '2026-03-12T16:00:00Z',
+    },
+    {
+        'id': 5,
+        'topic': 'African Union Celebrates 60 Years of Unity and Progress',
+        'keywords': ['africa', 'AU', 'unity', 'anniversary', 'progress'],
+        'source_platforms': ['news_api', 'rss'],
+        'engagement_score': 72.1,
+        'engagement_velocity': 6.2,
+        'risk_level': 'low',
+        'misinformation_risk_score': 8.5,
+        'priority_score': 6.1,
+        'verification_status': 'verified',
+        'factly_score': 95,
+        'primary_region': 'africa',
+        'predicted_trend_score': 68.4,
+        'first_detected': '2026-03-11T20:00:00Z',
+        'last_updated': '2026-03-12T12:00:00Z',
+    },
+    {
+        'id': 6,
+        'topic': 'False Reports of Airport Closures Spread Following Weather Alert',
+        'keywords': ['airport', 'weather', 'false reports', 'closure'],
+        'source_platforms': ['twitter', 'facebook'],
+        'engagement_score': 58.9,
+        'engagement_velocity': 18.3,
+        'risk_level': 'high',
+        'misinformation_risk_score': 72.6,
+        'priority_score': 42.8,
+        'verification_status': 'false',
+        'factly_score': 18,
+        'primary_region': 'us',
+        'predicted_trend_score': 55.2,
+        'first_detected': '2026-03-12T11:00:00Z',
+        'last_updated': '2026-03-12T15:30:00Z',
+    },
+    {
+        'id': 7,
+        'topic': 'India Announces Major Infrastructure Investment in Rural Areas',
+        'keywords': ['india', 'infrastructure', 'rural', 'investment', 'development'],
+        'source_platforms': ['news_api', 'rss'],
+        'engagement_score': 65.3,
+        'engagement_velocity': 5.8,
+        'risk_level': 'low',
+        'misinformation_risk_score': 12.4,
+        'priority_score': 8.1,
+        'verification_status': 'verified',
+        'factly_score': 88,
+        'primary_region': 'india',
+        'predicted_trend_score': 62.1,
+        'first_detected': '2026-03-12T06:00:00Z',
+        'last_updated': '2026-03-12T14:00:00Z',
+    },
+    {
+        'id': 8,
+        'topic': 'Viral Video Claims Chocolate Cures Cancer - Experts Warn False',
+        'keywords': ['chocolate', 'cancer', 'false claim', 'viral', 'health'],
+        'source_platforms': ['twitter', 'tiktok', 'facebook'],
+        'engagement_score': 81.7,
+        'engagement_velocity': 22.4,
+        'risk_level': 'critical',
+        'misinformation_risk_score': 94.2,
+        'priority_score': 77.0,
+        'verification_status': 'false',
+        'factly_score': 8,
+        'primary_region': 'global',
+        'predicted_trend_score': 78.9,
+        'first_detected': '2026-03-12T12:30:00Z',
+        'last_updated': '2026-03-12T18:30:00Z',
+    },
+]
+
 
 class TrendListAPIView(APIView):
     """
@@ -81,6 +221,33 @@ class TrendListAPIView(APIView):
         # Paginate
         total = queryset.count()
         trends = queryset[offset:offset + limit]
+        
+        # Check if we have real data, otherwise use demo data
+        use_demo = total == 0
+        
+        if use_demo:
+            # Filter demo data based on request parameters
+            filtered_demo = DEMO_TRENDS.copy()
+            
+            if region:
+                filtered_demo = [t for t in filtered_demo if t['primary_region'] == region]
+            if risk_level:
+                filtered_demo = [t for t in filtered_demo if t['risk_level'] == risk_level]
+            if verification_status:
+                filtered_demo = [t for t in filtered_demo if t['verification_status'] == verification_status]
+            
+            # Apply pagination to demo data
+            total = len(filtered_demo)
+            trends = filtered_demo[offset:offset + limit]
+            
+            return Response({
+                'count': total,
+                'limit': limit,
+                'offset': offset,
+                'results': trends,
+                'status': 'demo',
+                'message': 'Showing demo data - configure API keys for live trends'
+            })
         
         # Serialize
         results = []
@@ -418,47 +585,72 @@ class AnalyticsAPIView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Get trend analytics."""
+        """Get trend analytics - optimized with demo data support."""
         
-        # Get counts
-        total_trends = Trend.objects.filter(is_active=True).count()
-        high_risk = Trend.objects.filter(
-            is_active=True, 
+        # Get base queryset
+        base_queryset = Trend.objects.filter(is_active=True)
+        total_trends = base_queryset.count()
+        
+        # If no real data, use demo data for analytics
+        if total_trends == 0:
+            # Calculate analytics from demo data
+            demo_total = len(DEMO_TRENDS)
+            demo_high_risk = len([t for t in DEMO_TRENDS if t['risk_level'] in ['high', 'critical']])
+            demo_pending = len([t for t in DEMO_TRENDS if t['verification_status'] == 'pending'])
+            demo_verified = len([t for t in DEMO_TRENDS if t['verification_status'] in ['verified', 'true', 'false']])
+            
+            avg_risk = sum(t['misinformation_risk_score'] for t in DEMO_TRENDS) / demo_total if demo_total > 0 else 0
+            avg_engagement = sum(t['engagement_score'] for t in DEMO_TRENDS) / demo_total if demo_total > 0 else 0
+            
+            return Response({
+                'total_trends': demo_total,
+                'high_risk_trends': demo_high_risk,
+                'pending_verification': demo_pending,
+                'verified_claims': demo_verified,
+                'average_risk_score': round(avg_risk, 2),
+                'average_engagement': round(avg_engagement, 2),
+                'active_alerts': 2,
+                'period': 'demo',
+                'timestamp': timezone.now().isoformat(),
+                'status': 'demo'
+            })
+        
+        # Use a single aggregation query for all stats
+        from django.db.models import Q, Count, Avg, Case, When, IntegerField
+        
+        # Get aggregated stats in a single query
+        aggregated = base_queryset.aggregate(
+            total=Count('id'),
+            avg_risk=Avg('misinformation_risk_score'),
+            avg_engagement=Avg('engagement_score')
+        )
+        
+        # Get counts with filtered querysets (still efficient)
+        high_risk_count = base_queryset.filter(
             risk_level__in=['high', 'critical']
         ).count()
         
-        pending_verification = Trend.objects.filter(
-            is_active=True,
+        pending_verification_count = base_queryset.filter(
             verification_status='pending',
             misinformation_risk_score__gte=50
         ).count()
         
-        verified = Trend.objects.filter(
-            is_active=True,
+        verified_count = base_queryset.filter(
             verification_status__in=['verified', 'false', 'true']
         ).count()
         
-        # Get average scores
-        avg_risk = Trend.objects.filter(is_active=True).aggregate(
-            avg=Avg('misinformation_risk_score')
-        )['avg'] or 0
-        
-        avg_engagement = Trend.objects.filter(is_active=True).aggregate(
-            avg=Avg('engagement_score')
-        )['avg'] or 0
-        
-        # Get recent alerts
+        # Get recent alerts count
         recent_alerts = MisinformationAlert.objects.filter(
             status='active'
         ).count()
         
         return Response({
-            'total_trends': total_trends,
-            'high_risk_trends': high_risk,
-            'pending_verification': pending_verification,
-            'verified_claims': verified,
-            'average_risk_score': round(avg_risk, 2),
-            'average_engagement': round(avg_engagement, 2),
+            'total_trends': aggregated['total'] or 0,
+            'high_risk_trends': high_risk_count,
+            'pending_verification': pending_verification_count,
+            'verified_claims': verified_count,
+            'average_risk_score': round(aggregated['avg_risk'] or 0, 2),
+            'average_engagement': round(aggregated['avg_engagement'] or 0, 2),
             'active_alerts': recent_alerts,
             'timestamp': timezone.now().isoformat()
         })
