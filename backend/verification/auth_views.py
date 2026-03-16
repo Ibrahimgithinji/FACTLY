@@ -36,7 +36,7 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # perform case-insensitive lookup so email casing doesn't block login
+        # Perform case-insensitive lookup so email casing doesn't block login
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
@@ -45,27 +45,47 @@ class LoginView(APIView):
                 {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
-        # make sure username is still used for Django authentication
-        user = authenticate(username=user.username, password=password)
-        if not user:
-            logger.warning(f"Failed login attempt for user: {email}")
+        except Exception as e:
+            logger.error(f"Database error during user lookup: {e}", exc_info=True)
             return Response(
-                {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {'error': 'Server error. Please try again later.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Make sure username is still used for Django authentication
+        try:
+            user = authenticate(username=user.username, password=password)
+            if not user:
+                logger.warning(f"Failed login attempt for user: {email}")
+                return Response(
+                    {'error': 'Invalid credentials'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+        except Exception as e:
+            logger.error(f"Authentication error: {e}", exc_info=True)
+            return Response(
+                {'error': 'Server error during authentication. Please try again later.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
         # Generate JWT tokens
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'name': user.first_name or user.username,
-            }
-        }, status=status.HTTP_200_OK)
+        try:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'name': user.first_name or user.username,
+                }
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"JWT token generation error: {e}", exc_info=True)
+            return Response(
+                {'error': 'Server error generating tokens. Please try again later.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class SignupView(APIView):

@@ -247,8 +247,60 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
     ],
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'EXCEPTION_HANDLER': 'factly_backend.exception_handlers.custom_exception_handler',
 }
+
+# Custom exception handler for better error responses
+def custom_exception_handler(exc, context):
+    """
+    Custom exception handler that returns proper error messages
+    instead of generic 500 Internal Server Errors.
+    """
+    from rest_framework.views import exception_handler
+    from rest_framework.response import Response
+    from rest_framework import status
+    import traceback
+    
+    # Call REST framework's default exception handler
+    response = exception_handler(exc, context)
+    
+    # If response is None, an unhandled exception occurred
+    if response is None:
+        # Get the view and request for logging
+        view = context.get('view')
+        request = context.get('request')
+        
+        # Log the full exception with stack trace
+        logger.error(
+            f"Unhandled exception in {view}: {exc}",
+            exc_info=True,
+            extra={
+                'request': str(request) if request else 'No request',
+                'traceback': traceback.format_exc()
+            }
+        )
+        
+        # Determine appropriate status code based on exception type
+        if isinstance(exc, ValueError):
+            status_code = status.HTTP_400_BAD_REQUEST
+            error_message = str(exc)
+        elif isinstance(exc, KeyError):
+            status_code = status.HTTP_400_BAD_REQUEST
+            error_message = f"Missing required field: {str(exc)}"
+        else:
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            # In DEBUG mode, show the actual error; in production, show generic message
+            if DEBUG:
+                error_message = f"{exc.__class__.__name__}: {str(exc)}"
+            else:
+                error_message = "An unexpected error occurred. Please try again later."
+        
+        response = Response(
+            {'error': error_message},
+            status=status_code
+        )
+    
+    return response
 
 # JWT Settings for djangorestframework-simplejwt
 from datetime import timedelta

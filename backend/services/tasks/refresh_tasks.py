@@ -319,9 +319,107 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
     return trending
 
 
+# Demo/fallback trending topics when cache is empty
+DEMO_TRENDING_TOPICS = [
+    {
+        "id": "demo-1",
+        "title": "Global Climate Summit Reaches Historic Agreement on Emissions",
+        "topic": "climate summit emissions agreement",
+        "engagement_score": 92,
+        "virality": "high",
+        "risk_level": "medium",
+        "fact_score": 78,
+        "sources": ["Reuters", "BBC", "AP"],
+        "region": "global",
+        "timestamp": datetime.now().isoformat(),
+        "summary": "World leaders have agreed on ambitious new emission targets at the Global Climate Summit."
+    },
+    {
+        "id": "demo-2",
+        "title": "New Study Reveals Breakthrough in AI Medical Diagnostics",
+        "topic": "AI medical diagnostics breakthrough",
+        "engagement_score": 88,
+        "virality": "high",
+        "risk_level": "low",
+        "fact_score": 95,
+        "sources": ["Nature", "Science Daily", "Medical News"],
+        "region": "global",
+        "timestamp": datetime.now().isoformat(),
+        "summary": "Researchers have developed a new AI system that can detect diseases with unprecedented accuracy."
+    },
+    {
+        "id": "demo-3",
+        "title": "Economic Report: Inflation Rates Show Signs of Stabilization",
+        "topic": "inflation rates stabilization economy",
+        "engagement_score": 85,
+        "virality": "medium",
+        "risk_level": "low",
+        "fact_score": 88,
+        "sources": ["Bloomberg", "Financial Times", "WSJ"],
+        "region": "global",
+        "timestamp": datetime.now().isoformat(),
+        "summary": "Latest economic indicators suggest inflation may be reaching a plateau."
+    },
+    {
+        "id": "demo-4",
+        "title": "Tech Giants Face New Regulatory Framework in EU",
+        "topic": "EU tech regulation antitrust",
+        "engagement_score": 82,
+        "virality": "medium",
+        "risk_level": "medium",
+        "fact_score": 75,
+        "sources": ["TechCrunch", "The Verge", "EU Observer"],
+        "region": "europe",
+        "timestamp": datetime.now().isoformat(),
+        "summary": "The European Union has unveiled comprehensive new regulations for major technology companies."
+    },
+    {
+        "id": "demo-5",
+        "title": "Renewable Energy Investment Reaches Record High",
+        "topic": "renewable energy investment record",
+        "engagement_score": 79,
+        "virality": "medium",
+        "risk_level": "low",
+        "fact_score": 90,
+        "sources": ["IEA", "Reuters", "GreenTech Media"],
+        "region": "global",
+        "timestamp": datetime.now().isoformat(),
+        "summary": "Global investment in renewable energy sources has hit an all-time high this year."
+    }
+]
+
+DEMO_GLOBAL_EVENTS = [
+    {
+        "id": "event-1",
+        "title": "International Trade Summit Begins",
+        "event_type": "summit",
+        "region": "global",
+        "timestamp": datetime.now().isoformat(),
+        "importance": "high"
+    },
+    {
+        "id": "event-2",
+        "title": "Tech Innovation Forum Announced",
+        "event_type": "conference",
+        "region": "asia",
+        "timestamp": datetime.now().isoformat(),
+        "importance": "medium"
+    },
+    {
+        "id": "event-3",
+        "title": "Global Health Initiative Launched",
+        "event_type": "initiative",
+        "region": "global",
+        "timestamp": datetime.now().isoformat(),
+        "importance": "high"
+    }
+]
+
+
 def get_trending_topics() -> Dict[str, Any]:
     """
     Get current trending topics (called by views).
+    Returns demo data if cache is empty.
     """
     # Try to get from cache first
     cached = cache_manager.get('trending_service', {'type': 'trending_topics'}, data_type='realtime')
@@ -333,21 +431,37 @@ def get_trending_topics() -> Dict[str, Any]:
         }
     
     # Return from memory if available
+    memory_topics = _trending_topics_cache.get('topics', [])
+    if memory_topics:
+        return {
+            'topics': memory_topics,
+            'global_events': _trending_topics_cache.get('global_events', []),
+            'last_updated': _trending_topics_cache.get('last_updated'),
+            'source': 'memory'
+        }
+    
+    # Return demo/fallback data when cache and memory are empty
     return {
-        'topics': _trending_topics_cache.get('topics', []),
-        'global_events': _trending_topics_cache.get('global_events', []),
-        'last_updated': _trending_topics_cache.get('last_updated'),
-        'source': 'memory'
+        'topics': DEMO_TRENDING_TOPICS,
+        'global_events': DEMO_GLOBAL_EVENTS,
+        'last_updated': datetime.now(),
+        'source': 'demo_fallback'
     }
 
 
 def get_global_events() -> List[Dict[str, Any]]:
     """
     Get global events digest (called by views).
+    Returns demo data if cache is empty.
     """
     # Try to get from cache first
     cached = cache_manager.get('global_events', {'type': 'digest'}, data_type='realtime')
     if cached:
         return cached
     
-    return _trending_topics_cache.get('global_events', [])
+    memory_events = _trending_topics_cache.get('global_events', [])
+    if memory_events:
+        return memory_events
+    
+    # Return demo data when cache and memory are empty
+    return DEMO_GLOBAL_EVENTS
