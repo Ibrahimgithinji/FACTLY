@@ -585,72 +585,73 @@ class AnalyticsAPIView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Get trend analytics - optimized with demo data support."""
+        """Get trend analytics - always use live data."""
         
-        # Get base queryset
-        base_queryset = Trend.objects.filter(is_active=True)
-        total_trends = base_queryset.count()
-        
-        # If no real data, use demo data for analytics
-        if total_trends == 0:
-            # Calculate analytics from demo data
-            demo_total = len(DEMO_TRENDS)
-            demo_high_risk = len([t for t in DEMO_TRENDS if t['risk_level'] in ['high', 'critical']])
-            demo_pending = len([t for t in DEMO_TRENDS if t['verification_status'] == 'pending'])
-            demo_verified = len([t for t in DEMO_TRENDS if t['verification_status'] in ['verified', 'true', 'false']])
+        try:
+            # Get all trends (both active and inactive for analytics)
+            base_queryset = Trend.objects.all()
+            total_trends = base_queryset.count()
             
-            avg_risk = sum(t['misinformation_risk_score'] for t in DEMO_TRENDS) / demo_total if demo_total > 0 else 0
-            avg_engagement = sum(t['engagement_score'] for t in DEMO_TRENDS) / demo_total if demo_total > 0 else 0
+            # If no data at all, return error
+            if total_trends == 0:
+                return Response({
+                    'error': 'No trend data available',
+                    'total_trends': 0,
+                    'status': 'error'
+                }, status=404)
+            
+            # Get active trends for stats
+            active_queryset = base_queryset.filter(is_active=True)
+            active_count = active_queryset.count()
+            
+            # Use aggregation for efficiency
+            from django.db.models import Count, Avg
+            
+            aggregated = active_queryset.aggregate(
+                total=Count('id'),
+                avg_risk=Avg('misinformation_risk_score'),
+                avg_engagement=Avg('engagement_score')
+            )
+            
+            high_risk_count = active_queryset.filter(
+                risk_level__in=['high', 'critical']
+            ).count()
+            
+            pending_verification_count = active_queryset.filter(
+                verification_status='pending',
+                misinformation_risk_score__gte=50
+            ).count()
+            
+            verified_count = active_queryset.filter(
+                verification_status__in=['verified', 'false', 'true']
+            ).count()
+            
+            # Get alerts count
+            try:
+                recent_alerts = MisinformationAlert.objects.filter(
+                    status='active'
+                ).count()
+            except:
+                recent_alerts = 0
             
             return Response({
-                'total_trends': demo_total,
-                'high_risk_trends': demo_high_risk,
-                'pending_verification': demo_pending,
-                'verified_claims': demo_verified,
-                'average_risk_score': round(avg_risk, 2),
-                'average_engagement': round(avg_engagement, 2),
-                'active_alerts': 2,
-                'period': 'demo',
+                'total_trends': active_count,
+                'high_risk_trends': high_risk_count,
+                'pending_verification': pending_verification_count,
+                'verified_claims': verified_count,
+                'average_risk_score': round(aggregated['avg_risk'] or 0, 2),
+                'average_engagement': round(aggregated['avg_engagement'] or 0, 2),
+                'active_alerts': recent_alerts,
                 'timestamp': timezone.now().isoformat(),
-                'status': 'demo'
+                'status': 'live',
+                'debug_new_field': 'This is the new response format!'
             })
-        
-        # Use a single aggregation query for all stats
-        from django.db.models import Q, Count, Avg, Case, When, IntegerField
-        
-        # Get aggregated stats in a single query
-        aggregated = base_queryset.aggregate(
-            total=Count('id'),
-            avg_risk=Avg('misinformation_risk_score'),
-            avg_engagement=Avg('engagement_score')
-        )
-        
-        # Get counts with filtered querysets (still efficient)
-        high_risk_count = base_queryset.filter(
-            risk_level__in=['high', 'critical']
-        ).count()
-        
-        pending_verification_count = base_queryset.filter(
-            verification_status='pending',
-            misinformation_risk_score__gte=50
-        ).count()
-        
-        verified_count = base_queryset.filter(
-            verification_status__in=['verified', 'false', 'true']
-        ).count()
-        
-        # Get recent alerts count
-        recent_alerts = MisinformationAlert.objects.filter(
-            status='active'
-        ).count()
-        
-        return Response({
-            'total_trends': aggregated['total'] or 0,
-            'high_risk_trends': high_risk_count,
-            'pending_verification': pending_verification_count,
-            'verified_claims': verified_count,
-            'average_risk_score': round(aggregated['avg_risk'] or 0, 2),
-            'average_engagement': round(aggregated['avg_engagement'] or 0, 2),
-            'active_alerts': recent_alerts,
-            'timestamp': timezone.now().isoformat()
-        })
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Analytics API error: {str(e)}")
+            return Response({
+                'error': str(e),
+                'total_trends': 0,
+                'status': 'error'
+            }, status=500)
