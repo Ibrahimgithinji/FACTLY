@@ -19,7 +19,6 @@
     
     <!-- Favicon -->
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     
     <!-- Open Graph / Facebook -->
@@ -27,7 +26,7 @@
     <meta property="og:url" content="https://factly.app" />
     <meta property="og:title" content="FACTLY - AI-Powered Fact Checking & News Verification" />
     <meta property="og:description" content="Verify the credibility of news headlines and articles with FACTLY's advanced AI fact-checking. Get instant credibility scores, evidence analysis, and source verification." />
-    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta property="og:image" content="%PUBLIC_URL%/favicon.ico" />
     <meta property="og:site_name" content="FACTLY" />
     <meta property="og:locale" content="en_US" />
     
@@ -36,7 +35,7 @@
     <meta property="twitter:url" content="https://factly.app" />
     <meta property="twitter:title" content="FACTLY - AI-Powered Fact Checking & News Verification" />
     <meta property="twitter:description" content="Verify the credibility of news headlines and articles with FACTLY's advanced AI fact-checking. Get instant credibility scores, evidence analysis, and source verification." />
-    <meta property="twitter:image" content="%PUBLIC_URL%/twitter-image.png" />
+    <meta property="twitter:image" content="%PUBLIC_URL%/favicon.ico" />
     
     <!-- Preconnect to external domains for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -50,9 +49,11 @@
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
     <link rel="dns-prefetch" href="//fonts.gstatic.com" />
     
-    <!-- Security Headers (meta equivalents) -->
+    <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
     
     <!-- Mobile Web App Capable -->
     <meta name="mobile-web-app-capable" content="yes" />
@@ -62,7 +63,6 @@
     
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#0f172a" />
-    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
     
     <!-- Critical CSS for initial render - prevents FOUC -->
     <style>
