@@ -45,7 +45,7 @@
 // Component Implementation
 // ============================================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './TrendingTopics.css';
 import { useIntelligentFetch } from '../hooks/useIntelligentFetch';
 
@@ -181,6 +181,7 @@ const TrendingTopics = ({ onTopicClick }) => {
   }, [apiUrl, regionFilter, riskFilter, statusFilter]);
 
   // Intelligent fetch for trends with retry, caching, and error handling
+  const trendsUrl = useMemo(() => getTrendsUrl(), [getTrendsUrl]);
   const {
     data: trendsData,
     isLoading: trendsLoading,
@@ -192,7 +193,7 @@ const TrendingTopics = ({ onTopicClick }) => {
     lastFetchTime: trendsLastFetch,
     refresh: refreshTrends,
     retry: retryTrends
-  } = useIntelligentFetch(getTrendsUrl(), {
+  } = useIntelligentFetch(trendsUrl, {
     useCache: true,
     retryAttempts: 3,
     retryDelay: 1500,
@@ -228,10 +229,12 @@ const TrendingTopics = ({ onTopicClick }) => {
 
   // Update trends state when data changes
   useEffect(() => {
-    if (trendsData) {
+    if (trendsData && Array.isArray(trendsData) && trendsData.length > 0) {
       setTrends(trendsData);
+    } else if (trendsData && Array.isArray(trendsData) && trendsData.length === 0 && !trendsError) {
+      setTrends(DEMO_TRENDS);
     }
-  }, [trendsData]);
+  }, [trendsData, trendsError]);
 
   // Update analytics state when data changes
   useEffect(() => {
@@ -268,6 +271,11 @@ const TrendingTopics = ({ onTopicClick }) => {
     
     return () => clearInterval(intervalId);
   }, [fetchTrends, fetchAnalytics]);
+
+  // Re-fetch when filters change
+  useEffect(() => {
+    refreshTrends();
+  }, [regionFilter, riskFilter, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle manual refresh
   const handleRefresh = () => {
