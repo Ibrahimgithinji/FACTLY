@@ -229,7 +229,7 @@ export const useIntelligentFetch = (url, options = {}) => {
 
     // Attempt fetch with retries
     let lastError = null;
-    const currentRetryCount = forceRetry ? retryAttempts : 0;
+    const currentRetryCount = 0;
     
     for (let attempt = currentRetryCount; attempt <= retryAttempts; attempt++) {
       try {
@@ -389,6 +389,7 @@ export const useIntelligentFetch = (url, options = {}) => {
 
   // Auto-fetch on mount
   useEffect(() => {
+    mountedRef.current = true;
     if (autoFetch) {
       fetchData();
     }

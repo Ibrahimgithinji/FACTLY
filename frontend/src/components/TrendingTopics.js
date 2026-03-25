@@ -231,10 +231,14 @@ const TrendingTopics = ({ onTopicClick }) => {
   useEffect(() => {
     if (trendsData && Array.isArray(trendsData) && trendsData.length > 0) {
       setTrends(trendsData);
-    } else if (trendsData && Array.isArray(trendsData) && trendsData.length === 0 && !trendsError) {
+    } else if (!trendsData && !trendsLoading && trends.length === 0) {
+      // Show demo data before first fetch completes
+      setTrends(DEMO_TRENDS);
+    } else if (trendsData && Array.isArray(trendsData) && trendsData.length === 0) {
+      // Backend returned empty — show demo as fallback
       setTrends(DEMO_TRENDS);
     }
-  }, [trendsData, trendsError]);
+  }, [trendsData, trendsLoading]);
 
   // Update analytics state when data changes
   useEffect(() => {
