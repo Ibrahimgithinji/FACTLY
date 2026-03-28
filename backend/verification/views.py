@@ -336,6 +336,14 @@ class VerificationView(APIView):
             url = data.get('url', '')
             language = data.get('language', 'en')
 
+            # Input length validation
+            MAX_INPUT_LENGTH = 5000
+            if text and len(text) > MAX_INPUT_LENGTH:
+                return Response(
+                    {'error': f'Input too long. Maximum {MAX_INPUT_LENGTH} characters allowed.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             logger.info(f"Starting verification for {'URL' if url else 'text'}: {url or text[:100]}...")
 
             # Step 1: Extract content if URL provided

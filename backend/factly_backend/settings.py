@@ -25,11 +25,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-factly-secret-key-change-in-production')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes')
+
+# SECURITY WARNING: keep the secret key used in production secret!
+_secret_key = os.getenv('DJANGO_SECRET_KEY')
+if not _secret_key:
+    # Use a default key only in DEBUG mode for development convenience
+    if DEBUG:
+        _secret_key = 'django-insecure-dev-only-key-do-not-use-in-production'
+    else:
+        raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production")
+SECRET_KEY = _secret_key
 
 # Configure allowed hosts via environment variable (comma-separated). Default: allow localhost for development.
 # If no ALLOWED_HOSTS is set, default to localhost and 127.0.0.1 for development.
@@ -48,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'verification',
 ]
 
@@ -250,6 +258,16 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
     ],
     'EXCEPTION_HANDLER': 'factly_backend.exception_handlers.custom_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/minute',
+        'user': '120/minute',
+        'login': '10/minute',
+        'password_reset': '5/minute',
+    },
 }
 
 # Custom exception handler for better error responses

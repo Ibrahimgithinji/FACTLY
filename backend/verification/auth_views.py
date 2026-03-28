@@ -15,6 +15,17 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+
+
+class LoginRateThrottle(AnonRateThrottle):
+    rate = '10/minute'
+    scope = 'login'
+
+
+class PasswordResetRateThrottle(AnonRateThrottle):
+    rate = '5/minute'
+    scope = 'password_reset'
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from .models import PasswordResetToken
@@ -25,6 +36,7 @@ logger = logging.getLogger(__name__)
 class LoginView(APIView):
     """User login endpoint that returns JWT tokens."""
     permission_classes = [AllowAny]
+    throttle_classes = [LoginRateThrottle]
     
     def post(self, request):
         email = request.data.get('email')
@@ -91,6 +103,7 @@ class LoginView(APIView):
 class SignupView(APIView):
     """User registration endpoint that returns JWT tokens."""
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
     
     def post(self, request):
         name = request.data.get('name', '')
@@ -107,9 +120,9 @@ class SignupView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if len(password) < 6:
+        if len(password) < 8:
             return Response(
-                {'error': 'Password must be at least 6 characters'},
+                {'error': 'Password must be at least 8 characters'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -175,6 +188,7 @@ class RefreshTokenView(APIView):
 class ForgotPasswordView(APIView):
     """Send password reset email to user."""
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
     
     def post(self, request):
         email = request.data.get('email')
@@ -304,6 +318,7 @@ class VerifyResetTokenView(APIView):
 class ResetPasswordView(APIView):
     """Reset password using a valid reset token."""
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
     
     def post(self, request):
         token = request.data.get('token')
@@ -323,9 +338,9 @@ class ResetPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if len(new_password) < 6:
+        if len(new_password) < 8:
             return Response(
-                {'error': 'Password must be at least 6 characters'},
+                {'error': 'Password must be at least 8 characters'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -365,65 +380,3 @@ class ResetPasswordView(APIView):
             )
 
 
-class GetResetLinkView(APIView):
-    """
-    Development-only endpoint to retrieve reset link for testing.
-    In production, this endpoint should be disabled or require admin authentication.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        """
-        Get the reset link for a user (development only).
-        This is useful for testing the password reset flow without email setup.
-        """
-        # Security: Only allow in development mode
-        if not os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes'):
-            return Response(
-                {'error': 'This endpoint is only available in development mode'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        email = request.data.get('email')
-        
-        if not email:
-            return Response(
-                {'error': 'Email is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            # Get the most recent valid reset token for this user
-            user = User.objects.get(email=email)
-            reset_token = PasswordResetToken.objects.filter(
-                user=user,
-                is_used=False
-            ).order_by('-created_at').first()
-            
-            if not reset_token or not reset_token.is_valid():
-                return Response(
-                    {'error': 'No valid reset token found. Request a password reset first.'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            reset_link = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}"
-            
-            return Response({
-                'email': user.email,
-                'reset_link': reset_link,
-                'token': reset_token.token,
-                'expires_at': reset_token.expires_at,
-                'message': 'DEVELOPMENT: Copy the reset_link to your browser to test password reset'
-            }, status=status.HTTP_200_OK)
-            
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'User not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Error retrieving reset link: {e}")
-            return Response(
-                {'error': 'Unable to retrieve reset link'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
