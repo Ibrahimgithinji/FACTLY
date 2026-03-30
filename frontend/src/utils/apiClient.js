@@ -17,9 +17,9 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 // Storage helpers
 const getStoredToken = (key) => {
   try {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   } catch (e) {
-    console.error('Error reading from localStorage:', e);
+    console.error('Error reading from sessionStorage:', e);
     return null;
   }
 };
@@ -75,7 +75,7 @@ const tryRefreshToken = async () => {
 
     const data = await response.json();
     if (data.access) {
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, data.access);
       return true;
     }
     return false;

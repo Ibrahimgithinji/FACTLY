@@ -32,12 +32,12 @@ const isTokenExpiringSoon = (token) => {
   return expiration < threshold;
 };
 
-// Storage helpers (using localStorage for persistence across sessions)
+// Storage helpers (using sessionStorage for XSS protection)
 const getStoredToken = (key) => {
   try {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   } catch (e) {
-    console.error('Error reading from localStorage:', e);
+    console.error('Error reading from sessionStorage:', e);
     return null;
   }
 };
@@ -45,21 +45,21 @@ const getStoredToken = (key) => {
 const setStoredToken = (key, value) => {
   try {
     if (value) {
-      localStorage.setItem(key, value);
+      sessionStorage.setItem(key, value);
     } else {
-      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
     }
   } catch (e) {
-    console.error('Error writing to localStorage:', e);
+    console.error('Error writing to sessionStorage:', e);
   }
 };
 
 const getStoredUser = () => {
   try {
-    const userStr = localStorage.getItem(USER_KEY);
+    const userStr = sessionStorage.getItem(USER_KEY);
     return userStr ? JSON.parse(userStr) : null;
   } catch (e) {
-    console.error('Error reading user from localStorage:', e);
+    console.error('Error reading user from sessionStorage:', e);
     return null;
   }
 };
@@ -67,12 +67,12 @@ const getStoredUser = () => {
 const setStoredUser = (user) => {
   try {
     if (user) {
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     } else {
-      localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(USER_KEY);
     }
   } catch (e) {
-    console.error('Error writing user to localStorage:', e);
+    console.error('Error writing user to sessionStorage:', e);
   }
 };
 
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing tokens on mount - use localStorage for persistence
+    // Check for existing tokens on mount - use sessionStorage for XSS protection
     const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
     const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
     const storedUser = getStoredUser();
@@ -322,7 +322,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Clear tokens from localStorage
+    // Clear tokens from sessionStorage
     setStoredToken(ACCESS_TOKEN_KEY, null);
     setStoredToken(REFRESH_TOKEN_KEY, null);
     setStoredUser(null);

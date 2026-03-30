@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../utils/api';
@@ -12,6 +12,9 @@ const VerificationForm = () => {
   const [charCount, setCharCount] = useState(0);
   const navigate = useNavigate();
   const { getValidAccessToken, isAuthenticated } = useAuth();
+  
+  // Ref for abort controller
+  const abortControllerRef = useRef(null);
 
   const MAX_CHARS = 5000;
 
@@ -28,8 +31,8 @@ const VerificationForm = () => {
     if (!value.trim()) {
       return 'Please enter some text to verify';
     }
-    if (value.trim().length < 10) {
-      return 'Please enter at least 10 characters for accurate verification';
+    if (value.trim().length < 3) {
+      return 'Please enter at least 3 characters for accurate verification';
     }
     return null;
   }, []);
@@ -52,6 +55,14 @@ const VerificationForm = () => {
       return;
     }
 
+    // Cancel any previous in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
     setIsLoading(true);
     setError(null);
 
@@ -66,7 +77,10 @@ const VerificationForm = () => {
       console.log('Sending request to API:', isUrl ? 'URL mode' : 'Text mode');
 
       // Use the apiClient which handles authentication automatically
-      const result = await apiPost(API_ENDPOINTS.VERIFY, requestBody);
+      // Pass abort signal to cancel on new submissions
+      const result = await apiPost(API_ENDPOINTS.VERIFY, requestBody, {
+        signal: abortControllerRef.current.signal
+      });
       
       if (!result.success) {
         throw new Error(result.error || 'Verification failed');

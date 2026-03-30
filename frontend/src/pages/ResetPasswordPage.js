@@ -48,7 +48,7 @@ const ResetPasswordPage = () => {
 
   const calculatePasswordStrength = useCallback((password) => {
     if (!password) return '';
-    if (password.length < 6) return 'weak';
+    if (password.length < 8) return 'weak';
     if (password.length < 10 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) return 'medium';
     return 'strong';
   }, []);

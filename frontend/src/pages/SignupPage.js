@@ -20,7 +20,7 @@ const SignupPage = () => {
 
   const calculatePasswordStrength = (password) => {
     if (!password) return '';
-    if (password.length < 6) return 'weak';
+    if (password.length < 8) return 'weak';
     if (password.length < 10 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) return 'medium';
     return 'strong';
   };
@@ -42,8 +42,8 @@ const SignupPage = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     if (formData.password !== formData.confirmPassword) {

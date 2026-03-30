@@ -323,22 +323,13 @@ const TrendingTopics = ({ onTopicClick }) => {
   // =========================================================================
   const {
     data: trendsData,
-    isLoading: trendsLoading,
-    isRefreshing: trendsRefreshing,
+    loading: trendsLoading,
     error: trendsError,
-    errorInfo: trendsErrorInfo,
-    status: trendsStatus,
-    dataSource: trendsDataSource,
-    lastFetchTime: trendsLastFetch,
-    refresh: refreshTrends,
-    cancel: cancelTrends
+    refetch: refreshTrends
   } = useIntelligentFetch(trendsUrl, {
     useCache: true,
-    retryAttempts: 3,
-    retryDelay: 2000, // 2 second base - production standard
-    autoFetch: false, // Manual control
-    dataFormat: 'auto',
-    throttleMs: 10000, // 10 second throttle
+    retryAttempts: 2,
+    autoFetch: false,
     onSuccess: useCallback((parsedData) => {
       console.log('[TrendingTopics] Trends fetched:', parsedData?.length || 0, 'items');
     }, []),
@@ -352,17 +343,13 @@ const TrendingTopics = ({ onTopicClick }) => {
   // =========================================================================
   const {
     data: analyticsData,
-    isLoading: analyticsLoading,
+    loading: analyticsLoading,
     error: analyticsError,
-    refresh: refreshAnalytics,
-    cancel: cancelAnalytics
+    refetch: refreshAnalytics
   } = useIntelligentFetch(analyticsUrl, {
     useCache: true,
-    retryAttempts: 3,
-    retryDelay: 2000,
+    retryAttempts: 2,
     autoFetch: false,
-    dataFormat: 'analytics',
-    throttleMs: 10000, // 10 second throttle
     onSuccess: useCallback((parsedData) => {
       console.log('[TrendingTopics] Analytics fetched:', parsedData);
     }, []),
@@ -410,14 +397,7 @@ const TrendingTopics = ({ onTopicClick }) => {
     // Fetch both trends and analytics
     refreshTrends();
     refreshAnalytics();
-
-    // Cleanup function
-    return () => {
-      console.log('[TrendingTopics] Cleanup on unmount');
-      cancelTrends();
-      cancelAnalytics();
-    };
-  }, []); // Empty dependency - runs once
+  }, [refreshTrends, refreshAnalytics]);
 
   // =========================================================================
   // Effect: Re-fetch when filters change - Stable dependency
@@ -437,7 +417,7 @@ const TrendingTopics = ({ onTopicClick }) => {
   // Combined Loading State
   // =========================================================================
   const isLoading = trendsLoading || analyticsLoading;
-  const isRefreshing = trendsRefreshing;
+  const isRefreshing = false; // Refreshing is part of loading state
   const error = trendsError || analyticsError;
 
   // =========================================================================
@@ -494,13 +474,10 @@ const TrendingTopics = ({ onTopicClick }) => {
    * @returns {{label: string, color: string}} Display info
    */
   const getDataSourceDisplay = useCallback(() => {
-    switch (trendsDataSource) {
-      case 'api': return { label: 'Live', color: '#16a34a' };
-      case 'cache': return { label: 'Cached', color: '#2563eb' };
-      case 'fallback': return { label: 'Offline', color: '#ca8a04' };
-      default: return { label: 'Unknown', color: '#6b7280' };
-    }
-  }, [trendsDataSource]);
+    if (error) return { label: 'Error', color: '#dc2626' };
+    if (isLoading) return { label: 'Loading', color: '#2563eb' };
+    return { label: 'Live', color: '#16a34a' };
+  }, [error, isLoading]);
 
   const dataSourceDisplay = getDataSourceDisplay();
 
@@ -587,7 +564,7 @@ const TrendingTopics = ({ onTopicClick }) => {
           AI Trend Discovery
         </h3>
         <div className="header-actions">
-          {trendsDataSource && (
+          {error && (
             <div 
               className="data-source-indicator" 
               style={{ 
@@ -604,15 +581,10 @@ const TrendingTopics = ({ onTopicClick }) => {
               {dataSourceDisplay.label}
             </div>
           )}
-          {isRefreshing && (
+          {isLoading && (
             <div className="sync-status syncing">
               <div className="mini-spinner"></div>
               Syncing...
-            </div>
-          )}
-          {trendsLastFetch && !isRefreshing && (
-            <div className="last-updated">
-              Updated: {new Date(trendsLastFetch).toLocaleTimeString()}
             </div>
           )}
           <button 
@@ -700,7 +672,7 @@ const TrendingTopics = ({ onTopicClick }) => {
             key={trend.id || index}
             trend={trend}
             onClick={handleTopicClick}
-            isDemo={trendsDataSource === 'fallback'}
+            isDemo={error !== null}
           />
         ))}
       </div>
