@@ -19,6 +19,7 @@ from services.fact_checking_service import FactCheckingService
 from services.fact_checking_service.unified_schema import datetime_to_iso
 from services.scoring_service import ScoringService
 from services.fact_checking_service.enhanced_verification_orchestrator import EnhancedVerificationOrchestrator
+from services.fact_checking_service.api_rate_limiter import APIRateLimiter
 
 # Try to get Trend model from trend_collector app
 def get_trend_model():
@@ -44,40 +45,27 @@ class EnhancedVerificationView(APIView):
     # Allow public access for verification (no authentication required)
     permission_classes = [AllowAny]
     
-    # Simple in-memory rate limiting
-    _rate_limit_storage = {}
-    RATE_LIMIT_REQUESTS = 10
-    RATE_LIMIT_WINDOW = 3600
+    # Env-configurable rate limiting (uses Redis-backed APIRateLimiter when available)
+    RATE_LIMIT_CONFIG = {
+        'max_requests': int(os.getenv('VERIFICATION_ENHANCED_MAX_REQUESTS', '10')),
+        'window_seconds': int(os.getenv('VERIFICATION_ENHANCED_WINDOW_SECONDS', '3600')),
+        'burst_allowance': int(os.getenv('VERIFICATION_ENHANCED_BURST_ALLOWANCE', '2')),
+    }
+    rate_limiter = APIRateLimiter()
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.enhanced_orchestrator = EnhancedVerificationOrchestrator()
     
     def _check_rate_limit(self, request):
-        """Simple rate limiting check."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR', '')
-        
-        import time as time_module
-        current_time = time_module.time()
-        
-        if ip in self._rate_limit_storage:
-            self._rate_limit_storage[ip] = [
-                t for t in self._rate_limit_storage[ip]
-                if current_time - t < self.RATE_LIMIT_WINDOW
-            ]
-            
-            if len(self._rate_limit_storage[ip]) >= self.RATE_LIMIT_REQUESTS:
-                return False
-            
-            self._rate_limit_storage[ip].append(current_time)
-        else:
-            self._rate_limit_storage[ip] = [current_time]
-        
-        return True
+        """Delegate to shared APIRateLimiter for robust rate limiting."""
+        allowed, retry_after = self.rate_limiter.check_rate_limit(
+            request,
+            endpoint=request.path,
+            max_requests=self.RATE_LIMIT_CONFIG['max_requests'],
+            window_seconds=self.RATE_LIMIT_CONFIG['window_seconds']
+        )
+        return allowed, retry_after
     
     def post(self, request):
         """
@@ -92,10 +80,12 @@ class EnhancedVerificationView(APIView):
         start_time = time.time()
         
         # Check rate limit
-        if not self._check_rate_limit(request):
+        allowed, retry_after = self._check_rate_limit(request)
+        if not allowed:
             return Response(
-                {"error": "Rate limit exceeded. Please try again later.", "retry_after": self.RATE_LIMIT_WINDOW},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
+                {"error": "Rate limit exceeded. Please try again later.", "retry_after": retry_after},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={"Retry-After": str(retry_after)}
             )
         
         try:
@@ -264,10 +254,12 @@ class VerificationView(APIView):
     # Allow public access for verification (no authentication required)
     permission_classes = [AllowAny]
     
-    # Simple in-memory rate limiting (requests per IP)
-    _rate_limit_storage = {}
-    RATE_LIMIT_REQUESTS = 10
-    RATE_LIMIT_WINDOW = 3600  # 1 hour in seconds
+    RATE_LIMIT_CONFIG = {
+        'max_requests': int(os.getenv('VERIFICATION_MAX_REQUESTS', '10')),
+        'window_seconds': int(os.getenv('VERIFICATION_WINDOW_SECONDS', '3600')),
+        'burst_allowance': int(os.getenv('VERIFICATION_BURST_ALLOWANCE', '2')),
+    }
+    rate_limiter = APIRateLimiter()
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -278,35 +270,14 @@ class VerificationView(APIView):
         self.scorer = ScoringService()
 
     def _check_rate_limit(self, request):
-        """Simple rate limiting check."""
-        # Get client IP
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR', '')
-        
-        import time as time_module
-        current_time = time_module.time()
-        
-        # Clean old entries
-        if ip in self._rate_limit_storage:
-            # Remove entries older than the window
-            self._rate_limit_storage[ip] = [
-                t for t in self._rate_limit_storage[ip]
-                if current_time - t < self.RATE_LIMIT_WINDOW
-            ]
-            
-            # Check if over limit
-            if len(self._rate_limit_storage[ip]) >= self.RATE_LIMIT_REQUESTS:
-                return False
-            
-            # Add current request
-            self._rate_limit_storage[ip].append(current_time)
-        else:
-            self._rate_limit_storage[ip] = [current_time]
-        
-        return True
+        """Delegate to shared APIRateLimiter for robust rate limiting."""
+        allowed, retry_after = self.rate_limiter.check_rate_limit(
+            request,
+            endpoint=request.path,
+            max_requests=self.RATE_LIMIT_CONFIG['max_requests'],
+            window_seconds=self.RATE_LIMIT_CONFIG['window_seconds']
+        )
+        return allowed, retry_after
 
     def post(self, request):
         """
@@ -319,10 +290,12 @@ class VerificationView(APIView):
         start_time = time.time()
 
         # Check rate limit
-        if not self._check_rate_limit(request):
+        allowed, retry_after = self._check_rate_limit(request)
+        if not allowed:
             return Response(
-                {"error": "Rate limit exceeded. Please try again later.", "retry_after": self.RATE_LIMIT_WINDOW},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
+                {"error": "Rate limit exceeded. Please try again later.", "retry_after": retry_after},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={"Retry-After": str(retry_after)}
             )
 
         try:
