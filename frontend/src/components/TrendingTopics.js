@@ -145,6 +145,7 @@ const TrendingTopics = () => {
   const abortControllerRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const isFetchingRef = useRef(false);
+  const fetchTopicsRef = useRef(null);
 
   // =========================================================================
   // Fetch Function - Handles both GET and POST refresh
@@ -153,7 +154,6 @@ const TrendingTopics = () => {
   const fetchTopics = useCallback(async (isManualRefresh = false) => {
     // Prevent concurrent requests
     if (isFetchingRef.current) {
-      console.log('[TrendingTopics] Skipping - fetch in progress');
       return;
     }
 
@@ -169,7 +169,6 @@ const TrendingTopics = () => {
       // If manual refresh, POST to trigger backend refresh first
       if (isManualRefresh) {
         try {
-          console.log('[TrendingTopics] POST /api/verification/refresh/');
           const refreshResponse = await fetch(
             `${API_BASE_URL}/api/verification/refresh/`,
             {
@@ -188,7 +187,6 @@ const TrendingTopics = () => {
             const text = await refreshResponse.text();
             console.warn('[TrendingTopics] POST returned non-JSON:', text.substring(0, 200));
           } else if (refreshResponse.ok) {
-            console.log('[TrendingTopics] Refresh triggered, waiting 800ms...');
             // Wait for backend to start processing
             await new Promise(resolve => setTimeout(resolve, 800));
           }
@@ -201,7 +199,6 @@ const TrendingTopics = () => {
       }
 
       // Now GET the trending topics
-      console.log('[TrendingTopics] GET /api/verification/trending/');
       const response = await fetch(
         `${API_BASE_URL}/api/verification/trending/`,
         {
@@ -270,18 +267,22 @@ const TrendingTopics = () => {
   // =========================================================================
 
   useEffect(() => {
+    // Create ref for fetchTopics to use in interval
+    fetchTopicsRef.current = fetchTopics;
+  }, [fetchTopics]);
+
+  // Polling Effect - Poll every 5 minutes
+  useEffect(() => {
     // Initial fetch
-    fetchTopics(false);
+    fetchTopicsRef.current(false);
 
     // Set up polling interval
     pollIntervalRef.current = setInterval(() => {
-      console.log('[TrendingTopics] Poll interval triggered');
-      fetchTopics(false);
+      fetchTopicsRef.current(false);
     }, POLL_INTERVAL_MS);
 
     // Cleanup on unmount
     return () => {
-      console.log('[TrendingTopics] Cleanup - clearing interval and aborting');
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -290,14 +291,13 @@ const TrendingTopics = () => {
         abortControllerRef.current.abort();
       }
     };
-  }, [fetchTopics]);
+  }, []);
 
   // =========================================================================
   // Handle Manual Refresh
   // =========================================================================
 
   const handleManualRefresh = useCallback(() => {
-    console.log('[TrendingTopics] Manual refresh triggered');
     setIsRefreshing(true);
     fetchTopics(true).finally(() => {
       setIsRefreshing(false);
