@@ -6,28 +6,28 @@ app_name = 'verification'
 
 urlpatterns = [
     # Authentication endpoints
-    path('auth/login/', auth_views.LoginView.as_view(), name='login'),
-    path('auth/signup/', auth_views.SignupView.as_view(), name='signup'),
-    path('auth/refresh/', auth_views.RefreshTokenView.as_view(), name='refresh'),
-    path('auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
-    path('auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
-    path('auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
+    path('verification/auth/login/', auth_views.LoginView.as_view(), name='login'),
+    path('verification/auth/signup/', auth_views.SignupView.as_view(), name='signup'),
+    path('verification/auth/refresh/', auth_views.RefreshTokenView.as_view(), name='refresh'),
+    path('verification/auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
+    path('verification/auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
+    path('verification/auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
     
     # Standard verification endpoints
-    path('verify/', views.VerificationView.as_view(), name='verify'),
-    path('verify/enhanced/', views.EnhancedVerificationView.as_view(), name='verify_enhanced'),
-    path('health/', views.health_check, name='health_check'),
+    path('verification/verify/', views.VerificationView.as_view(), name='verify'),
+    path('verification/verify/enhanced/', views.EnhancedVerificationView.as_view(), name='verify_enhanced'),
+    path('verification/health/', views.health_check, name='health_check'),
     
     # Trending topics and global events endpoints
-    path('trending/', views.TrendingTopicsView.as_view(), name='trending_topics'),
-    path('trending/live/', views.LiveTrendingStoriesView.as_view(), name='live_trending_stories'),
-    path('global-events/', views.TrendingTopicsView.as_view(), name='global_events'),
-    path('refresh/', views.RefreshDataView.as_view(), name='refresh_data'),
+    path('verification/trending/', views.TrendingTopicsView.as_view(), name='trending_topics'),
+    path('verification/trending/live/', views.LiveTrendingStoriesView.as_view(), name='live_trending_stories'),
+    path('verification/global-events/', views.TrendingTopicsView.as_view(), name='global_events'),
+    path('verification/refresh/', views.RefreshDataView.as_view(), name='refresh_data'),
     
     # Trends and Analytics (stub endpoints)
-    path('trends/', views.TrendsAPIView.as_view(), name='trends'),
-    path('trends/collect/', views.TrendsCollectAPIView.as_view(), name='trends_collect'),
-    path('analytics/', views.AnalyticsAPIView.as_view(), name='analytics'),
+    path('verification/trends/', views.TrendsAPIView.as_view(), name='trends'),
+    path('verification/trends/collect/', views.TrendsCollectAPIView.as_view(), name='trends_collect'),
+    path('verification/analytics/', views.AnalyticsAPIView.as_view(), name='analytics'),
     
     # Fast verification endpoints (async, optimized)
     # path('verify/fast/', fast_views.FastVerificationView.as_view(), name='verify_fast'),
