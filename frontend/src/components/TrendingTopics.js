@@ -1,73 +1,20 @@
 /**
- * TrendingTopics Component (PRODUCTION HARDENED VERSION)
+ * TrendingTopics Component - Complete Rewrite
  * 
- * Dashboard for AI-Powered Trend Discovery and Misinformation Detection.
- * Implements defense-in-depth against rate limiting and rendering issues:
- * - useMemo for URL computation stability
- * - useCallback for stable function references
- * - Proper cleanup in useEffect return functions
- * - Visibility-aware polling (pauses when tab hidden)
- * - Cache-aside pattern with stale-while-revalidate
- * - Error boundaries around fetch operations
- * - Demo data fallback on errors
- * 
- * @author FACTLY Platform Engineering Team
- * @version 2.0.0
- * @date 2026-03-28
+ * Fetches from GET /api/verification/trending/ and POST /api/verification/refresh/
+ * Implements proper polling with abort handling and error states.
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './TrendingTopics.css';
-import { useIntelligentFetch } from '../hooks/useIntelligentFetch';
 
 // ============================================================================
-// SVG Icons - Memoized to prevent re-renders
+// Constants
 // ============================================================================
 
-/** @type {React.FC} */
-const TrendingIcon = React.memo(() => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-    <polyline points="17 6 23 6 23 12"></polyline>
-  </svg>
-));
-TrendingIcon.displayName = 'TrendingIcon';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-/** @type {React.FC} */
-const RefreshIcon = React.memo(() => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"></polyline>
-    <polyline points="1 20 1 14 7 14"></polyline>
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-  </svg>
-));
-RefreshIcon.displayName = 'RefreshIcon';
-
-/** @type {React.FC} */
-const AlertIcon = React.memo(() => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-    <line x1="12" y1="9" x2="12" y2="13"></line>
-    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-  </svg>
-));
-AlertIcon.displayName = 'AlertIcon';
-
-/** @type {React.FC} */
-const GlobeIcon = React.memo(() => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="2" y1="12" x2="22" y2="12"></line>
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-  </svg>
-));
-GlobeIcon.displayName = 'GlobeIcon';
-
-// ============================================================================
-// Constants and Configuration
-// ============================================================================
-
-/** Risk level badge configuration */
 const RISK_BADGES = {
   critical: { label: 'Critical', color: '#dc2626', textColor: '#fff' },
   high: { label: 'High Risk', color: '#ea580c', textColor: '#fff' },
@@ -75,95 +22,19 @@ const RISK_BADGES = {
   low: { label: 'Low Risk', color: '#16a34a', textColor: '#fff' },
 };
 
-/** Verification status badge configuration */
 const VERIFICATION_BADGES = {
   pending: { label: 'Pending', color: '#6b7280' },
   processing: { label: 'Processing', color: '#2563eb' },
-  verified: { label: 'Verified True', color: '#16a34a' },
-  false: { label: 'False Claim', color: '#dc2626' },
+  verified: { label: 'Verified', color: '#16a34a' },
+  false: { label: 'False', color: '#dc2626' },
   true: { label: 'True', color: '#16a34a' },
   unverifiable: { label: 'Unverifiable', color: '#ca8a04' },
 };
 
-/** Region display names */
-const REGION_NAMES = {
-  global: 'Global',
-  africa: 'Africa',
-  india: 'India',
-  us: 'United States',
-  europe: 'Europe',
-  asia: 'Asia',
-  latin_america: 'Latin America',
-};
-
-/** Demo fallback data when API is unavailable */
-const DEMO_TRENDS = [
-  {
-    id: 1,
-    topic: "Global COVID-19 vaccination updates and efficacy studies",
-    keywords: ["covid", "vaccine", "efficacy"],
-    source_platforms: ["Twitter", "News"],
-    engagement_score: 85,
-    engagement_velocity: 120,
-    risk_level: "medium",
-    misinformation_risk_score: 45,
-    verification_status: "verified",
-    factly_score: 92,
-    primary_region: "global",
-    first_detected: new Date(Date.now() - 3600000).toISOString(),
-    last_updated: new Date().toISOString()
-  },
-  {
-    id: 2,
-    topic: "Climate change impact on global food production",
-    keywords: ["climate", "food", "production"],
-    source_platforms: ["News", "Reddit"],
-    engagement_score: 78,
-    engagement_velocity: 95,
-    risk_level: "low",
-    misinformation_risk_score: 25,
-    verification_status: "verified",
-    factly_score: 88,
-    primary_region: "global",
-    first_detected: new Date(Date.now() - 7200000).toISOString(),
-    last_updated: new Date().toISOString()
-  },
-  {
-    id: 3,
-    topic: "New cryptocurrency regulations and market analysis",
-    keywords: ["crypto", "regulation", "market"],
-    source_platforms: ["Twitter", "Reddit"],
-    engagement_score: 72,
-    engagement_velocity: 150,
-    risk_level: "medium",
-    misinformation_risk_score: 55,
-    verification_status: "processing",
-    factly_score: 65,
-    primary_region: "us",
-    first_detected: new Date(Date.now() - 1800000).toISOString(),
-    last_updated: new Date().toISOString()
-  }
-];
-
 // ============================================================================
-// Utility Functions
+// Helper Functions
 // ============================================================================
 
-/**
- * Get API URL from environment.
- * @returns {string} API base URL
- */
-const getApiUrl = () => {
-  const envUrl = process.env.REACT_APP_API_URL;
-  const defaultUrls = ['http://localhost:8000', 'http://127.0.0.1:8000'];
-  return envUrl || defaultUrls[0];
-};
-
-/**
- * Format relative time string.
- * @param {string} dateString - ISO date string
- * @returns {string} Formatted relative time
- */
 const formatRelativeTime = (dateString) => {
   if (!dateString) return 'Unknown';
   
@@ -181,371 +52,278 @@ const formatRelativeTime = (dateString) => {
   return date.toLocaleDateString();
 };
 
-/**
- * Get engagement bar color based on score.
- * @param {number} score - Engagement score
- * @returns {string} Color hex code
- */
-const getEngagementColor = (score) => {
-  if (score >= 80) return '#16a34a';
-  if (score >= 60) return '#ca8a04';
-  if (score >= 40) return '#ea580c';
-  return '#dc2626';
+const getFreshnessDot = (lastUpdated) => {
+  if (!lastUpdated) return 'gray';
+  const date = new Date(lastUpdated);
+  const diff = Date.now() - date.getTime();
+  const minutes = diff / 60000;
+  if (minutes < 30) return 'green';
+  if (minutes < 60) return 'yellow';
+  return 'red';
 };
 
 // ============================================================================
-// TrendCard Sub-Component (Memoized)
+// SVG Icons
 // ============================================================================
 
-/**
- * Individual trend card component - memoized for performance.
- * @typedef {Object} Trend
- * @property {number} id
- * @property {string} topic
- * @property {string} risk_level
- * @property {string} verification_status
- * @property {number} engagement_score
- * @property {number} misinformation_risk_score
- * @property {number|string} factly_score
- * @property {string} primary_region
- * @property {string} last_updated
- * 
- * @param {Object} props - Component props
- * @param {Trend} props.trend - Trend data
- * @param {function} props.onClick - Click handler
- * @param {boolean} props.isDemo - Is demo data
- * @returns {JSX.Element}
- */
-const TrendCard = React.memo(({ trend, onClick, isDemo }) => {
-  const riskBadge = RISK_BADGES[trend.risk_level] || RISK_BADGES.low;
-  const statusBadge = VERIFICATION_BADGES[trend.verification_status] || VERIFICATION_BADGES.pending;
-  
-  return (
-    <div 
-      className={`trend-card ${isDemo ? 'demo' : ''}`}
-      onClick={() => onClick && onClick(trend.topic)}
-    >
-      <div className="trend-header">
-        <span className="risk-badge" style={{ backgroundColor: riskBadge.color, color: riskBadge.textColor }}>
-          {riskBadge.label}
-        </span>
-        <span className="status-badge" style={{ backgroundColor: statusBadge.color }}>
-          {statusBadge.label}
-        </span>
-      </div>
-      
-      <h4 className="trend-topic">{trend.topic}</h4>
-      
-      <div className="trend-meta">
-        <span className="region">
-          <GlobeIcon /> {REGION_NAMES[trend.primary_region] || trend.primary_region}
-        </span>
-        <span className="time">{formatRelativeTime(trend.last_updated)}</span>
-      </div>
-      
-      <div className="trend-stats">
-        <div className="stat">
-          <span className="stat-value">{trend.engagement_score}</span>
-          <span className="stat-label">Virality</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{trend.misinformation_risk_score}</span>
-          <span className="stat-label">Risk</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{trend.factly_score || 'N/A'}</span>
-          <span className="stat-label">Factly</span>
-        </div>
-      </div>
-      
-      {isDemo && <div className="demo-badge">DEMO</div>}
-    </div>
-  );
-});
-TrendCard.displayName = 'TrendCard';
+const TrendingIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+    <polyline points="17 6 23 6 23 12"></polyline>
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <polyline points="1 20 1 14 7 14"></polyline>
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+  </svg>
+);
+
+const AlertIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+    <line x1="12" y1="9" x2="12" y2="13"></line>
+    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+  </svg>
+);
 
 // ============================================================================
-// Main TrendingTopics Component
+// Demo Data
 // ============================================================================
 
-/**
- * TrendingTopics Dashboard Component
- * 
- * Main component displaying trending topics with analytics.
- * Implements all production hardening requirements:
- * - Manual fetch control to prevent storms
- * - Stable memoized callbacks
- * - Proper cleanup on unmount
- * - Visibility-aware polling
- * - Cache-aside with stale-while-revalidate
- * 
- * @param {Object} props - Component props
- * @param {function} props.onTopicClick - Topic click handler
- * @returns {JSX.Element}
- */
-const TrendingTopics = ({ onTopicClick }) => {
-  // =========================================================================
-  // State - Stable initialization
-  // =========================================================================
-  const [trends, setTrends] = useState([]);
-  const [analytics, setAnalytics] = useState(null);
-  
-  // Filter state
-  const [regionFilter, setRegionFilter] = useState('');
-  const [riskFilter, setRiskFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+const DEMO_TOPICS = [
+  {
+    id: 1,
+    topic: "Global COVID-19 vaccination updates and efficacy studies",
+    mention_count: 1250,
+    trending_score: 85,
+    freshness: 0.92,
+    risk_level: "medium",
+    verification_status: "verified",
+    last_updated: new Date(Date.now() - 1800000).toISOString()
+  },
+  {
+    id: 2,
+    topic: "Climate change impact on global food production",
+    mention_count: 890,
+    trending_score: 78,
+    freshness: 0.88,
+    risk_level: "low",
+    verification_status: "verified",
+    last_updated: new Date(Date.now() - 3600000).toISOString()
+  },
+  {
+    id: 3,
+    topic: "New cryptocurrency regulations and market analysis",
+    mention_count: 720,
+    trending_score: 72,
+    freshness: 0.65,
+    risk_level: "medium",
+    verification_status: "processing",
+    last_updated: new Date(Date.now() - 900000).toISOString()
+  }
+];
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+const TrendingTopics = () => {
+  // State variables
+  const [topics, setTopics] = useState([]);
+  const [globalEvents, setGlobalEvents] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [cacheStats, setCacheStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchFailed, setFetchFailed] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(null);
 
   // Refs for lifecycle management
-  const initialFetchDoneRef = useRef(false);
+  const abortControllerRef = useRef(null);
+  const pollIntervalRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
   // =========================================================================
-  // Computed Values - Memoized for stability
+  // Fetch Function - Handles both GET and POST refresh
   // =========================================================================
-  
-  // API URL - stable reference
-  const apiUrl = useMemo(() => getApiUrl(), []);
 
-  // Build trends URL with filters - CRITICAL: memoized to prevent re-computation
-  const trendsUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    if (regionFilter) params.append('region', regionFilter);
-    if (riskFilter) params.append('risk_level', riskFilter);
-    if (statusFilter) params.append('verification_status', statusFilter);
-    params.append('limit', '50');
-    return `${apiUrl}/api/trends/?${params.toString()}`;
-  }, [apiUrl, regionFilter, riskFilter, statusFilter]);
-
-  // Analytics URL - stable
-  const analyticsUrl = useMemo(() => `${apiUrl}/api/analytics/`, [apiUrl]);
-
-  // =========================================================================
-  // Intelligent Fetch Hook - Trends
-  // =========================================================================
-  const {
-    data: trendsData,
-    loading: trendsLoading,
-    error: trendsError,
-    refetch: refreshTrends
-  } = useIntelligentFetch(trendsUrl, {
-    useCache: true,
-    retryAttempts: 2,
-    autoFetch: false,
-    onSuccess: useCallback((parsedData) => {
-      console.log('[TrendingTopics] Trends fetched:', parsedData?.length || 0, 'items');
-    }, []),
-    onError: useCallback((error) => {
-      console.error('[TrendingTopics] Trends fetch error:', error?.message);
-    }, [])
-  });
-
-  // =========================================================================
-  // Intelligent Fetch Hook - Analytics
-  // =========================================================================
-  const {
-    data: analyticsData,
-    loading: analyticsLoading,
-    error: analyticsError,
-    refetch: refreshAnalytics
-  } = useIntelligentFetch(analyticsUrl, {
-    useCache: true,
-    retryAttempts: 2,
-    autoFetch: false,
-    onSuccess: useCallback((parsedData) => {
-      console.log('[TrendingTopics] Analytics fetched:', parsedData);
-    }, []),
-    onError: useCallback((error) => {
-      console.error('[TrendingTopics] Analytics error:', error?.message);
-    }, [])
-  });
-
-  // =========================================================================
-  // Effect: Update trends when data changes - Stable dependency array
-  // =========================================================================
-  useEffect(() => {
-    if (trendsData && Array.isArray(trendsData) && trendsData.length > 0) {
-      setTrends(trendsData);
-    } else if (trendsData && Array.isArray(trendsData) && trendsData.length === 0) {
-      setTrends(DEMO_TRENDS);
-    } else if (!trendsData && !trendsLoading && !trendsError && !initialFetchDoneRef.current) {
-      setTrends(DEMO_TRENDS);
-    } else if (trendsError && trends.length === 0) {
-      setTrends(DEMO_TRENDS);
-    }
-  }, [trendsData, trendsLoading, trendsError, trends.length]);
-
-  // =========================================================================
-  // Effect: Update analytics when data changes
-  // =========================================================================
-  useEffect(() => {
-    if (analyticsData) {
-      setAnalytics(analyticsData);
-    }
-  }, [analyticsData]);
-
-  // =========================================================================
-  // Effect: Initial fetch on mount - StrictMode safe
-  // =========================================================================
-  useEffect(() => {
-    // Guard against StrictMode double-invocation
-    if (initialFetchDoneRef.current) {
+  const fetchTopics = useCallback(async (isManualRefresh = false) => {
+    // Prevent concurrent requests
+    if (isFetchingRef.current) {
+      console.log('[TrendingTopics] Skipping - fetch in progress');
       return;
     }
-    
-    initialFetchDoneRef.current = true;
-    console.log('[TrendingTopics] Initial fetch triggered');
-    
-    // Fetch both trends and analytics
-    refreshTrends();
-    refreshAnalytics();
-  }, [refreshTrends, refreshAnalytics]);
 
-  // =========================================================================
-  // Effect: Re-fetch when filters change - Stable dependency
-  // =========================================================================
-  useEffect(() => {
-    // Skip the initial render (before first fetch)
-    if (!initialFetchDoneRef.current) {
-      return;
+    // Create new abort controller
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
-    
-    console.log('[TrendingTopics] Filters changed, refetching');
-    setTrends([]); // Clear stale results while loading new filter
-    refreshTrends();
-  }, [regionFilter, riskFilter, statusFilter]); // Only refetch when filters change
+    abortControllerRef.current = new AbortController();
 
-  // =========================================================================
-  // Combined Loading State
-  // =========================================================================
-  const isLoading = trendsLoading || analyticsLoading;
-  const isRefreshing = false; // Refreshing is part of loading state
-  const error = trendsError || analyticsError;
+    isFetchingRef.current = true;
 
-  // =========================================================================
-  // Callback Handlers - Stable references with useCallback
-  // =========================================================================
-  
-  /**
-   * Handle manual refresh - triggers both trends and analytics refresh.
-   */
-  const handleRefresh = useCallback(() => {
-    console.log('[TrendingTopics] Manual refresh');
-    refreshTrends();
-    refreshAnalytics();
-    
-    // Optionally trigger backend collection
-    fetch(`${apiUrl}/api/trends/collect/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ regions: ['global', 'africa', 'us', 'europe', 'india'] }),
-    }).catch(err => console.log('[TrendingTopics] Collection trigger:', err.message));
-  }, [refreshTrends, refreshAnalytics, apiUrl]);
+    try {
+      // If manual refresh, POST to trigger backend refresh first
+      if (isManualRefresh) {
+        try {
+          console.log('[TrendingTopics] POST /api/verification/refresh/');
+          const refreshResponse = await fetch(
+            `${API_BASE_URL}/api/verification/refresh/`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ task: 'all', force: true }),
+              signal: abortControllerRef.current.signal
+            }
+          );
 
-  /**
-   * Handle filter change - stable callback.
-   * @param {string} filterType - Filter type
-   * @param {string} value - Filter value
-   */
-  const handleFilterChange = useCallback((filterType, value) => {
-    switch (filterType) {
-      case 'region':
-        setRegionFilter(value);
-        break;
-      case 'risk':
-        setRiskFilter(value);
-        break;
-      case 'status':
-        setStatusFilter(value);
-        break;
+          // Check Content-Type before parsing JSON
+          const contentType = refreshResponse.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await refreshResponse.text();
+            console.warn('[TrendingTopics] POST returned non-JSON:', text.substring(0, 200));
+          } else if (refreshResponse.ok) {
+            console.log('[TrendingTopics] Refresh triggered, waiting 800ms...');
+            // Wait for backend to start processing
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        } catch (postErr) {
+          if (postErr.name !== 'AbortError') {
+            console.warn('[TrendingTopics] POST refresh failed, continuing to GET:', postErr.message);
+          }
+          setRefreshError('Refresh trigger failed, fetching latest data');
+        }
+      }
+
+      // Now GET the trending topics
+      console.log('[TrendingTopics] GET /api/verification/trending/');
+      const response = await fetch(
+        `${API_BASE_URL}/api/verification/trending/`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          signal: abortControllerRef.current.signal
+        }
+      );
+
+      // Validate Content-Type header
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Invalid Content-Type for ${response.url}: ${response.status} - ${text.substring(0, 200)}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Handle the API response structure
+      if (data.trending_topics) {
+        setTopics(data.trending_topics);
+      } else if (Array.isArray(data)) {
+        setTopics(data);
+      } else {
+        setTopics([]);
+      }
+
+      // Set additional data if available
+      if (data.global_events) {
+        setGlobalEvents(data.global_events);
+      }
+      if (data.last_updated) {
+        setLastUpdated(data.last_updated);
+      }
+      if (data.cache_stats) {
+        setCacheStats(data.cache_stats);
+      }
+
+      // Clear error states on success
+      setFetchFailed(false);
+      setRefreshError(null);
+      setLoading(false);
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log('[TrendingTopics] Fetch aborted');
+        return;
+      }
+
+      console.error('[TrendingTopics] Fetch error:', err.message);
+      setFetchFailed(true);
+      setLoading(false);
+    } finally {
+      isFetchingRef.current = false;
     }
   }, []);
 
-  /**
-   * Handle topic click - stable callback.
-   * @param {string} topic - Topic string
-   */
-  const handleTopicClick = useCallback((topic) => {
-    if (onTopicClick) {
-      onTopicClick(topic);
-    }
-  }, [onTopicClick]);
-
-  /**
-   * Get data source display text.
-   * @returns {{label: string, color: string}} Display info
-   */
-  const getDataSourceDisplay = useCallback(() => {
-    if (error) return { label: 'Error', color: '#dc2626' };
-    if (isLoading) return { label: 'Loading', color: '#2563eb' };
-    return { label: 'Live', color: '#16a34a' };
-  }, [error, isLoading]);
-
-  const dataSourceDisplay = getDataSourceDisplay();
-
   // =========================================================================
-  // Render Helper Functions
+  // Polling Effect - Poll every 5 minutes
   // =========================================================================
-  
-  /**
-   * Handle retry button click.
-   */
-  const handleRetry = useCallback(() => {
-    refreshTrends();
-  }, [refreshTrends]);
+
+  useEffect(() => {
+    // Initial fetch
+    fetchTopics(false);
+
+    // Set up polling interval
+    pollIntervalRef.current = setInterval(() => {
+      console.log('[TrendingTopics] Poll interval triggered');
+      fetchTopics(false);
+    }, POLL_INTERVAL_MS);
+
+    // Cleanup on unmount
+    return () => {
+      console.log('[TrendingTopics] Cleanup - clearing interval and aborting');
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchTopics]);
 
   // =========================================================================
-  // Render - Loading State
+  // Handle Manual Refresh
   // =========================================================================
-  if (isLoading && trends.length === 0) {
-    return (
-      <div className="trending-topics-container">
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading trending topics...</p>
-        </div>
-      </div>
-    );
-  }
+
+  const handleManualRefresh = useCallback(() => {
+    console.log('[TrendingTopics] Manual refresh triggered');
+    setIsRefreshing(true);
+    fetchTopics(true).finally(() => {
+      setIsRefreshing(false);
+    });
+  }, [fetchTopics]);
 
   // =========================================================================
-  // Render - Error State with Demo Data
+  // Render: Skeleton Loading State
   // =========================================================================
-  if (error && trends.length === 0) {
+
+  if (loading && topics.length === 0) {
     return (
       <div className="trending-topics-container">
         <div className="trending-header">
           <h3 className="trending-title">
             <TrendingIcon />
-            AI Trend Discovery
+            Trending Topics
           </h3>
-          <button 
-            className="refresh-button" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshIcon />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
         </div>
-        
-        <div className="error-state">
-          <AlertIcon />
-          <p>Unable to connect to trend detection service</p>
-          <p className="error-detail">{error?.message || error}</p>
-          <p className="help-text">Make sure the backend server is running</p>
-          <button className="retry-button" onClick={handleRetry}>
-            Try Again
-          </button>
-        </div>
-        
-        <div className="demo-notice">
-          <p>Demo Trends (Backend not connected):</p>
-          {DEMO_TRENDS.map((trend, idx) => (
-            <TrendCard 
-              key={idx}
-              trend={trend}
-              onClick={handleTopicClick}
-              isDemo={true}
-            />
+        <div className="skeleton-list">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton-title"></div>
+              <div className="skeleton-meta"></div>
+              <div className="skeleton-stats"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -553,43 +331,57 @@ const TrendingTopics = ({ onTopicClick }) => {
   }
 
   // =========================================================================
-  // Render - Main Dashboard
+  // Render: Error State with Friendly Message
   // =========================================================================
+
+  if (fetchFailed && topics.length === 0) {
+    return (
+      <div className="trending-topics-container">
+        <div className="trending-header">
+          <h3 className="trending-title">
+            <TrendingIcon />
+            Trending Topics
+          </h3>
+          <button 
+            className="refresh-button" 
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshIcon />
+            {isRefreshing ? 'Refreshing...' : 'Try Again'}
+          </button>
+        </div>
+        
+        <div className="error-state">
+          <AlertIcon />
+          <p>Trending topics are currently unavailable</p>
+          <p className="error-detail">Please check your connection and try again</p>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // Render: Full UI with Topics
+  // =========================================================================
+
   return (
-    <div className="trending-topics-container dashboard">
+    <div className="trending-topics-container">
       {/* Header */}
       <div className="trending-header">
         <h3 className="trending-title">
           <TrendingIcon />
-          AI Trend Discovery
+          Trending Topics
         </h3>
         <div className="header-actions">
-          {error && (
-            <div 
-              className="data-source-indicator" 
-              style={{ 
-                backgroundColor: `${dataSourceDisplay.color}20`,
-                color: dataSourceDisplay.color,
-                borderColor: dataSourceDisplay.color
-              }}
-              title={`Data source: ${dataSourceDisplay.label}`}
-            >
-              <span 
-                className="source-dot" 
-                style={{ backgroundColor: dataSourceDisplay.color }}
-              />
-              {dataSourceDisplay.label}
-            </div>
-          )}
-          {isLoading && (
-            <div className="sync-status syncing">
-              <div className="mini-spinner"></div>
-              Syncing...
-            </div>
+          {lastUpdated && (
+            <span className="last-updated">
+              Updated: {formatRelativeTime(lastUpdated)}
+            </span>
           )}
           <button 
             className="refresh-button" 
-            onClick={handleRefresh}
+            onClick={handleManualRefresh}
             disabled={isRefreshing}
           >
             <RefreshIcon />
@@ -598,97 +390,89 @@ const TrendingTopics = ({ onTopicClick }) => {
         </div>
       </div>
 
-      {/* Analytics Summary */}
-      {analytics && (
-        <div className="analytics-summary">
-          <div className="analytics-stat">
-            <span className="stat-value">{analytics.total_trends}</span>
-            <span className="stat-label">Total Trends</span>
-          </div>
-          <div className="analytics-stat">
-            <span className="stat-value">{analytics.high_risk_trends}</span>
-            <span className="stat-label">High Risk</span>
-          </div>
-          <div className="analytics-stat">
-            <span className="stat-value">{analytics.pending_verification}</span>
-            <span className="stat-label">Pending</span>
-          </div>
-          <div className="analytics-stat">
-            <span className="stat-value">{analytics.verified_claims}</span>
-            <span className="stat-label">Verified</span>
-          </div>
-          <div className="analytics-stat">
-            <span className="stat-value">{analytics.average_risk_score}</span>
-            <span className="stat-label">Avg Risk</span>
+      {/* Error Message (if refresh failed but we have cached data) */}
+      {refreshError && (
+        <div className="warning-banner">
+          {refreshError}
+        </div>
+      )}
+
+      {/* Global Events */}
+      {globalEvents.length > 0 && (
+        <div className="global-events">
+          <h4>Global Events</h4>
+          <div className="events-list">
+            {globalEvents.map((event, idx) => (
+              <span key={idx} className="event-tag">{event}</span>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="trending-filters">
-        <select 
-          value={regionFilter} 
-          onChange={(e) => handleFilterChange('region', e.target.value)}
-          className="filter-select"
-        >
-          <option value="">All Regions</option>
-          <option value="global">Global</option>
-          <option value="africa">Africa</option>
-          <option value="us">United States</option>
-          <option value="europe">Europe</option>
-          <option value="india">India</option>
-        </select>
-        
-        <select 
-          value={riskFilter} 
-          onChange={(e) => handleFilterChange('risk', e.target.value)}
-          className="filter-select"
-        >
-          <option value="">All Risk Levels</option>
-          <option value="critical">Critical</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        
-        <select 
-          value={statusFilter} 
-          onChange={(e) => handleFilterChange('status', e.target.value)}
-          className="filter-select"
-        >
-          <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="verified">Verified</option>
-          <option value="false">False</option>
-          <option value="true">True</option>
-        </select>
+      {/* Topics List */}
+      <div className="topics-list">
+        {topics.map((topic) => {
+          const riskBadge = RISK_BADGES[topic.risk_level] || RISK_BADGES.low;
+          const statusBadge = VERIFICATION_BADGES[topic.verification_status] || VERIFICATION_BADGES.pending;
+          const freshnessColor = getFreshnessDot(topic.last_updated);
+          
+          return (
+            <div key={topic.id || topic.topic} className="topic-card">
+              <div className="topic-header">
+                <span 
+                  className="risk-badge" 
+                  style={{ backgroundColor: riskBadge.color, color: riskBadge.textColor }}
+                >
+                  {riskBadge.label}
+                </span>
+                <span 
+                  className="status-badge" 
+                  style={{ backgroundColor: statusBadge.color }}
+                >
+                  {statusBadge.label}
+                </span>
+              </div>
+              
+              <h4 className="topic-title">{topic.topic}</h4>
+              
+              <div className="topic-meta">
+                <span className="freshness">
+                  <span 
+                    className="freshness-dot" 
+                    style={{ backgroundColor: freshnessColor }}
+                  />
+                  Freshness: {Math.round((topic.freshness || 0) * 100)}%
+                </span>
+                {topic.last_updated && (
+                  <span className="timestamp">
+                    {formatRelativeTime(topic.last_updated)}
+                  </span>
+                )}
+              </div>
+              
+              <div className="topic-stats">
+                <div className="stat">
+                  <span className="stat-value">{topic.mention_count || 0}</span>
+                  <span className="stat-label">Mentions</span>
+                </div>
+                <div className="stat">
+                  <span className="stat-value">{Math.round(topic.trending_score || 0)}</span>
+                  <span className="stat-label">Trend Score</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Trend Cards Grid */}
-      <div className="trends-grid">
-        {trends.map((trend, index) => (
-          <TrendCard
-            key={trend.id || index}
-            trend={trend}
-            onClick={handleTopicClick}
-            isDemo={error !== null}
-          />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {trends.length === 0 && !isLoading && (
-        <div className="empty-state">
-          <p>No trending topics found</p>
-          <button onClick={handleRefresh}>Refresh</button>
+      {/* Cache Stats */}
+      {cacheStats && (
+        <div className="cache-stats">
+          <span>Cache hit rate: {Math.round((cacheStats.hit_rate || 0) * 100)}%</span>
         </div>
       )}
     </div>
   );
 };
-
-// Display name for debugging
-TrendingTopics.displayName = 'TrendingTopics';
 
 export default TrendingTopics;

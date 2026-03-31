@@ -375,6 +375,11 @@ export const useIntelligentFetch = (url, options = {}) => {
         if (attempt >= retryAttempts) {
           break;
         }
+      } finally {
+        // Only set loading to false if not aborted
+        if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
 
