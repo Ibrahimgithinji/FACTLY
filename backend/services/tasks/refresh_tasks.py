@@ -78,28 +78,59 @@ def update_trending_topics(self):
     """
     Update trending topics based on real-time news.
     Runs every 15 minutes.
+    
+    ENHANCEMENT 3: Added RSS feed fallback when no API keys are configured.
+    Uses RealTimeNewsService.RSS_FEEDS (BBC, Reuters, AP) as fallback.
     """
     try:
         logger.info("Starting trending topics update")
         
-        # Fetch breaking news
-        breaking_news = realtime_news.get_real_time_news(
-            "breaking news",
-            max_results=20,
-            max_age_hours=2
-        )
+        # Try to fetch from API first
+        breaking_news = []
+        world_news = []
         
-        # Fetch world news
-        world_news = realtime_news.get_real_time_news(
-            "world news",
-            max_results=20,
-            max_age_hours=6
-        )
+        try:
+            breaking_news = realtime_news.get_real_time_news(
+                "breaking news",
+                max_results=20,
+                max_age_hours=2
+            )
+        except Exception as e:
+            logger.warning(f"Failed to fetch breaking news from API: {e}")
         
-        # Combine and analyze for trending topics
+        try:
+            world_news = realtime_news.get_real_time_news(
+                "world news",
+                max_results=20,
+                max_age_hours=6
+            )
+        except Exception as e:
+            logger.warning(f"Failed to fetch world news from API: {e}")
+        
+        # Combine results
         all_news = breaking_news + world_news
         
-        # Extract trending topics (simplified extraction)
+        # ENHANCEMENT 3: RSS Feed Fallback - if no results from API, use RSS directly
+        if not all_news:
+            logger.info("No API results, falling back to RSS feeds")
+            try:
+                # Use the RSS feeds from RealTimeNewsService
+                # Try all RSS feeds for general news
+                for feed_name, feed_url in RealTimeNewsService.RSS_FEEDS.items():
+                    try:
+                        rss_results = realtime_news._fetch_single_rss(
+                            feed_url,
+                            query="news",
+                            max_results=10
+                        )
+                        all_news.extend(rss_results)
+                        logger.info(f"Fetched {len(rss_results)} items from RSS feed: {feed_name}")
+                    except Exception as rss_err:
+                        logger.warning(f"Failed to fetch RSS feed {feed_name}: {rss_err}")
+            except Exception as rss_fallback_err:
+                logger.warning(f"RSS fallback failed: {rss_fallback_err}")
+        
+        # Extract trending topics
         trending = extract_trending_topics(all_news)
         
         # Update cache
@@ -281,10 +312,13 @@ def refresh_fact_check_cache(self):
 def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
     """
     Extract trending topics from news items.
-    Simplified keyword extraction - in production, use NLP.
+    FIXED: Now emits the correct frontend schema with all required fields.
+    Frontend needs: id, topic, mention_count, trending_score (0-100), freshness (0-1),
+                   risk_level, verification_status, last_updated
     """
     from collections import Counter
     import re
+    import hashlib
     
     # Common words to exclude
     stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
@@ -306,119 +340,149 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
     # Count word frequency
     word_counts = Counter(all_words)
     
-    # Get top trending topics
+    # Get top trending topics with correct schema
     trending = []
-    for word, count in word_counts.most_common(10):
+    now = datetime.now()
+    for idx, (word, count) in enumerate(word_counts.most_common(10)):
         if count >= 2:  # Only include if mentioned multiple times
+            # Generate deterministic ID from topic
+            topic_text = word.title()
+            id_hash = hashlib.md5(topic_text.encode()).hexdigest()[:8]
+            
+            # Calculate freshness (decay over time - simplified)
+            # Freshness starts at 1.0 and decays based on count (more mentions = more recent)
+            freshness = min(1.0, count / 10.0)
+            
             trending.append({
-                'topic': word.title(),
-                'mentions': count,
-                'trending_score': min(1.0, count / 5.0),  # Normalize to 0-1
+                'id': f'live-{id_hash}',
+                'topic': topic_text,
+                'mention_count': count,
+                'trending_score': int(min(100, count * 10)),  # Convert to 0-100 int
+                'freshness': round(freshness, 2),
+                'risk_level': 'medium',  # Default risk level
+                'verification_status': 'pending',  # Default status
+                'last_updated': now.isoformat()
             })
     
     return trending
 
 
-# Demo/fallback trending topics when cache is empty
-DEMO_TRENDING_TOPICS = [
-    {
-        "id": "demo-1",
-        "title": "Global Climate Summit Reaches Historic Agreement on Emissions",
-        "topic": "climate summit emissions agreement",
-        "engagement_score": 92,
-        "virality": "high",
-        "risk_level": "medium",
-        "fact_score": 78,
-        "sources": ["Reuters", "BBC", "AP"],
-        "region": "global",
-        "timestamp": datetime.now().isoformat(),
-        "summary": "World leaders have agreed on ambitious new emission targets at the Global Climate Summit."
-    },
-    {
-        "id": "demo-2",
-        "title": "New Study Reveals Breakthrough in AI Medical Diagnostics",
-        "topic": "AI medical diagnostics breakthrough",
-        "engagement_score": 88,
-        "virality": "high",
-        "risk_level": "low",
-        "fact_score": 95,
-        "sources": ["Nature", "Science Daily", "Medical News"],
-        "region": "global",
-        "timestamp": datetime.now().isoformat(),
-        "summary": "Researchers have developed a new AI system that can detect diseases with unprecedented accuracy."
-    },
-    {
-        "id": "demo-3",
-        "title": "Economic Report: Inflation Rates Show Signs of Stabilization",
-        "topic": "inflation rates stabilization economy",
-        "engagement_score": 85,
-        "virality": "medium",
-        "risk_level": "low",
-        "fact_score": 88,
-        "sources": ["Bloomberg", "Financial Times", "WSJ"],
-        "region": "global",
-        "timestamp": datetime.now().isoformat(),
-        "summary": "Latest economic indicators suggest inflation may be reaching a plateau."
-    },
-    {
-        "id": "demo-4",
-        "title": "Tech Giants Face New Regulatory Framework in EU",
-        "topic": "EU tech regulation antitrust",
-        "engagement_score": 82,
-        "virality": "medium",
-        "risk_level": "medium",
-        "fact_score": 75,
-        "sources": ["TechCrunch", "The Verge", "EU Observer"],
-        "region": "europe",
-        "timestamp": datetime.now().isoformat(),
-        "summary": "The European Union has unveiled comprehensive new regulations for major technology companies."
-    },
-    {
-        "id": "demo-5",
-        "title": "Renewable Energy Investment Reaches Record High",
-        "topic": "renewable energy investment record",
-        "engagement_score": 79,
-        "virality": "medium",
-        "risk_level": "low",
-        "fact_score": 90,
-        "sources": ["IEA", "Reuters", "GreenTech Media"],
-        "region": "global",
-        "timestamp": datetime.now().isoformat(),
-        "summary": "Global investment in renewable energy sources has hit an all-time high this year."
-    }
-]
+# =============================================================================
+# Demo/Fallback Trending Topics - Uses CORRECT frontend schema
+# Frontend needs: id, topic, mention_count, trending_score (0-100), freshness (0-1),
+#                risk_level, verification_status, last_updated
+# =============================================================================
 
-DEMO_GLOBAL_EVENTS = [
-    {
-        "id": "event-1",
-        "title": "International Trade Summit Begins",
-        "event_type": "summit",
-        "region": "global",
-        "timestamp": datetime.now().isoformat(),
-        "importance": "high"
-    },
-    {
-        "id": "event-2",
-        "title": "Tech Innovation Forum Announced",
-        "event_type": "conference",
-        "region": "asia",
-        "timestamp": datetime.now().isoformat(),
-        "importance": "medium"
-    },
-    {
-        "id": "event-3",
-        "title": "Global Health Initiative Launched",
-        "event_type": "initiative",
-        "region": "global",
-        "timestamp": datetime.now().isoformat(),
-        "importance": "high"
-    }
-]
+def _make_demo_topics() -> List[Dict[str, Any]]:
+    """
+    Create demo trending topics with live timestamps on EVERY call.
+    FIXED: This fixes Bug 3 - timestamps were stale when set at module load time.
+    """
+    now = datetime.now()
+    
+    # Topics with realistic freshness values (decaying over time)
+    demo_topics = [
+        {
+            "id": "demo-1",
+            "topic": "Global Climate Summit Reaches Historic Agreement on Emissions",
+            "mention_count": 1250,
+            "trending_score": 92,
+            "freshness": 0.85,
+            "risk_level": "medium",
+            "verification_status": "verified",
+            "last_updated": (now - timedelta(minutes=15)).isoformat()
+        },
+        {
+            "id": "demo-2",
+            "topic": "New Study Reveals Breakthrough in AI Medical Diagnostics",
+            "mention_count": 890,
+            "trending_score": 88,
+            "freshness": 0.78,
+            "risk_level": "low",
+            "verification_status": "verified",
+            "last_updated": (now - timedelta(minutes=25)).isoformat()
+        },
+        {
+            "id": "demo-3",
+            "topic": "Economic Report: Inflation Rates Show Signs of Stabilization",
+            "mention_count": 720,
+            "trending_score": 75,
+            "freshness": 0.65,
+            "risk_level": "low",
+            "verification_status": "pending",
+            "last_updated": (now - timedelta(minutes=45)).isoformat()
+        },
+        {
+            "id": "demo-4",
+            "topic": "Tech Giants Face New Regulatory Framework in EU",
+            "mention_count": 650,
+            "trending_score": 72,
+            "freshness": 0.55,
+            "risk_level": "medium",
+            "verification_status": "processing",
+            "last_updated": (now - timedelta(hours=1)).isoformat()
+        },
+        {
+            "id": "demo-5",
+            "topic": "Renewable Energy Investment Reaches Record High",
+            "mention_count": 580,
+            "trending_score": 68,
+            "freshness": 0.45,
+            "risk_level": "low",
+            "verification_status": "verified",
+            "last_updated": (now - timedelta(hours=2)).isoformat()
+        }
+    ]
+    
+    return demo_topics
+
+
+def _make_demo_global_events() -> List[Dict[str, Any]]:
+    """Create demo global events with live timestamps."""
+    now = datetime.now()
+    
+    return [
+        {
+            "id": "event-1",
+            "title": "International Trade Summit Begins",
+            "event_type": "summit",
+            "region": "global",
+            "timestamp": now.isoformat(),
+            "importance": "high"
+        },
+        {
+            "id": "event-2",
+            "title": "Tech Innovation Forum Announced",
+            "event_type": "conference",
+            "region": "asia",
+            "timestamp": (now - timedelta(hours=2)).isoformat(),
+            "importance": "medium"
+        },
+        {
+            "id": "event-3",
+            "title": "Global Health Initiative Launched",
+            "event_type": "initiative",
+            "region": "global",
+            "timestamp": (now - timedelta(hours=5)).isoformat(),
+            "importance": "high"
+        }
+    ]
+
+
+# Keep backwards compatibility - DEMO_TRENDING_TOPICS now calls the builder
+def _get_demo_trending_topics() -> List[Dict[str, Any]]:
+    """Getter for backwards compatibility - calls builder to get live timestamps."""
+    return _make_demo_topics()
+
+
+DEMO_TRENDING_TOPICS = _get_demo_trending_topics()  # Legacy compatibility - will rebuild on next access
+DEMO_GLOBAL_EVENTS = _make_demo_global_events()
 
 
 def get_trending_topics() -> Dict[str, Any]:
     """
     Get current trending topics (called by views).
+    FIXED: Now rebuilds demo topics with live timestamps on every call.
     Returns demo data if cache is empty.
     """
     # Try to get from cache first
@@ -440,10 +504,10 @@ def get_trending_topics() -> Dict[str, Any]:
             'source': 'memory'
         }
     
-    # Return demo/fallback data when cache and memory are empty
+    # FIXED Bug 3: Return LIVE demo data - rebuild topics with fresh timestamps
     return {
-        'topics': DEMO_TRENDING_TOPICS,
-        'global_events': DEMO_GLOBAL_EVENTS,
+        'topics': _make_demo_topics(),  # Generate fresh timestamps on every call
+        'global_events': _make_demo_global_events(),
         'last_updated': datetime.now(),
         'source': 'demo_fallback'
     }

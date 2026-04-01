@@ -1,7 +1,12 @@
 # Environment variables
+# Root level
 .env
 .env.local
 .env.*.local
+# Subdirectory .env files (backend/, frontend/)
+**/.env
+**/.env.local
+**/.env.*.local
 
 # Python
 __pycache__/

@@ -17,18 +17,18 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-// API endpoint helpers
+// API endpoint helpers - matching Django backend paths under /api/verification/
 export const API_ENDPOINTS = {
-  LOGIN: `${API_BASE_URL}/api/auth/login/`,
-  SIGNUP: `${API_BASE_URL}/api/auth/signup/`,
-  REFRESH: `${API_BASE_URL}/api/auth/refresh/`,
-  FORGOT_PASSWORD: `${API_BASE_URL}/api/auth/forgot-password/`,
-  VERIFY_RESET_TOKEN: `${API_BASE_URL}/api/auth/verify-reset-token/`,
-  RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password/`,
-  VERIFY: `${API_BASE_URL}/api/verify/`,
-  ENHANCED_VERIFY: `${API_BASE_URL}/api/verify/enhanced/`,
-  HISTORY: `${API_BASE_URL}/api/history/`,
-  USER: `${API_BASE_URL}/api/user/`,
+  LOGIN: `${API_BASE_URL}/api/verification/auth/login/`,
+  SIGNUP: `${API_BASE_URL}/api/verification/auth/signup/`,
+  REFRESH: `${API_BASE_URL}/api/verification/auth/refresh/`,
+  FORGOT_PASSWORD: `${API_BASE_URL}/api/verification/auth/forgot-password/`,
+  VERIFY_RESET_TOKEN: `${API_BASE_URL}/api/verification/auth/verify-reset-token/`,
+  RESET_PASSWORD: `${API_BASE_URL}/api/verification/auth/reset-password/`,
+  VERIFY: `${API_BASE_URL}/api/verification/verify/`,
+  ENHANCED_VERIFY: `${API_BASE_URL}/api/verification/verify/enhanced/`,
+  HISTORY: `${API_BASE_URL}/api/verification/history/`,
+  USER: `${API_BASE_URL}/api/verification/user/`,
 };
 
 // Export for use in fetch requests

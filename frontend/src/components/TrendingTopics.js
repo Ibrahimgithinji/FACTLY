@@ -140,6 +140,7 @@ const TrendingTopics = () => {
   const [fetchFailed, setFetchFailed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(null);
+  const [dataSource, setDataSource] = useState(null);
 
   // Refs for lifecycle management
   const abortControllerRef = useRef(null);
@@ -242,6 +243,10 @@ const TrendingTopics = () => {
       if (data.cache_stats) {
         setCacheStats(data.cache_stats);
       }
+      // ENHANCEMENT 2: Surface data_source field
+      if (data.data_source) {
+        setDataSource(data.data_source);
+      }
 
       // Clear error states on success
       setFetchFailed(false);
@@ -331,7 +336,8 @@ const TrendingTopics = () => {
   }
 
   // =========================================================================
-  // Render: Error State with Friendly Message
+  // ENHANCEMENT 1: Render Error State with DEMO Fallback
+  // Instead of showing an error, fall back to demo topics with a banner
   // =========================================================================
 
   if (fetchFailed && topics.length === 0) {
@@ -352,10 +358,66 @@ const TrendingTopics = () => {
           </button>
         </div>
         
-        <div className="error-state">
+        {/* ENHANCEMENT 1: Show demo data instead of error */}
+        <div className="warning-banner">
           <AlertIcon />
-          <p>Trending topics are currently unavailable</p>
-          <p className="error-detail">Please check your connection and try again</p>
+          Demo data — backend unavailable
+        </div>
+        
+        {/* Render DEMO_TOPICS as fallback */}
+        <div className="topics-list">
+          {DEMO_TOPICS.map((topic) => {
+            const riskBadge = RISK_BADGES[topic.risk_level] || RISK_BADGES.low;
+            const statusBadge = VERIFICATION_BADGES[topic.verification_status] || VERIFICATION_BADGES.pending;
+            const freshnessColor = getFreshnessDot(topic.last_updated);
+            
+            return (
+              <div key={topic.id || topic.topic} className="topic-card">
+                <div className="topic-header">
+                  <span 
+                    className="risk-badge" 
+                    style={{ backgroundColor: riskBadge.color, color: riskBadge.textColor }}
+                  >
+                    {riskBadge.label}
+                  </span>
+                  <span 
+                    className="status-badge" 
+                    style={{ backgroundColor: statusBadge.color }}
+                  >
+                    {statusBadge.label}
+                  </span>
+                </div>
+                
+                <h4 className="topic-title">{topic.topic}</h4>
+                
+                <div className="topic-meta">
+                  <span className="freshness">
+                    <span 
+                      className="freshness-dot" 
+                      style={{ backgroundColor: freshnessColor }}
+                    />
+                    Freshness: {Math.round((topic.freshness || 0) * 100)}%
+                  </span>
+                  {topic.last_updated && (
+                    <span className="timestamp">
+                      {formatRelativeTime(topic.last_updated)}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="topic-stats">
+                  <div className="stat">
+                    <span className="stat-value">{topic.mention_count || 0}</span>
+                    <span className="stat-label">Mentions</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-value">{Math.round(topic.trending_score || 0)}</span>
+                    <span className="stat-label">Trend Score</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -377,6 +439,12 @@ const TrendingTopics = () => {
           {lastUpdated && (
             <span className="last-updated">
               Updated: {formatRelativeTime(lastUpdated)}
+            </span>
+          )}
+          {/* ENHANCEMENT 2: Show data_source badge */}
+          {dataSource && (
+            <span className="data-source-badge">
+              Source: {dataSource}
             </span>
           )}
           <button 
@@ -403,7 +471,9 @@ const TrendingTopics = () => {
           <h4>Global Events</h4>
           <div className="events-list">
             {globalEvents.map((event, idx) => (
-              <span key={idx} className="event-tag">{event}</span>
+              <span key={idx} className="event-tag">
+                {event.title || event.topic || JSON.stringify(event).substring(0, 50)}
+              </span>
             ))}
           </div>
         </div>
