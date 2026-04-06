@@ -1,0 +1,117 @@
+/* Loading Skeleton Styles */
+
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-color, #e5e7eb) 0%,
+    var(--skeleton-highlight, #f3f4f6) 50%,
+    var(--skeleton-color, #e5e7eb) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Card Skeleton */
+.cards-skeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.card-skeleton {
+  background: var(--card-background, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Table Skeleton */
+.table-skeleton {
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-row-skeleton {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 4), 1fr);
+  gap: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.table-row-skeleton:last-child {
+  border-bottom: none;
+}
+
+.table-cell-skeleton {
+  padding: 12px 16px;
+}
+
+.table-cell-skeleton .skeleton {
+  height: 16px;
+}
+
+/* List Skeleton */
+.list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list-item-skeleton {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  align-items: center;
+}
+
+/* Skeleton Variants */
+.skeleton-line {
+  height: 16px;
+  border-radius: 4px;
+}
+
+.skeleton-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-box {
+  height: 100px;
+  border-radius: 8px;
+}
+
+.skeleton-card {
+  border-radius: 12px;
+  height: 200px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cards-skeleton {
+    grid-template-columns: 1fr;
+  }
+
+  .table-row-skeleton {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+}

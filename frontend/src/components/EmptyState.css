@@ -1,0 +1,72 @@
+/* Empty State Styles */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  min-height: 300px;
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color, #e5e7eb);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0 0 8px 0;
+}
+
+.empty-state-message {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #666);
+  margin: 0 0 24px 0;
+  max-width: 400px;
+}
+
+.empty-state-button {
+  padding: 10px 20px;
+  background: var(--primary-color, #3498db);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.empty-state-button:hover {
+  background: var(--primary-color-dark, #2980b9);
+  transform: translateY(-2px);
+}
+
+.empty-state-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .empty-state-container {
+    padding: 40px 15px;
+    min-height: 250px;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+  }
+
+  .empty-state-title {
+    font-size: 1.1rem;
+  }
+
+  .empty-state-message {
+    font-size: 0.9rem;
+  }
+}
