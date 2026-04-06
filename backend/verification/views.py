@@ -38,6 +38,56 @@ def get_misinformation_alert_model():
 
 logger = logging.getLogger(__name__)
 
+# ============================================================================
+# Helper Functions for Secure Configuration
+# ============================================================================
+
+def get_redis_client(timeout=2):
+    """
+    Get Redis client with environment variable configuration.
+    Returns None if Redis is unavailable, allowing graceful fallback.
+
+    Uses environment variables:
+    - REDIS_HOST (default: localhost)
+    - REDIS_PORT (default: 6379)
+    - REDIS_DB (default: 0)
+    - REDIS_PASSWORD (optional)
+    """
+    try:
+        host = os.getenv('REDIS_HOST', 'localhost')
+        port = int(os.getenv('REDIS_PORT', 6379))
+        db = int(os.getenv('REDIS_DB', 0))
+        password = os.getenv('REDIS_PASSWORD', None)
+
+        client = redis.Redis(
+            host=host,
+            port=port,
+            db=db,
+            password=password,
+            decode_responses=True,
+            socket_connect_timeout=timeout
+        )
+        # Test connection
+        client.ping()
+        return client
+    except Exception as e:
+        logger.debug(f"Redis connection unavailable: {type(e).__name__}")
+        return None
+
+
+def get_generic_error_message(error_type):
+    """
+    Return generic error messages that don't expose system details.
+    Prevents information disclosure about system architecture.
+    """
+    messages = {
+        'trending': 'Unable to fetch trending topics. Please try again later.',
+        'verification': 'Verification failed. Please try again with valid input.',
+        'refresh': 'Unable to refresh data. Please try again later.',
+        'cache': 'Service temporarily unavailable. Please try again later.',
+    }
+    return messages.get(error_type, 'An error occurred. Please try again later.')
+
 
 class EnhancedVerificationView(APIView):
     """API view for enhanced content verification with direct source verification."""
@@ -595,7 +645,12 @@ class TrendingTopicsView(APIView):
         except Exception as e:
             logger.exception("Failed to fetch trending topics")
             return Response(
-                {"error": f"Failed to fetch trending topics: {str(e)}", "status": "error"},
+                {
+                    "error": get_generic_error_message('trending'),
+                    "status": "error",
+                    "trending_topics": [],
+                    "global_events": []
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -611,34 +666,38 @@ class LiveTrendingStoriesView(APIView):
     def get(self, request):
         """
         Get live trending stories from Redis cache or fresh fetch.
-        
+
         Returns:
         - trending_stories: List of live trending stories
         """
-        import json
-        import os
-        
         try:
-            # Try Redis first
-            import redis
-            redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
-            cached = redis_client.get("trending_stories_cache")
-            
-            if cached:
-                data = json.loads(cached)
-                logger.info("Returning cached trending stories")
-                return Response({"trending_stories": data}, status=status.HTTP_200_OK)
-            
-        except (redis.ConnectionError, ImportError):
-            # Redis not available or not installed, continue to fetch fresh data
-            pass
+            # Try Redis first (using secure configuration)
+            redis_client = get_redis_client()
+            if redis_client:
+                try:
+                    cached = redis_client.get("trending_stories_cache")
+                    if cached:
+                        data = json.loads(cached)
+                        logger.info("Returning cached trending stories")
+                        return Response({"trending_stories": data}, status=status.HTTP_200_OK)
+                except Exception as e:
+                    logger.debug(f"Redis cache retrieval failed: {type(e).__name__}")
+                    # Continue to fetch fresh data
+
+            # If no cache, fetch fresh data directly (bypass celery task)
+            stories = self._fetch_live_stories()
+
+            return Response({"trending_stories": stories}, status=status.HTTP_200_OK)
+
         except Exception as e:
-            logger.warning(f"Redis error: {e}")
-        
-        # If no cache, fetch fresh data directly (bypass celery task)
-        stories = self._fetch_live_stories()
-        
-        return Response({"trending_stories": stories}, status=status.HTTP_200_OK)
+            logger.error("Error fetching live trending stories")
+            return Response(
+                {
+                    "error": get_generic_error_message('cache'),
+                    "trending_stories": []
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def _fetch_live_stories(self):
         """Fetch live stories directly without celery dependency."""
@@ -701,12 +760,15 @@ class LiveTrendingStoriesView(APIView):
         return stories
     
     def _get_demo_stories(self):
-        """Return demo stories when no API keys configured."""
+        """
+        Return demo stories when no API keys configured.
+        Uses .invalid TLD for demo URLs per RFC 2606 to prevent confusion with real domains.
+        """
         return [
             {
                 "title": "Breaking: Major Climate Summit Reaches Historic Agreement",
                 "description": "World leaders announce unprecedented commitment to carbon reduction goals.",
-                "url": "https://example.com/climate-summit",
+                "url": "https://demo.invalid/climate-summit",
                 "source": "Global News Network",
                 "publishedAt": datetime.now().isoformat(),
                 "api_source": "demo"
@@ -714,7 +776,7 @@ class LiveTrendingStoriesView(APIView):
             {
                 "title": "Technology Breakthrough in Renewable Energy Storage",
                 "description": "Scientists develop new battery technology with 10x capacity.",
-                "url": "https://example.com/energy-storage",
+                "url": "https://demo.invalid/energy-storage",
                 "source": "Tech Today",
                 "publishedAt": datetime.now().isoformat(),
                 "api_source": "demo"
@@ -722,7 +784,7 @@ class LiveTrendingStoriesView(APIView):
             {
                 "title": "Global Health Organization Updates Vaccination Guidelines",
                 "description": "New recommendations based on latest research findings.",
-                "url": "https://example.com/health-update",
+                "url": "https://demo.invalid/health-update",
                 "source": "Health News",
                 "publishedAt": datetime.now().isoformat(),
                 "api_source": "demo"
@@ -730,7 +792,7 @@ class LiveTrendingStoriesView(APIView):
             {
                 "title": "Economic Report Shows Strong Market Growth",
                 "description": "Quarterly earnings exceed analyst expectations across sectors.",
-                "url": "https://example.com/market-growth",
+                "url": "https://demo.invalid/market-growth",
                 "source": "Financial Times",
                 "publishedAt": datetime.now().isoformat(),
                 "api_source": "demo"
@@ -738,7 +800,7 @@ class LiveTrendingStoriesView(APIView):
             {
                 "title": "Space Agency Announces New Mars Mission Timeline",
                 "description": "Ambitious plans for crewed mission revealed.",
-                "url": "https://example.com/mars-mission",
+                "url": "https://demo.invalid/mars-mission",
                 "source": "Space News",
                 "publishedAt": datetime.now().isoformat(),
                 "api_source": "demo"
@@ -749,89 +811,139 @@ class LiveTrendingStoriesView(APIView):
 class RefreshDataView(APIView):
     """
     API view for triggering manual data refresh.
-    
+
     Allows manual triggering of background data refresh tasks.
+    NOTE: This endpoint is rate-limited to prevent abuse/DoS attacks.
     """
     permission_classes = [AllowAny]
-    
+    rate_limiter = APIRateLimiter()
+
+    # Rate limiting config for refresh endpoint (stricter than verification)
+    RATE_LIMIT_CONFIG = {
+        'max_requests': int(os.getenv('REFRESH_MAX_REQUESTS', '5')),
+        'window_seconds': int(os.getenv('REFRESH_WINDOW_SECONDS', '3600')),
+    }
+
+    def _check_rate_limit(self, request):
+        """Check rate limit for refresh endpoint."""
+        allowed, retry_after = self.rate_limiter.check_rate_limit(
+            request,
+            endpoint=request.path,
+            max_requests=self.RATE_LIMIT_CONFIG['max_requests'],
+            window_seconds=self.RATE_LIMIT_CONFIG['window_seconds']
+        )
+        return allowed, retry_after
+
     def post(self, request):
         """
         Trigger data refresh tasks.
-        
+
+        Rate Limited: Max 5 requests per hour per IP.
+
         Request body (optional):
         - task: Which task to run ('trending', 'global_events', 'all')
         - force: Force refresh even if cache is valid
         """
+        # Check rate limit FIRST
+        allowed, retry_after = self._check_rate_limit(request)
+        if not allowed:
+            return Response(
+                {
+                    "error": "Rate limit exceeded. Please try again later.",
+                    "retry_after": retry_after
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={"Retry-After": str(retry_after)}
+            )
+
         try:
             task_type = request.data.get('task', 'all')
             force = request.data.get('force', False)
-            
+
+            # Validate task_type to prevent injection
+            valid_tasks = ['trending', 'global_events', 'realtime', 'all']
+            if task_type not in valid_tasks:
+                return Response(
+                    {"error": "Invalid task type"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             from services.tasks.refresh_tasks import (
                 update_trending_topics,
                 update_global_events,
                 refresh_realtime_data
             )
-            
+
             results = {}
-            
+
             if task_type in ['trending', 'all']:
                 result = update_trending_topics.delay() if hasattr(update_trending_topics, 'delay') else update_trending_topics()
                 results['trending'] = {"status": "triggered", "task_id": str(result) if hasattr(result, 'id') else "completed"}
-            
+
             if task_type in ['global_events', 'all']:
                 result = update_global_events.delay() if hasattr(update_global_events, 'delay') else update_global_events()
                 results['global_events'] = {"status": "triggered", "task_id": str(result) if hasattr(result, 'id') else "completed"}
-            
+
             if task_type in ['realtime', 'all']:
                 result = refresh_realtime_data.delay() if hasattr(refresh_realtime_data, 'delay') else refresh_realtime_data()
                 results['realtime'] = {"status": "triggered", "task_id": str(result) if hasattr(result, 'id') else "completed"}
-            
+
+            logger.info(f"Refresh tasks triggered for: {task_type}")
             return Response({
                 "status": "success",
-                "message": f"Refresh tasks triggered for: {task_type}",
-                "tasks": results,
-                "timestamp": datetime.now().isoformat()
+                "message": f"Refresh tasks triggered",
+                "tasks": results
             }, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
-            logger.exception("Failed to trigger refresh tasks")
+            logger.error("Error triggering refresh tasks")
             return Response(
-                {"error": f"Failed to trigger refresh: {str(e)}"},
+                {"error": get_generic_error_message('refresh')},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
 class TrendsAPIView(APIView):
+    """API view for fetching trends with caching."""
     permission_classes = [AllowAny]
 
     def get(self, request):
         try:
             limit = int(request.query_params.get('limit', 8))
             region = request.query_params.get('region', 'global')
+            # Validation
+            limit = max(1, min(50, limit))  # Limit between 1-50
 
-            # Optional Redis cache (works even if Redis is not running)
+            # Try Redis cache (using secure configuration)
             results = []
             cache_key = f"trending:{region}:{limit}"
-            try:
-                redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True, socket_connect_timeout=2)
-                cached = redis_client.get(cache_key)
-                if cached:
-                    return Response(json.loads(cached), status=status.HTTP_200_OK)
-            except Exception:
-                logger.info("Redis not running — skipping cache (still fetching live data)")
+            redis_client = get_redis_client(timeout=2)
+            if redis_client:
+                try:
+                    cached = redis_client.get(cache_key)
+                    if cached:
+                        logger.debug("Returning cached trends from Redis")
+                        return Response(json.loads(cached), status=status.HTTP_200_OK)
+                except Exception as e:
+                    logger.debug(f"Redis cache retrieval failed: {type(e).__name__}")
 
-            # Keys from .env (already mapped by user)
+            # Get API keys from environment
             newsapi_key = os.getenv("NEWSAPI_KEY")
             newsdata_key = os.getenv("NEWSDATA_IO_KEY")
 
             session = requests.Session()
             session.timeout = 12
 
-            # Primary + Backup: APIs (will work after restart)
+            # Fetch from NewsData with secure headers (no keys in URL logs)
             if newsdata_key:
                 try:
-                    url = f"https://newsdata.io/api/1/latest?apikey={newsdata_key}&language=en&size={limit}"
-                    resp = session.get(url)
+                    # Use params dict to keep keys out of URL logging
+                    params = {
+                        "apikey": newsdata_key,
+                        "language": "en",
+                        "size": min(limit, 10)
+                    }
+                    resp = session.get("https://newsdata.io/api/1/latest", params=params)
                     if resp.status_code == 200:
                         for item in resp.json().get("results", [])[:limit]:
                             results.append({
@@ -852,12 +964,17 @@ class TrendsAPIView(APIView):
                                 'last_updated': datetime.utcnow().isoformat(),
                             })
                 except Exception as e:
-                    logger.warning(f"NewsData.io failed: {e}")
+                    logger.debug(f"NewsData fetch error: {type(e).__name__}")
 
+            # Fetch from NewsAPI as fallback
             if len(results) < limit // 2 and newsapi_key:
                 try:
-                    url = f"https://newsapi.org/v2/top-headlines?sortBy=popularity&pageSize={limit}&apiKey={newsapi_key}"
-                    resp = session.get(url)
+                    params = {
+                        "sortBy": "popularity",
+                        "pageSize": min(limit, 10),
+                        "apiKey": newsapi_key
+                    }
+                    resp = session.get("https://newsapi.org/v2/top-headlines", params=params)
                     if resp.status_code == 200:
                         for a in resp.json().get("articles", []):
                             results.append({
@@ -878,7 +995,7 @@ class TrendsAPIView(APIView):
                                 'last_updated': datetime.utcnow().isoformat(),
                             })
                 except Exception as e:
-                    logger.warning(f"NewsAPI failed: {e}")
+                    logger.debug(f"NewsAPI fetch failed: {type(e).__name__}")
 
             # GUARANTEED FALLBACK: RSS from major sources (always works, no keys needed)
             if len(results) < 3:
@@ -909,7 +1026,7 @@ class TrendsAPIView(APIView):
                                 'last_updated': datetime.utcnow().isoformat(),
                             })
                     except Exception as e:
-                        logger.warning(f"RSS fallback failed for {feed_url}: {e}")
+                        logger.debug(f"RSS fetch failed: {type(e).__name__}")
 
             # Deduplicate
             seen = set()
@@ -921,26 +1038,27 @@ class TrendsAPIView(APIView):
                 'offset': 0,
                 'results': unique_results[:limit],
                 'status': 'live',
-                'message': 'Live global trends (API + RSS fallback)'
+                'message': 'Live global trends'
             }
 
-            # Cache only if Redis is available
-            try:
-                redis_client.setex(cache_key, 600, json.dumps(response_data))
-            except:
-                pass
+            # Cache if Redis is available
+            if redis_client:
+                try:
+                    redis_client.setex(cache_key, 600, json.dumps(response_data))
+                except Exception as e:
+                    logger.debug(f"Redis caching failed: {type(e).__name__}")
 
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logger.exception("Trending error")
+            logger.error("Error fetching trends")
             return Response({
                 'count': 0,
                 'limit': 8,
                 'offset': 0,
                 'results': [],
                 'status': 'error',
-                'message': 'Temporary issue — restart Redis + backend'
+                'message': get_generic_error_message('trending')
             }, status=status.HTTP_200_OK)
 
 
