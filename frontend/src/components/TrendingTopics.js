@@ -130,7 +130,7 @@ const DEMO_TOPICS = [
 // Main Component
 // ============================================================================
 
-const TrendingTopics = () => {
+const TrendingTopics = ({ onTopicClick }) => {
   // State variables
   const [topics, setTopics] = useState([]);
   const [globalEvents, setGlobalEvents] = useState([]);
@@ -310,6 +310,16 @@ const TrendingTopics = () => {
   }, [fetchTopics]);
 
   // =========================================================================
+  // Handle Topic Click
+  // =========================================================================
+
+  const handleTopicClick = useCallback((topic) => {
+    if (onTopicClick && typeof onTopicClick === 'function') {
+      onTopicClick(topic.topic || topic);
+    }
+  }, [onTopicClick]);
+
+  // =========================================================================
   // Render: Skeleton Loading State
   // =========================================================================
 
@@ -370,30 +380,41 @@ const TrendingTopics = () => {
             const riskBadge = RISK_BADGES[topic.risk_level] || RISK_BADGES.low;
             const statusBadge = VERIFICATION_BADGES[topic.verification_status] || VERIFICATION_BADGES.pending;
             const freshnessColor = getFreshnessDot(topic.last_updated);
-            
+
             return (
-              <div key={topic.id || topic.topic} className="topic-card">
+              <div
+                key={topic.id || topic.topic}
+                className="topic-card"
+                onClick={() => handleTopicClick(topic)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleTopicClick(topic);
+                  }
+                }}
+              >
                 <div className="topic-header">
-                  <span 
-                    className="risk-badge" 
+                  <span
+                    className="risk-badge"
                     style={{ backgroundColor: riskBadge.color, color: riskBadge.textColor }}
                   >
                     {riskBadge.label}
                   </span>
-                  <span 
-                    className="status-badge" 
+                  <span
+                    className="status-badge"
                     style={{ backgroundColor: statusBadge.color }}
                   >
                     {statusBadge.label}
                   </span>
                 </div>
-                
+
                 <h4 className="topic-title">{topic.topic}</h4>
-                
+
                 <div className="topic-meta">
                   <span className="freshness">
-                    <span 
-                      className="freshness-dot" 
+                    <span
+                      className="freshness-dot"
                       style={{ backgroundColor: freshnessColor }}
                     />
                     Freshness: {Math.round((topic.freshness || 0) * 100)}%
@@ -404,7 +425,7 @@ const TrendingTopics = () => {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="topic-stats">
                   <div className="stat">
                     <span className="stat-value">{topic.mention_count || 0}</span>
@@ -485,30 +506,41 @@ const TrendingTopics = () => {
           const riskBadge = RISK_BADGES[topic.risk_level] || RISK_BADGES.low;
           const statusBadge = VERIFICATION_BADGES[topic.verification_status] || VERIFICATION_BADGES.pending;
           const freshnessColor = getFreshnessDot(topic.last_updated);
-          
+
           return (
-            <div key={topic.id || topic.topic} className="topic-card">
+            <div
+              key={topic.id || topic.topic}
+              className="topic-card"
+              onClick={() => handleTopicClick(topic)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleTopicClick(topic);
+                }
+              }}
+            >
               <div className="topic-header">
-                <span 
-                  className="risk-badge" 
+                <span
+                  className="risk-badge"
                   style={{ backgroundColor: riskBadge.color, color: riskBadge.textColor }}
                 >
                   {riskBadge.label}
                 </span>
-                <span 
-                  className="status-badge" 
+                <span
+                  className="status-badge"
                   style={{ backgroundColor: statusBadge.color }}
                 >
                   {statusBadge.label}
                 </span>
               </div>
-              
+
               <h4 className="topic-title">{topic.topic}</h4>
-              
+
               <div className="topic-meta">
                 <span className="freshness">
-                  <span 
-                    className="freshness-dot" 
+                  <span
+                    className="freshness-dot"
                     style={{ backgroundColor: freshnessColor }}
                   />
                   Freshness: {Math.round((topic.freshness || 0) * 100)}%
@@ -519,7 +551,7 @@ const TrendingTopics = () => {
                   </span>
                 )}
               </div>
-              
+
               <div className="topic-stats">
                 <div className="stat">
                   <span className="stat-value">{topic.mention_count || 0}</span>
