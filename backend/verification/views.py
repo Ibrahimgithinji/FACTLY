@@ -271,7 +271,7 @@ class EnhancedVerificationView(APIView):
         except Exception as e:
             logger.exception("Enhanced verification failed")
             return Response(
-                {"error": f"Enhanced verification failed: {str(e)}"},
+                {"error": get_generic_error_message('verification')},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -395,8 +395,8 @@ class VerificationView(APIView):
                 nlp_analysis = self.text_preprocessor.preprocess(text, language=language)
                 logger.info(f"NLP preprocessing completed: {nlp_analysis['language']}")
             except Exception as e:
-                logger.warning(f"NLP preprocessing failed: {e}")
-                nlp_analysis = {"error": str(e)}
+                logger.warning(f"NLP preprocessing failed: {type(e).__name__}")
+                nlp_analysis = {"error": "NLP analysis unavailable"}
 
             # Step 3: Fact-check the claim
             verification_result = None
@@ -533,7 +533,7 @@ class VerificationView(APIView):
         except Exception as e:
             logger.exception("Verification failed")
             return Response(
-                {"error": f"Verification failed: {str(e)}"},
+                {"error": get_generic_error_message('verification')},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -1209,5 +1209,5 @@ class AnalyticsAPIView(APIView):
                 'period': period,
                 'timestamp': datetime.now().isoformat(),
                 'status': 'demo',
-                'message': 'Showing demo data due to error: ' + str(e)
+                'message': 'Showing example data. Please configure API keys for live analytics.'
             }, status=status.HTTP_200_OK)
