@@ -7,8 +7,18 @@ Scheduled Celery tasks to keep FACTLY updated with global events.
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
-from celery import shared_task
-from celery.exceptions import MaxRetriesExceededError
+
+# Celery imports (optional - only required for scheduled tasks)
+try:
+    from celery import shared_task
+    from celery.exceptions import MaxRetriesExceededError
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
+    # Define no-op decorator for when celery is unavailable
+    shared_task = lambda *args, **kwargs: lambda func: func
+    class MaxRetriesExceededError(Exception):
+        pass
 
 from services.fact_checking_service.cache_manager import CacheManager
 from services.fact_checking_service.real_time_news_service import RealTimeNewsService
