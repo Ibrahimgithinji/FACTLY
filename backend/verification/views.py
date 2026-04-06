@@ -630,10 +630,20 @@ class TrendingTopicsView(APIView):
             cache_manager = CacheManager()
             cache_stats = cache_manager.get_stats()
             
+            # Convert last_updated to ISO format safely
+            last_updated = trending_data.get('last_updated')
+            if last_updated:
+                if hasattr(last_updated, 'isoformat'):
+                    last_updated_iso = last_updated.isoformat()
+                else:
+                    last_updated_iso = str(last_updated)
+            else:
+                last_updated_iso = None
+
             response_data = {
                 "trending_topics": trending_data.get('topics', []),
                 "global_events": global_events,
-                "last_updated": trending_data.get('last_updated').isoformat() if trending_data.get('last_updated') else None,
+                "last_updated": last_updated_iso,
                 "data_source": trending_data.get('source', 'memory'),
                 "cache_stats": cache_stats,
                 "status": "success"
