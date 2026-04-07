@@ -39,16 +39,18 @@ class LoginView(APIView):
     throttle_classes = [LoginRateThrottle]
     
     def post(self, request):
-        email = request.data.get('email')
+        email = request.data.get('email') or ''
         password = request.data.get('password')
         
+        email = email.strip().lower()
+
         if not email or not password:
             return Response(
                 {'error': 'Email and password required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Perform case-insensitive lookup so email casing doesn't block login
+        # Perform case-insensitive lookup and normalize email before login
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
@@ -56,6 +58,12 @@ class LoginView(APIView):
             return Response(
                 {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
+            )
+        except User.MultipleObjectsReturned:
+            logger.error(f"Multiple user accounts found for email: {email}", exc_info=True)
+            return Response(
+                {'error': 'Multiple accounts found for this email address. Please contact support.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"Database error during user lookup: {e}", exc_info=True)
@@ -66,7 +74,8 @@ class LoginView(APIView):
         
         # Make sure username is still used for Django authentication
         try:
-            user = authenticate(username=user.username, password=password)
+            username = user.username or email
+            user = authenticate(username=username, password=password)
             if not user:
                 logger.warning(f"Failed login attempt for user: {email}")
                 return Response(

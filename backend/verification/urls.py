@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, auth_views
+from . import views, auth_views, user_views
 # from . import fast_views  # Disabled temporarily - requires additional dependencies
 
 app_name = 'verification'
@@ -12,6 +12,10 @@ urlpatterns = [
     path('verification/auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('verification/auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
     path('verification/auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
+    
+    # User endpoints
+    path('verification/user/', user_views.UserProfileView.as_view(), name='user_profile'),
+    path('verification/user/stats/', user_views.UserStatisticsView.as_view(), name='user_stats'),
     
     # Standard verification endpoints
     path('verification/verify/', views.VerificationView.as_view(), name='verify'),

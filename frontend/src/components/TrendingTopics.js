@@ -155,14 +155,13 @@ const TrendingTopics = ({ onTopicClick }) => {
   const fetchTopics = useCallback(async (isManualRefresh = false) => {
     // Prevent concurrent requests
     if (isFetchingRef.current) {
+      console.log('[TrendingTopics] Fetch already in progress, skipping');
       return;
     }
 
-    // Create new abort controller
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
+    // Create new abort controller only if we're starting a new request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     isFetchingRef.current = true;
 
@@ -178,9 +177,15 @@ const TrendingTopics = ({ onTopicClick }) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ task: 'all', force: true }),
-              signal: abortControllerRef.current.signal
+              signal: abortController.signal
             }
           );
+
+          // Check if request was aborted
+          if (abortController.signal.aborted) {
+            console.log('[TrendingTopics] Refresh POST aborted');
+            return;
+          }
 
           // Check Content-Type before parsing JSON
           const contentType = refreshResponse.headers.get('content-type');
@@ -192,11 +197,21 @@ const TrendingTopics = ({ onTopicClick }) => {
             await new Promise(resolve => setTimeout(resolve, 800));
           }
         } catch (postErr) {
+          if (postErr.name === 'AbortError' || abortController.signal.aborted) {
+            console.log('[TrendingTopics] Refresh POST aborted');
+            return;
+          }
           if (postErr.name !== 'AbortError') {
             console.warn('[TrendingTopics] POST refresh failed, continuing to GET:', postErr.message);
+            setRefreshError('Refresh trigger failed, fetching latest data');
           }
-          setRefreshError('Refresh trigger failed, fetching latest data');
         }
+      }
+
+      // Check if request was already aborted
+      if (abortController.signal.aborted) {
+        console.log('[TrendingTopics] GET request aborted before starting');
+        return;
       }
 
       // Now GET the trending topics
@@ -207,15 +222,22 @@ const TrendingTopics = ({ onTopicClick }) => {
           headers: {
             'Accept': 'application/json',
           },
-          signal: abortControllerRef.current.signal
+          signal: abortController.signal
         }
       );
+
+      // Check if request was aborted after response
+      if (abortController.signal.aborted) {
+        console.log('[TrendingTopics] Fetch aborted after response received');
+        return;
+      }
 
       // Validate Content-Type header
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        throw new Error(`Invalid Content-Type for ${response.url}: ${response.status} - ${text.substring(0, 200)}`);
+        console.error(`[TrendingTopics] Invalid Content-Type: ${response.status}`);
+        throw new Error(`Server returned non-JSON response`);
       }
 
       if (!response.ok) {
@@ -225,11 +247,13 @@ const TrendingTopics = ({ onTopicClick }) => {
       const data = await response.json();
 
       // Handle the API response structure
-      if (data.trending_topics) {
+      if (data.trending_topics && data.trending_topics.length > 0) {
         setTopics(data.trending_topics);
-      } else if (Array.isArray(data)) {
+      } else if (Array.isArray(data) && data.length > 0) {
         setTopics(data);
-      } else {
+      } else if (topics.length === 0) {
+        // Only show error if we have no cached topics
+        setFetchFailed(true);
         setTopics([]);
       }
 
@@ -243,7 +267,6 @@ const TrendingTopics = ({ onTopicClick }) => {
       if (data.cache_stats) {
         setCacheStats(data.cache_stats);
       }
-      // ENHANCEMENT 2: Surface data_source field
       if (data.data_source) {
         setDataSource(data.data_source);
       }
@@ -254,18 +277,25 @@ const TrendingTopics = ({ onTopicClick }) => {
       setLoading(false);
 
     } catch (err) {
-      if (err.name === 'AbortError') {
-        console.log('[TrendingTopics] Fetch aborted');
+      if (err.name === 'AbortError' || abortController.signal.aborted) {
+        console.log('[TrendingTopics] Fetch was aborted');
+        // Don't update state if aborted - this is normal during component unmount
         return;
       }
 
       console.error('[TrendingTopics] Fetch error:', err.message);
-      setFetchFailed(true);
+      // Only set failed if we don't have any cached data
+      if (topics.length === 0) {
+        setFetchFailed(true);
+      }
       setLoading(false);
     } finally {
-      isFetchingRef.current = false;
+      // Only clear the flag if this is still the current request
+      if (abortControllerRef.current === abortController) {
+        isFetchingRef.current = false;
+      }
     }
-  }, []);
+  }, [topics.length]);
 
   // =========================================================================
   // Polling Effect - Poll every 5 minutes
