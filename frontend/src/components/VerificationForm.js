@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useResults } from '../context/ResultsContext';
 import { API_ENDPOINTS } from '../utils/api';
 import { apiPost } from '../utils/apiClient';
 import './VerificationForm.css';
@@ -12,6 +13,7 @@ const VerificationForm = () => {
   const [charCount, setCharCount] = useState(0);
   const navigate = useNavigate();
   const { getValidAccessToken, isAuthenticated } = useAuth();
+  const { updateResults } = useResults();
   
   // Ref for abort controller
   const abortControllerRef = useRef(null);
@@ -92,9 +94,8 @@ const VerificationForm = () => {
         classification: data.factly_score?.classification
       });
       
-      // Save result for current session
-      sessionStorage.setItem('factCheckResult', JSON.stringify(data));
-      sessionStorage.setItem('factCheckQuery', input.trim());
+      // Update results in context (this also saves to sessionStorage)
+      updateResults(data, input.trim());
       
       // Save to history (localStorage is for persistent history)
       const historyItem = {

@@ -1,25 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useResults } from '../context/ResultsContext';
 import './ScoreDisplay.css';
 
 const ScoreDisplay = () => {
-  const [result, setResult] = useState(null);
+  const { results, loading, error } = useResults();
   const [animatedScore, setAnimatedScore] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef(null);
-
-  useEffect(() => {
-    // Use sessionStorage instead of localStorage to reduce persistent exposure
-    const storedResult = sessionStorage.getItem('factCheckResult');
-    if (storedResult) {
-      try {
-        const parsed = JSON.parse(storedResult);
-        setResult(parsed);
-      } catch (err) {
-        // If parsing fails, remove corrupted entry
-        sessionStorage.removeItem('factCheckResult');
-      }
-    }
-  }, []);
 
   // Intersection Observer for animation trigger
   useEffect(() => {
@@ -42,10 +29,10 @@ const ScoreDisplay = () => {
 
   // Animate score counting
   useEffect(() => {
-    if (!result || !isVisible) return;
+    if (!results || !isVisible) return;
 
     // Handle different API response formats
-    const targetScore = result.factly_score?.factly_score ?? result.factly_score?.score ?? result.score ?? 0;
+    const targetScore = results.factly_score?.factly_score ?? results.factly_score?.score ?? results.score ?? 0;
     const duration = 1500;
     const steps = 60;
     const increment = targetScore / steps;
@@ -62,9 +49,9 @@ const ScoreDisplay = () => {
     }, duration / steps);
 
     return () => clearInterval(timer);
-  }, [result, isVisible]);
+  }, [results, isVisible]);
 
-  if (!result) {
+  if (loading) {
     return (
       <div className="score-display loading" role="status" aria-live="polite">
         <div className="loading-spinner-large" aria-hidden="true"></div>
@@ -73,15 +60,25 @@ const ScoreDisplay = () => {
     );
   }
 
-  const { score, confidence, factors = {} } = result;
+  if (error || !results) {
+    return (
+      <div className="score-display error" role="alert">
+        <div className="error-icon" aria-hidden="true">⚠️</div>
+        <h2>Unable to Load Results</h2>
+        <p>{error || 'No verification results found. Please submit a query first.'}</p>
+      </div>
+    );
+  }
+
+  const { score, confidence, factors = {} } = results;
   
   // Handle different API response formats
-  const actualScore = result.factly_score?.factly_score ?? result.factly_score?.score ?? score ?? 0;
-  const actualConfidence = result.factly_score?.confidence_level ? 
-    (result.factly_score.confidence_level === 'High' ? 0.9 : 
-     result.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) : 
+  const actualScore = results.factly_score?.factly_score ?? results.factly_score?.score ?? score ?? 0;
+  const actualConfidence = results.factly_score?.confidence_level ? 
+    (results.factly_score.confidence_level === 'High' ? 0.9 : 
+     results.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) : 
     (confidence ?? 0.5);
-  const actualFactors = result.factly_score?.components ?? factors;
+  const actualFactors = results.factly_score?.components ?? factors;
   
   const scorePercentage = Math.round(actualScore);
 

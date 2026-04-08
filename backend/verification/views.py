@@ -495,6 +495,9 @@ class VerificationView(APIView):
                         "sentiment": news.sentiment
                     })
 
+            # Add enhanced analysis
+            enhanced_analysis = self._analyze_evidence_enhanced(evidence_items, verification_result)
+            
             response_data = {
                 "original_text": text,
                 "extracted_content": extracted_content.to_dict() if extracted_content else None,
@@ -525,6 +528,7 @@ class VerificationView(APIView):
                 },
                 "evidence": evidence_items,
                 "sources": sources_list,
+                "enhanced_analysis": enhanced_analysis,
                 "processing_time": processing_time
             }
             
@@ -575,6 +579,135 @@ class VerificationView(APIView):
             return "Data is somewhat stale (1-3 days old) - consider verifying with current sources"
         else:
             return "Data is stale (more than 3 days old) - strongly recommend fresh verification"
+    
+    def _analyze_evidence_enhanced(self, evidence_items, verification_result):
+        """
+        Perform enhanced analysis of evidence for better verification insights.
+        
+        Args:
+            evidence_items: List of evidence items
+            verification_result: The full verification result
+            
+        Returns:
+            Dict with enhanced analysis data
+        """
+        fact_checks = [e for e in evidence_items if e.get('type') == 'fact_check']
+        news_sources = [e for e in evidence_items if e.get('type') == 'news']
+        
+        # Verdict consistency analysis
+        verdicts = [fc.get('rating', fc.get('verdict', '')).lower().strip() 
+                   for fc in fact_checks if fc.get('rating') or fc.get('verdict')]
+        
+        verdict_counts = {}
+        for verdict in verdicts:
+            # Normalize verdicts
+            if verdict in ['true', 'correct', 'verified', 'mostly-true', 'mostly true']:
+                verdict_counts['true'] = verdict_counts.get('true', 0) + 1
+            elif verdict in ['false', 'incorrect', 'fake', 'mostly-false', 'mostly false']:
+                verdict_counts['false'] = verdict_counts.get('false', 0) + 1
+            elif verdict in ['mixed', 'partially-true', 'partially true', 'misleading', 'half-true', 'half true']:
+                verdict_counts['mixed'] = verdict_counts.get('mixed', 0) + 1
+            else:
+                verdict_counts['unknown'] = verdict_counts.get('unknown', 0) + 1
+        
+        total_verdicts = sum(verdict_counts.values())
+        consensus_verdict = max(verdict_counts.items(), key=lambda x: x[1])[0] if verdict_counts else 'unknown'
+        consensus_percentage = (verdict_counts.get(consensus_verdict, 0) / total_verdicts * 100) if total_verdicts > 0 else 0
+        
+        # Source credibility analysis
+        credibility_scores = [fc.get('source_credibility') for fc in fact_checks + news_sources 
+                            if fc.get('source_credibility') is not None]
+        avg_credibility = sum(credibility_scores) / len(credibility_scores) if credibility_scores else 0
+        
+        # Evidence freshness analysis
+        now = datetime.now()
+        dates = []
+        for item in evidence_items:
+            date_str = item.get('exact_date') or item.get('date')
+            if date_str:
+                try:
+                    date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                    dates.append(date)
+                except:
+                    pass
+        
+        avg_age_hours = float('inf')
+        if dates:
+            ages = [(now - date).total_seconds() / 3600 for date in dates]
+            avg_age_hours = sum(ages) / len(ages)
+        
+        # Cross-verification analysis
+        unique_sources = set()
+        for item in evidence_items:
+            source = item.get('source')
+            if source:
+                unique_sources.add(source)
+        
+        cross_verification_score = min(len(unique_sources) / 3.0, 1.0)  # Max at 3+ sources
+        
+        # Confidence distribution
+        confidence_scores = [fc.get('confidence_score') for fc in fact_checks 
+                           if fc.get('confidence_score') is not None]
+        confidence_distribution = {
+            'high': len([c for c in confidence_scores if c >= 0.8]),
+            'medium': len([c for c in confidence_scores if 0.6 <= c < 0.8]),
+            'low': len([c for c in confidence_scores if c < 0.6])
+        }
+        
+        return {
+            'evidence_summary': {
+                'total_sources': len(evidence_items),
+                'fact_checks': len(fact_checks),
+                'news_sources': len(news_sources)
+            },
+            'verdict_consensus': {
+                'consensus_verdict': consensus_verdict,
+                'consensus_percentage': round(consensus_percentage, 1),
+                'has_conflicts': len([v for v in verdict_counts.values() if v > 0]) > 1,
+                'verdict_breakdown': verdict_counts
+            },
+            'source_credibility': {
+                'average_score': round(avg_credibility, 3),
+                'credibility_level': self._get_credibility_level(avg_credibility),
+                'score_distribution': credibility_scores
+            },
+            'evidence_freshness': {
+                'average_age_hours': avg_age_hours,
+                'freshness_level': self._get_freshness_level(avg_age_hours),
+                'is_fresh': avg_age_hours <= 24,
+                'is_stale': avg_age_hours > 168  # 1 week
+            },
+            'cross_verification': {
+                'unique_sources': len(unique_sources),
+                'cross_verification_score': round(cross_verification_score, 3),
+                'verification_strength': self._get_verification_strength(cross_verification_score)
+            },
+            'confidence_analysis': {
+                'distribution': confidence_distribution,
+                'average_confidence': sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0
+            }
+        }
+    
+    def _get_credibility_level(self, score):
+        """Get credibility level label from score."""
+        if score >= 0.8: return 'High'
+        if score >= 0.6: return 'Medium'
+        if score >= 0.4: return 'Low'
+        return 'Unreliable'
+    
+    def _get_freshness_level(self, hours):
+        """Get freshness level label from age in hours."""
+        if hours <= 1: return 'Very Recent'
+        if hours <= 6: return 'Recent'
+        if hours <= 24: return 'Moderately Recent'
+        if hours <= 72: return 'Somewhat Stale'
+        return 'Stale'
+    
+    def _get_verification_strength(self, score):
+        """Get verification strength label from cross-verification score."""
+        if score >= 0.8: return 'Strong'
+        if score >= 0.5: return 'Moderate'
+        return 'Weak'
 
 
 def health_check(request):

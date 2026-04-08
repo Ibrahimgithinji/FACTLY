@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ResultsProvider } from './context/ResultsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -18,6 +19,7 @@ const EvidencePanel = lazy(() => import('./components/EvidencePanel'));
 const CredibilityChart = lazy(() => import('./components/CredibilityChart'));
 const TrendingTopics = lazy(() => import('./components/TrendingTopics'));
 const RealTimeVerification = lazy(() => import('./components/RealTimeVerification'));
+const EnhancedVerification = lazy(() => import('./components/EnhancedVerification'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -37,7 +39,7 @@ const PageLoader = () => (
 const ResultsPage = () => (
   <div className="results-container">
     <ScoreDisplay />
-    {/* add real-time verification panel under the score for richer context */}
+    <EnhancedVerification />
     <RealTimeVerification />
     <div className="results-grid">
       <EvidencePanel />
@@ -69,12 +71,13 @@ const HomePage = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router future={{ v7_relativeSplatPath: true }}>
-        <div className="App">
-          <Navbar />
-          <main id="main-content" className="app-main" role="main">
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
+      <ResultsProvider>
+        <Router future={{ v7_relativeSplatPath: true }}>
+          <div className="App">
+            <Navbar />
+            <main id="main-content" className="app-main" role="main">
+              <Suspense fallback={<PageLoader />}>
+                <ErrorBoundary>
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
@@ -132,6 +135,7 @@ function App() {
           </main>
         </div>
       </Router>
+    </ResultsProvider>
     </AuthProvider>
   );
 }

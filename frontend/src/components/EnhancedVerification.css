@@ -1,0 +1,287 @@
+.enhanced-verification {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-verification h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.analysis-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.analysis-card h4 {
+  color: #495057;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.analysis-card.summary .metrics {
+  display: flex;
+  gap: 20px;
+  justify-content: space-around;
+}
+
+.metric {
+  text-align: center;
+}
+
+.metric .value {
+  display: block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.metric .label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.consensus-result {
+  text-align: center;
+}
+
+.verdict-main {
+  margin-bottom: 12px;
+}
+
+.verdict-label {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.verdict-percentage {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.conflict-warning {
+  background: #fff3cd;
+  color: #856404;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  border: 1px solid #ffeaa7;
+}
+
+.consensus-result.positive {
+  border-left: 4px solid #28a745;
+}
+
+.consensus-result.positive .verdict-label {
+  color: #28a745;
+}
+
+.consensus-result.negative {
+  border-left: 4px solid #dc3545;
+}
+
+.consensus-result.negative .verdict-label {
+  color: #dc3545;
+}
+
+.consensus-result.mixed {
+  border-left: 4px solid #ffc107;
+}
+
+.consensus-result.mixed .verdict-label {
+  color: #856404;
+}
+
+.consensus-result.unknown {
+  border-left: 4px solid #6c757d;
+}
+
+.consensus-result.unknown .verdict-label {
+  color: #6c757d;
+}
+
+.credibility-score {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.credibility-gauge {
+  flex: 1;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.credibility-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+  transition: width 0.5s ease;
+}
+
+.credibility-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.credibility-value {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.credibility-percent {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.freshness-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.freshness-icon {
+  font-size: 1.5rem;
+}
+
+.freshness-info {
+  flex: 1;
+}
+
+.freshness-age {
+  display: block;
+  font-weight: 500;
+}
+
+.freshness-status {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.freshness-indicator.fresh .freshness-status {
+  color: #28a745;
+}
+
+.freshness-indicator.stale .freshness-status {
+  color: #dc3545;
+}
+
+.freshness-indicator.moderate .freshness-status {
+  color: #ffc107;
+}
+
+.cross-verification-score {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.verification-gauge {
+  flex: 1;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.verification-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+  transition: width 0.5s ease;
+}
+
+.verification-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.verification-sources {
+  font-weight: 500;
+}
+
+.verification-strength {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.methodology-content p {
+  color: #495057;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.methodology-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.factor {
+  color: #28a745;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-card.summary .metrics {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .credibility-score,
+  .cross-verification-score {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .freshness-indicator {
+    flex-direction: column;
+    text-align: center;
+  }
+}

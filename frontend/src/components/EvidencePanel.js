@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useResults } from '../context/ResultsContext';
 import './EvidencePanel.css';
 
 const EvidencePanel = () => {
-  const [result, setResult] = useState(null);
+  const { results, loading, error } = useResults();
   const [expandedClaims, setExpandedClaims] = useState({});
-
-  useEffect(() => {
-    const storedResult = sessionStorage.getItem('factCheckResult');
-    if (storedResult) {
-      setResult(JSON.parse(storedResult));
-    }
-  }, []);
 
   const toggleClaim = (index) => {
     setExpandedClaims(prev => ({
@@ -61,23 +55,35 @@ const EvidencePanel = () => {
     return `${(score * 100).toFixed(1)}%`;
   };
 
-  if (!result) {
+  if (loading) {
     return (
       <div className="evidence-panel" role="region" aria-label="Evidence and Sources">
         <h3>Evidence & Sources</h3>
-        <div className="placeholder-state">
-          <div className="placeholder-icon" aria-hidden="true">📚</div>
-          <p>Submit a query to see evidence and sources.</p>
+        <div className="loading-state">
+          <div className="loading-spinner" aria-hidden="true"></div>
+          <p>Loading evidence...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !results) {
+    return (
+      <div className="evidence-panel" role="region" aria-label="Evidence and Sources">
+        <h3>Evidence & Sources</h3>
+        <div className="error-state">
+          <div className="error-icon" aria-hidden="true">⚠️</div>
+          <p>{error || 'No evidence available'}</p>
         </div>
       </div>
     );
   }
 
   // Use new evidence structure if available, fallback to legacy structure
-  const evidence = result.evidence || [];
-  const sources = result.sources || result.sources || [];
-  const legacyClaims = result.claims || [];
-  const legacySources = result.sources || [];
+  const evidence = results.evidence || [];
+  const sources = results.sources || results.sources || [];
+  const legacyClaims = results.claims || [];
+  const legacySources = results.sources || [];
   
   // Combine legacy and new structures
   const displayClaims = evidence.length > 0 
@@ -91,9 +97,9 @@ const EvidencePanel = () => {
     <div className="evidence-panel" role="region" aria-label="Evidence and Sources">
       <h3>Evidence & Sources</h3>
       
-      {result.query && (
+      {results.query && (
         <div className="query-preview" role="note">
-          <strong>Query:</strong> {result.query}
+          <strong>Query:</strong> {results.query}
         </div>
       )}
       
@@ -321,23 +327,23 @@ const EvidencePanel = () => {
       )}
       
       {/* Enhanced Verification Results */}
-      {result.verification_summary && (
+      {results.verification_summary && (
         <div className="enhanced-verification-section">
           <h4>Enhanced Verification Summary</h4>
           
           {/* Overall Assessment */}
-          {result.verification_summary.overall_assessment && (
+          {results.verification_summary.overall_assessment && (
             <div className="verification-assessment">
-              <p>{result.verification_summary.overall_assessment}</p>
+              <p>{results.verification_summary.overall_assessment}</p>
             </div>
           )}
           
           {/* Verified Data Points */}
-          {result.verification_summary.verified_data_points && result.verification_summary.verified_data_points.length > 0 && (
+          {results.verification_summary.verified_data_points && results.verification_summary.verified_data_points.length > 0 && (
             <div className="data-points-section verified">
               <h5>✓ Verified Data Points</h5>
               <ul>
-                {result.verification_summary.verified_data_points.map((point, idx) => (
+                {results.verification_summary.verified_data_points.map((point, idx) => (
                   <li key={idx}>{point}</li>
                 ))}
               </ul>
@@ -345,11 +351,11 @@ const EvidencePanel = () => {
           )}
           
           {/* Unverified Data Points */}
-          {result.verification_summary.unverified_data_points && result.verification_summary.unverified_data_points.length > 0 && (
+          {results.verification_summary.unverified_data_points && results.verification_summary.unverified_data_points.length > 0 && (
             <div className="data-points-section unverified">
               <h5>⚠ Unverified Data Points</h5>
               <ul>
-                {result.verification_summary.unverified_data_points.map((point, idx) => (
+                {results.verification_summary.unverified_data_points.map((point, idx) => (
                   <li key={idx}>{point}</li>
                 ))}
               </ul>
@@ -357,11 +363,11 @@ const EvidencePanel = () => {
           )}
           
           {/* Discrepancies */}
-          {result.verification_summary.discrepancies_and_caveats && result.verification_summary.discrepancies_and_caveats.length > 0 && (
+          {results.verification_summary.discrepancies_and_caveats && results.verification_summary.discrepancies_and_caveats.length > 0 && (
             <div className="discrepancies-section">
               <h5>⚠ Discrepancies & Caveats</h5>
               <ul>
-                {result.verification_summary.discrepancies_and_caveats.map((item, idx) => (
+                {results.verification_summary.discrepancies_and_caveats.map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
               </ul>
@@ -369,19 +375,19 @@ const EvidencePanel = () => {
           )}
           
           {/* Source Diversity Assessment */}
-          {result.verification_summary.source_diversity_assessment && (
+          {results.verification_summary.source_diversity_assessment && (
             <div className="source-diversity-section">
               <h5>📊 Source Diversity</h5>
-              <p>{result.verification_summary.source_diversity_assessment}</p>
+              <p>{results.verification_summary.source_diversity_assessment}</p>
             </div>
           )}
           
           {/* Recommendations */}
-          {result.verification_summary.recommendations && result.verification_summary.recommendations.length > 0 && (
+          {results.verification_summary.recommendations && results.verification_summary.recommendations.length > 0 && (
             <div className="recommendations-section">
               <h5>💡 Recommendations</h5>
               <ul>
-                {result.verification_summary.recommendations.map((rec, idx) => (
+                {results.verification_summary.recommendations.map((rec, idx) => (
                   <li key={idx}>{rec}</li>
                 ))}
               </ul>
@@ -389,11 +395,11 @@ const EvidencePanel = () => {
           )}
           
           {/* Verification Limitations */}
-          {result.verification_summary.verification_limitations && result.verification_summary.verification_limitations.length > 0 && (
+          {results.verification_summary.verification_limitations && results.verification_summary.verification_limitations.length > 0 && (
             <div className="limitations-section">
               <h5>⚠ Verification Limitations</h5>
               <ul>
-                {result.verification_summary.verification_limitations.map((lim, idx) => (
+                {results.verification_summary.verification_limitations.map((lim, idx) => (
                   <li key={idx}>{lim}</li>
                 ))}
               </ul>
@@ -403,34 +409,34 @@ const EvidencePanel = () => {
       )}
       
       {/* Verification Trace */}
-      {result.verification_trace && (
+      {results.verification_trace && (
         <div className="verification-trace-section">
           <h4>Verification Process Trace</h4>
           
           {/* Confidence Level */}
-          {result.verification_trace.confidence_level && (
+          {results.verification_trace.confidence_level && (
             <div className="trace-meta">
               <span className="meta-label">Confidence Level:</span>
-              <span className={`confidence-badge ${result.verification_trace.confidence_level.toLowerCase()}`}>
-                {result.verification_trace.confidence_level}
+              <span className={`confidence-badge ${results.verification_trace.confidence_level.toLowerCase()}`}>
+                {results.verification_trace.confidence_level}
               </span>
             </div>
           )}
           
           {/* Recommended Verdict */}
-          {result.verification_trace.recommended_verdict && (
+          {results.verification_trace.recommended_verdict && (
             <div className="trace-meta">
               <span className="meta-label">Recommended Verdict:</span>
-              <span className="verdict-badge">{result.verification_trace.recommended_verdict}</span>
+              <span className="verdict-badge">{results.verification_trace.recommended_verdict}</span>
             </div>
           )}
           
           {/* Verification Steps */}
-          {result.verification_trace.verification_steps && result.verification_trace.verification_steps.length > 0 && (
+          {results.verification_trace.verification_steps && results.verification_trace.verification_steps.length > 0 && (
             <div className="trace-steps">
               <h5>Verification Steps</h5>
               <ol>
-                {result.verification_trace.verification_steps.map((step, idx) => (
+                {results.verification_trace.verification_steps.map((step, idx) => (
                   <li key={idx} className={`step-item ${step.status}`}>
                     <span className="step-name">{step.step_name}</span>
                     <span className="step-status">{step.status}</span>
@@ -444,45 +450,45 @@ const EvidencePanel = () => {
           )}
           
           {/* Processing Time */}
-          {result.verification_trace.processing_time_ms > 0 && (
+          {results.verification_trace.processing_time_ms > 0 && (
             <div className="trace-meta">
               <span className="meta-label">Processing Time:</span>
-              <span className="processing-time">{result.verification_trace.processing_time_ms.toFixed(0)}ms</span>
+              <span className="processing-time">{results.verification_trace.processing_time_ms.toFixed(0)}ms</span>
             </div>
           )}
         </div>
       )}
       
       {/* Direct Verification Details */}
-      {result.direct_verification && (
+      {results.direct_verification && (
         <div className="direct-verification-section">
           <h4>Direct Source Verification</h4>
           
           <div className="verification-stats">
             <div className="stat-item">
-              <span className="stat-value">{result.direct_verification.sources_consulted}</span>
+              <span className="stat-value">{results.direct_verification.sources_consulted}</span>
               <span className="stat-label">Sources Consulted</span>
             </div>
             <div className="stat-item primary">
-              <span className="stat-value">{result.direct_verification.primary_sources_found}</span>
+              <span className="stat-value">{results.direct_verification.primary_sources_found}</span>
               <span className="stat-label">Primary Sources</span>
             </div>
             <div className="stat-item secondary">
-              <span className="stat-value">{result.direct_verification.secondary_sources_found}</span>
+              <span className="stat-value">{results.direct_verification.secondary_sources_found}</span>
               <span className="stat-label">Secondary Sources</span>
             </div>
             <div className="stat-item score">
-              <span className="stat-value">{(result.direct_verification.overall_verification_score * 100).toFixed(0)}%</span>
+              <span className="stat-value">{(results.direct_verification.overall_verification_score * 100).toFixed(0)}%</span>
               <span className="stat-label">Verification Score</span>
             </div>
           </div>
           
           {/* Sources Consulted Details */}
-          {result.verification_summary?.sources_consulted && result.verification_summary.sources_consulted.length > 0 && (
+          {results.verification_summary?.sources_consulted && results.verification_summary.sources_consulted.length > 0 && (
             <div className="sources-detail">
               <h5>Authoritative Sources</h5>
               <ul>
-                {result.verification_summary.sources_consulted.map((source, idx) => (
+                {results.verification_summary.sources_consulted.map((source, idx) => (
                   <li key={idx} className="source-detail-item">
                     <span className="source-name">{source.name}</span>
                     <span className="source-type">{source.type}</span>
@@ -497,50 +503,50 @@ const EvidencePanel = () => {
       )}
       
       {/* Cross-Source Analysis */}
-      {result.cross_source_analysis && (
+      {results.cross_source_analysis && (
         <div className="cross-source-section">
           <h4>Cross-Source Analysis</h4>
           
           <div className="analysis-metrics">
-            {result.cross_source_analysis.consensus_level && (
+            {results.cross_source_analysis.consensus_level && (
               <div className="metric-item">
                 <span className="metric-label">Consensus:</span>
-                <span className={`metric-value ${result.cross_source_analysis.consensus_level}`}>
-                  {result.cross_source_analysis.consensus_level.replace(/_/g, ' ')}
+              <span className={`metric-value ${results.cross_source_analysis.consensus_level}`}>
+                {results.cross_source_analysis.consensus_level.replace(/_/g, ' ')}
                 </span>
               </div>
             )}
             
-            {result.cross_source_analysis.evidence_strength && (
+            {results.cross_source_analysis.evidence_strength && (
               <div className="metric-item">
                 <span className="metric-label">Evidence Strength:</span>
-                <span className={`metric-value ${result.cross_source_analysis.evidence_strength}`}>
-                  {result.cross_source_analysis.evidence_strength.replace(/_/g, ' ')}
+                <span className={`metric-value ${results.cross_source_analysis.evidence_strength}`}>
+                  {results.cross_source_analysis.evidence_strength.replace(/_/g, ' ')}
                 </span>
               </div>
             )}
             
-            {result.cross_source_analysis.agreement_score > 0 && (
+            {results.cross_source_analysis.agreement_score > 0 && (
               <div className="metric-item">
                 <span className="metric-label">Agreement Score:</span>
-                <span className="metric-value">{(result.cross_source_analysis.agreement_score * 100).toFixed(0)}%</span>
+                <span className="metric-value">{(results.cross_source_analysis.agreement_score * 100).toFixed(0)}%</span>
               </div>
             )}
             
-            {result.cross_source_analysis.confidence_score > 0 && (
+            {results.cross_source_analysis.confidence_score > 0 && (
               <div className="metric-item">
                 <span className="metric-label">Confidence Score:</span>
-                <span className="metric-value">{(result.cross_source_analysis.confidence_score * 100).toFixed(0)}%</span>
+                <span className="metric-value">{(results.cross_source_analysis.confidence_score * 100).toFixed(0)}%</span>
               </div>
             )}
           </div>
           
           {/* Key Findings */}
-          {result.cross_source_analysis.key_findings && result.cross_source_analysis.key_findings.length > 0 && (
+          {results.cross_source_analysis.key_findings && results.cross_source_analysis.key_findings.length > 0 && (
             <div className="key-findings">
               <h5>Key Findings</h5>
               <ul>
-                {result.cross_source_analysis.key_findings.map((finding, idx) => (
+                {results.cross_source_analysis.key_findings.map((finding, idx) => (
                   <li key={idx}>{finding}</li>
                 ))}
               </ul>
@@ -548,11 +554,11 @@ const EvidencePanel = () => {
           )}
           
           {/* Contradictions */}
-          {result.cross_source_analysis.contradictions && result.cross_source_analysis.contradictions.length > 0 && (
+          {results.cross_source_analysis.contradictions && results.cross_source_analysis.contradictions.length > 0 && (
             <div className="contradictions">
               <h5>⚠ Contradictions Found</h5>
               <ul>
-                {result.cross_source_analysis.contradictions.map((contradiction, idx) => (
+                {results.cross_source_analysis.contradictions.map((contradiction, idx) => (
                   <li key={idx}>
                     {contradiction.source1} vs {contradiction.source2}: {contradiction.details}
                   </li>
@@ -562,11 +568,11 @@ const EvidencePanel = () => {
           )}
           
           {/* Uncertainty Factors */}
-          {result.cross_source_analysis.uncertainty_factors && result.cross_source_analysis.uncertainty_factors.length > 0 && (
+          {results.cross_source_analysis.uncertainty_factors && results.cross_source_analysis.uncertainty_factors.length > 0 && (
             <div className="uncertainty-factors">
               <h5>⚠ Uncertainty Factors</h5>
               <ul>
-                {result.cross_source_analysis.uncertainty_factors.map((factor, idx) => (
+                {results.cross_source_analysis.uncertainty_factors.map((factor, idx) => (
                   <li key={idx}>{factor}</li>
                 ))}
               </ul>
