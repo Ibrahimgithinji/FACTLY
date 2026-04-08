@@ -1,11 +1,12 @@
 /**
- * TrendingTopics Component - Complete Rewrite
+ * TrendingTopics Component - Enhanced with timeout and retry logic
  * 
  * Fetches from GET /api/verification/trending/ and POST /api/verification/refresh/
- * Implements proper polling with abort handling and error states.
+ * Implements proper polling with abort handling, timeout, and retry mechanisms.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { API_ENDPOINTS } from '../utils/api';
 import './TrendingTopics.css';
 
 // ============================================================================
@@ -14,6 +15,9 @@ import './TrendingTopics.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const FETCH_TIMEOUT_MS = 15000; // 15 second timeout
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000; // 2 seconds between retries
 
 const RISK_BADGES = {
   critical: { label: 'Critical', color: '#dc2626', textColor: '#fff' },
@@ -60,6 +64,16 @@ const getFreshnessDot = (lastUpdated) => {
   if (minutes < 30) return 'green';
   if (minutes < 60) return 'yellow';
   return 'red';
+};
+
+// Helper to fetch with timeout
+const fetchWithTimeout = (url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) => {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Fetch timeout')), timeoutMs)
+    )
+  ]);
 };
 
 // ============================================================================
@@ -147,14 +161,15 @@ const TrendingTopics = ({ onTopicClick }) => {
   const pollIntervalRef = useRef(null);
   const isFetchingRef = useRef(false);
   const fetchTopicsRef = useRef(null);
+  const retryCountRef = useRef(0);
 
   // =========================================================================
-  // Fetch Function - Handles both GET and POST refresh
+  // Fetch Function with Retry Logic and Timeout
   // =========================================================================
 
-  const fetchTopics = useCallback(async (isManualRefresh = false) => {
+  const fetchTopicsWithRetry = useCallback(async (isManualRefresh = false, retryCount = 0) => {
     // Prevent concurrent requests
-    if (isFetchingRef.current) {
+    if (isFetchingRef.current && retryCount === 0) {
       console.log('[TrendingTopics] Fetch already in progress, skipping');
       return;
     }
@@ -163,14 +178,20 @@ const TrendingTopics = ({ onTopicClick }) => {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    isFetchingRef.current = true;
+    if (retryCount === 0) {
+      isFetchingRef.current = true;
+      retryCountRef.current = 0;
+    }
 
     try {
+      console.log(`[TrendingTopics] Fetching trending topics (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+
       // If manual refresh, POST to trigger backend refresh first
-      if (isManualRefresh) {
+      if (isManualRefresh && retryCount === 0) {
         try {
-          const refreshResponse = await fetch(
-            `${API_BASE_URL}/api/verification/refresh/`,
+          console.log('[TrendingTopics] Triggering backend refresh...');
+          const refreshResponse = await fetchWithTimeout(
+            API_ENDPOINTS.REFRESH_DATA || `${API_BASE_URL}/api/verification/refresh/`,
             {
               method: 'POST',
               headers: {
@@ -178,33 +199,30 @@ const TrendingTopics = ({ onTopicClick }) => {
               },
               body: JSON.stringify({ task: 'all', force: true }),
               signal: abortController.signal
-            }
+            },
+            FETCH_TIMEOUT_MS
           );
 
-          // Check if request was aborted
           if (abortController.signal.aborted) {
             console.log('[TrendingTopics] Refresh POST aborted');
             return;
           }
 
-          // Check Content-Type before parsing JSON
           const contentType = refreshResponse.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            const text = await refreshResponse.text();
-            console.warn('[TrendingTopics] POST returned non-JSON:', text.substring(0, 200));
-          } else if (refreshResponse.ok) {
-            // Wait for backend to start processing
-            await new Promise(resolve => setTimeout(resolve, 800));
+          if (contentType && contentType.includes('application/json')) {
+            if (refreshResponse.ok) {
+              console.log('[TrendingTopics] Backend refresh triggered successfully');
+              // Wait slightly for backend to start processing
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
         } catch (postErr) {
           if (postErr.name === 'AbortError' || abortController.signal.aborted) {
             console.log('[TrendingTopics] Refresh POST aborted');
             return;
           }
-          if (postErr.name !== 'AbortError') {
-            console.warn('[TrendingTopics] POST refresh failed, continuing to GET:', postErr.message);
-            setRefreshError('Refresh trigger failed, fetching latest data');
-          }
+          console.warn('[TrendingTopics] POST refresh failed, will continue to GET:', postErr.message);
+          setRefreshError('Refresh trigger failed, fetching latest data');
         }
       }
 
@@ -214,16 +232,18 @@ const TrendingTopics = ({ onTopicClick }) => {
         return;
       }
 
-      // Now GET the trending topics
-      const response = await fetch(
-        `${API_BASE_URL}/api/verification/trending/`,
+      // Now GET the trending topics with timeout
+      console.log('[TrendingTopics] Fetching from:', API_ENDPOINTS.TRENDING || `${API_BASE_URL}/api/verification/trending/`);
+      const response = await fetchWithTimeout(
+        API_ENDPOINTS.TRENDING || `${API_BASE_URL}/api/verification/trending/`,
         {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
           },
           signal: abortController.signal
-        }
+        },
+        FETCH_TIMEOUT_MS
       );
 
       // Check if request was aborted after response
@@ -237,7 +257,7 @@ const TrendingTopics = ({ onTopicClick }) => {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error(`[TrendingTopics] Invalid Content-Type: ${response.status}`);
-        throw new Error(`Server returned non-JSON response`);
+        throw new Error(`Server returned non-JSON response (${response.status})`);
       }
 
       if (!response.ok) {
@@ -245,16 +265,16 @@ const TrendingTopics = ({ onTopicClick }) => {
       }
 
       const data = await response.json();
+      console.log('[TrendingTopics] API Response received:', data);
 
-      // Handle the API response structure
-      if (data.trending_topics && data.trending_topics.length > 0) {
         setTopics(data.trending_topics);
+        setDataSource(data.data_source || 'api');
       } else if (Array.isArray(data) && data.length > 0) {
         setTopics(data);
-      } else if (topics.length === 0) {
-        // Only show error if we have no cached topics
-        setFetchFailed(true);
-        setTopics([]);
+        setDataSource('api');
+      } else {
+        // No data returned, will retry or show demo
+        throw new Error('Empty response from API');
       }
 
       // Set additional data if available
@@ -267,35 +287,64 @@ const TrendingTopics = ({ onTopicClick }) => {
       if (data.cache_stats) {
         setCacheStats(data.cache_stats);
       }
-      if (data.data_source) {
-        setDataSource(data.data_source);
-      }
 
       // Clear error states on success
       setFetchFailed(false);
       setRefreshError(null);
       setLoading(false);
+      retryCountRef.current = 0;
+      console.log('[TrendingTopics] Fetch successful');
 
     } catch (err) {
       if (err.name === 'AbortError' || abortController.signal.aborted) {
         console.log('[TrendingTopics] Fetch was aborted');
-        // Don't update state if aborted - this is normal during component unmount
         return;
       }
 
-      console.error('[TrendingTopics] Fetch error:', err.message);
-      // Only set failed if we don't have any cached data
-      if (topics.length === 0) {
-        setFetchFailed(true);
+      const errorMessage = err.message || 'Unknown error';
+      console.warn(`[TrendingTopics] Fetch error (attempt ${retryCount + 1}/${MAX_RETRIES}):`, errorMessage);
+
+      // Retry logic
+      if (retryCount < MAX_RETRIES - 1) {
+        const delayMs = RETRY_DELAY_MS * (retryCount + 1); // Exponential backoff
+        console.log(`[TrendingTopics] Retrying in ${delayMs}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        
+        // If not aborted, retry
+        if (!abortController.signal.aborted) {
+          return fetchTopicsWithRetry(isManualRefresh, retryCount + 1);
+        }
+      } else {
+        // Exhausted retries
+        console.error('[TrendingTopics] All retries exhausted, falling back to demo data');
+        
+        // Show demo data only if we have no cached topics
+        if (topics.length === 0) {
+          setTopics(DEMO_TOPICS);
+          setFetchFailed(true);
+          setDataSource('demo_fallback');
+        }
+        
+        setLoading(false);
+        setRefreshError(`Failed to fetch trending topics: ${errorMessage}`);
       }
-      setLoading(false);
+
     } finally {
-      // Only clear the flag if this is still the current request
-      if (abortControllerRef.current === abortController) {
+      // Only clear the flag if this is still the current request and not retrying
+      if (retryCount === 0 && abortControllerRef.current === abortController) {
         isFetchingRef.current = false;
       }
     }
   }, [topics.length]);
+
+  // =========================================================================
+  // Create fetchTopics wrapper that uses retry logic
+  // =========================================================================
+
+  const fetchTopics = useCallback((isManualRefresh = false) => {
+    return fetchTopicsWithRetry(isManualRefresh, 0);
+  }, [fetchTopicsWithRetry]);
 
   // =========================================================================
   // Polling Effect - Poll every 5 minutes

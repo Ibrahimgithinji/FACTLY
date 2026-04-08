@@ -29,6 +29,10 @@ export const API_ENDPOINTS = {
   ENHANCED_VERIFY: `${API_BASE_URL}/api/verification/verify/enhanced/`,
   HISTORY: `${API_BASE_URL}/api/verification/history/`,
   USER: `${API_BASE_URL}/api/verification/user/`,
+  TRENDING: `${API_BASE_URL}/api/verification/trending/`,
+  TRENDING_LIVE: `${API_BASE_URL}/api/verification/trending/live/`,
+  GLOBAL_EVENTS: `${API_BASE_URL}/api/verification/global-events/`,
+  REFRESH_DATA: `${API_BASE_URL}/api/verification/refresh/`,
 };
 
 // Export for use in fetch requests
