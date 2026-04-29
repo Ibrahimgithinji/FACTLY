@@ -334,12 +334,13 @@ export const AuthProvider = ({ children }) => {
 
   const forgotPassword = async (email) => {
     try {
+      const normalizedEmail = email?.trim().toLowerCase();
       const response = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       // Check if response is JSON before parsing

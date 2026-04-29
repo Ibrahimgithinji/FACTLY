@@ -3,12 +3,25 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core import mail
+from unittest.mock import patch
 
+from verification.auth_views import PasswordResetRateThrottle
 from verification.models import PasswordResetToken
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class PasswordResetTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._original_reset_rate = PasswordResetRateThrottle.rate
+        PasswordResetRateThrottle.rate = '1000/minute'
+
+    @classmethod
+    def tearDownClass(cls):
+        PasswordResetRateThrottle.rate = cls._original_reset_rate
+        super().tearDownClass()
+
     def setUp(self):
         self.user_email = 'tester@example.com'
         self.user_password = 'testpass123'
@@ -27,6 +40,24 @@ class PasswordResetTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         sent = mail.outbox[0]
         self.assertIn(token_obj.token, sent.body)
+    
+    def test_forgot_password_normalizes_email_before_lookup(self):
+        url = reverse('verification:forgot_password')
+        resp = self.client.post(url, {'email': '  TESTER@EXAMPLE.COM  '}, content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+
+        token_obj = PasswordResetToken.objects.filter(user=self.user).first()
+        self.assertIsNotNone(token_obj)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user_email])
+    
+    @patch('verification.auth_views.send_mail', return_value=0)
+    def test_forgot_password_returns_503_when_email_not_delivered(self, mocked_send_mail):
+        url = reverse('verification:forgot_password')
+        resp = self.client.post(url, {'email': self.user_email}, content_type='application/json')
+        self.assertEqual(resp.status_code, 503)
+        self.assertIn('Unable to send reset email', resp.json().get('error', ''))
+        mocked_send_mail.assert_called_once()
 
     # --- authentication tests ---
     def test_login_success(self):

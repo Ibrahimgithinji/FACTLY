@@ -9,7 +9,9 @@ import uuid
 import os
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.validators import validate_email
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
@@ -200,24 +202,41 @@ class ForgotPasswordView(APIView):
     throttle_classes = [PasswordResetRateThrottle]
     
     def post(self, request):
-        email = request.data.get('email')
+        email = (request.data.get('email') or '').strip().lower()
         
         if not email:
             return Response(
                 {'error': 'Email is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Use case-insensitive email lookup to handle case variations
-        # e.g., user@Example.com and USER@EXAMPLE.COM will match the same account
+
         try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {'error': 'Please provide a valid email address'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Fetch at most two rows so we can detect duplicates without an extra count query.
+        matching_users = list(
+            User.objects.filter(email__iexact=email).order_by('-date_joined')[:2]
+        )
+
+        if not matching_users:
             # For security, don't reveal if email exists
             logger.warning(f"Password reset attempt for non-existent email: {email}")
             return Response(
                 {'message': 'If an account exists with this email, a password reset link has been sent.'},
                 status=status.HTTP_200_OK
+            )
+
+        user = matching_users[0]
+        if len(matching_users) > 1:
+            logger.warning(
+                "Multiple user accounts found for password reset email %s; using most recently created account id=%s.",
+                email,
+                user.id
             )
         
         try:
@@ -236,7 +255,8 @@ class ForgotPasswordView(APIView):
             )
             
             # Send email with reset link
-            reset_link = f"{settings.FRONTEND_URL}/reset-password/{token}"
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+            reset_link = f"{frontend_url}/reset-password/{token}"
             
             subject = 'Password Reset Request - FACTLY'
             message = f"""
@@ -255,25 +275,30 @@ FACTLY Team
             """
             
             try:
-                send_mail(
+                sent_count = send_mail(
                     subject,
                     message,
                     settings.DEFAULT_FROM_EMAIL,
                     [user.email],
                     fail_silently=False,
                 )
+                if sent_count != 1:
+                    logger.error(
+                        "Password reset email was not delivered for %s. send_mail returned %s.",
+                        user.email,
+                        sent_count
+                    )
+                    return Response(
+                        {'error': 'Unable to send reset email right now. Please try again later.'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE
+                    )
                 logger.info(f"Password reset email sent successfully to: {email}")
                 logger.debug(f"Reset link: {reset_link}")
             except Exception as email_error:
                 logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
-                
-                # Log the reset link for development debugging
-                logger.info(f"Password reset link for development: {reset_link}")
-                
-                # Always return generic success message, never expose reset link in API response
                 return Response(
-                    {'message': 'If an account exists with this email, a password reset link has been sent.'},
-                    status=status.HTTP_200_OK
+                    {'error': 'Unable to send reset email right now. Please try again later.'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
                 )
             
             return Response(
