@@ -17,10 +17,10 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 
 // Retry configuration
 const RETRY_CONFIG = {
-  maxAttempts: 3,
+  maxAttempts: 2,
   delayMs: 1000,
   backoffMultiplier: 2,
-  retryableStatuses: [408, 429, 500, 502, 503, 504],
+  retryableStatuses: [408, 429],
 };
 
 // Storage helpers

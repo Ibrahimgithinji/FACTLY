@@ -51,7 +51,7 @@ def get_redis_client(timeout=2):
     - REDIS_HOST (default: localhost)
     - REDIS_PORT (default: 6379)
     - REDIS_DB (default: 0)
-    - REDIS_PASSWORD (optional)
+    - REDIS_PASSWORD (optional but recommended for production)
     """
     try:
         host = os.getenv('REDIS_HOST', 'localhost')
@@ -59,13 +59,20 @@ def get_redis_client(timeout=2):
         db = int(os.getenv('REDIS_DB', 0))
         password = os.getenv('REDIS_PASSWORD', None)
 
+        if not DEBUG and not password:
+            logger.warning(
+                "REDIS_PASSWORD not set — Redis connection without authentication "
+                "is insecure in production. Set REDIS_PASSWORD in your environment."
+            )
+
         client = redis.Redis(
             host=host,
             port=port,
             db=db,
             password=password,
             decode_responses=True,
-            socket_connect_timeout=timeout
+            socket_connect_timeout=timeout,
+            ssl=os.getenv('REDIS_SSL', 'false').lower() in ('1', 'true', 'yes'),
         )
         # Test connection
         client.ping()

@@ -47,34 +47,43 @@ const CredibilityChart = () => {
 
   const { score, confidence, factors = {}, components = [] } = result;
 
+  const actualScore = result.factly_score?.factly_score ?? result.factly_score?.score ?? score ?? 0;
+  const actualConfidence = result.factly_score?.confidence_level ?
+    (result.factly_score.confidence_level === 'High' ? 0.9 :
+     result.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) :
+    (confidence ?? 0.5);
+  const actualFactors = result.factly_score?.components ?? factors;
+  const actualComponents = result.factly_score?.components ?? components;
+
   // Map backend component data to chart display
   const componentMap = {};
-  components.forEach(comp => {
-    componentMap[comp.name.toLowerCase().replace(/\s+/g, '')] = comp;
+  actualComponents.forEach(comp => {
+    const compObj = typeof comp === 'object' && comp.score !== undefined ? comp : { name: comp, score: 0 };
+    componentMap[compObj.name.toLowerCase().replace(/\s+/g, '')] = compObj;
   });
 
   const chartData = [
-    { 
-      label: 'Source Reliability', 
-      value: componentMap['sourcecredibility'] ? componentMap['sourcecredibility'].score : (factors.sourceReliability || score * 0.9), 
+    {
+      label: 'Source Reliability',
+      value: componentMap['sourcecredibility'] ? componentMap['sourcecredibility'].score : (actualFactors.sourceReliability || actualScore * 0.9),
       className: 'source-reliability',
       icon: '📚'
     },
-    { 
-      label: 'Content Consistency', 
-      value: componentMap['contentanalysis'] ? componentMap['contentanalysis'].score : (factors.contentConsistency || score * 0.85), 
+    {
+      label: 'Content Consistency',
+      value: componentMap['contentanalysis'] ? componentMap['contentanalysis'].score : (actualFactors.contentConsistency || actualScore * 0.85),
       className: 'content-consistency',
       icon: '✓'
     },
-    { 
-      label: 'Fact-Check Coverage', 
-      value: componentMap['factcheckconsensus'] ? componentMap['factcheckconsensus'].score : (factors.factCheckCoverage || confidence), 
+    {
+      label: 'Fact-Check Coverage',
+      value: componentMap['factcheckconsensus'] ? componentMap['factcheckconsensus'].score : (actualFactors.factCheckCoverage || actualConfidence),
       className: 'fact-check-coverage',
       icon: '🔍'
     },
-    { 
-      label: 'Evidence Quality', 
-      value: componentMap['evidencequality'] ? componentMap['evidencequality'].score : (factors.evidenceQuality || score * 0.8), 
+    {
+      label: 'Evidence Quality',
+      value: componentMap['evidencequality'] ? componentMap['evidencequality'].score : (actualFactors.evidenceQuality || actualScore * 0.8),
       className: 'evidence-quality',
       icon: '📋'
     },
@@ -125,9 +134,9 @@ const CredibilityChart = () => {
           <span className="summary-label">Overall Score</span>
           <span className="summary-value">{Math.round(score * 100)}%</span>
         </div>
-        <div className="summary-item confidence">
-          <span className="summary-label">Confidence</span>
-          <span className="summary-value">{Math.round(confidence * 100)}%</span>
+  <div className="summary-item confidence">
+      <span className="summary-label">Confidence</span>
+      <span className="summary-value">{Math.round(actualConfidence * 100)}%</span>
         </div>
       </div>
 

@@ -15,6 +15,8 @@ and cross-referencing of claims against authoritative data sources.
 import logging
 import re
 import requests
+import socket
+import ipaddress
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -136,8 +138,41 @@ class DirectSourceVerifier:
         self.session.headers.update({
             'User-Agent': 'FACTLY-Verification/1.0'
         })
-        
+        self.session.max_redirects = 5
+
         logger.info("DirectSourceVerifier initialized")
+
+    @staticmethod
+    def _is_safe_url(url: str) -> bool:
+        """Validate that a URL does not point to a private/internal host (SSRF protection)."""
+        try:
+            parsed = urlparse(url)
+            hostname = parsed.hostname
+            if not hostname:
+                return False
+            if parsed.scheme not in ('http', 'https'):
+                return False
+            if hostname in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
+                return False
+            try:
+                addr = ipaddress.ip_address(hostname)
+                if addr.is_private or addr.is_loopback or addr.is_reserved or addr.is_link_local:
+                    return False
+            except ValueError:
+                pass
+            for res in socket.getaddrinfo(hostname, None):
+                ip = res[4][0]
+                try:
+                    addr = ipaddress.ip_address(ip)
+                    if addr.is_private or addr.is_loopback or addr.is_reserved or addr.is_link_local:
+                        return False
+                except ValueError:
+                    continue
+            return True
+        except (socket.gaierror, OSError):
+            return False
+        except Exception:
+            return False
     
     def verify_claim_directly(self, claim: str) -> SourceVerificationReport:
         """
@@ -461,12 +496,20 @@ class DirectSourceVerifier:
         # Attempt to verify against official source
         try:
             if source_url:
-                response = self.session.get(source_url, timeout=10)
-                if response.status_code == 200:
-                    evidence_found.append(f"Official source accessible: {source_url}")
-                    verification_score = 0.7
-                else:
+                if not self._is_safe_url(source_url):
+                    logger.warning(f"Blocked potentially unsafe URL (SSRF protection): {source_url}")
                     verification_score = 0.3
+                else:
+                    response = self.session.get(source_url, timeout=10, allow_redirects=True)
+                    # Re-validate after redirects in case we landed on an internal host
+                    if response.url and not self._is_safe_url(response.url):
+                        logger.warning(f"Redirect to unsafe URL blocked: {response.url}")
+                        verification_score = 0.3
+                    elif response.status_code == 200:
+                        evidence_found.append(f"Official source accessible: {source_url}")
+                        verification_score = 0.7
+                    else:
+                        verification_score = 0.3
             else:
                 verification_score = 0.5
         except Exception as e:

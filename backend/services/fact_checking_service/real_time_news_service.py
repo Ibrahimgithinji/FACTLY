@@ -49,8 +49,8 @@ class RealTimeNewsService:
 
     # Major news sources RSS feeds
     RSS_FEEDS = {
-        'bbc': 'http://feeds.bbci.co.uk/news/rss.xml',
-        'cnn': 'http://rss.cnn.com/rss/edition.rss',
+        'bbc': 'https://feeds.bbci.co.uk/news/rss.xml',
+        'cnn': 'https://rss.cnn.com/rss/edition.rss',
         'reuters': 'https://feeds.reuters.com/Reuters/worldNews',
         'ap': 'https://feeds.apnews.com/rss/apf-topnews',
         'nyt': 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',

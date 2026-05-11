@@ -12,11 +12,16 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import shutil
+import sqlite3
+import logging
 from dotenv import load_dotenv
 import ipaddress
 
 # Load environment variables from .env if present
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,9 +36,13 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 # SECURITY WARNING: keep the secret key used in production secret!
 _secret_key = os.getenv('DJANGO_SECRET_KEY')
 if not _secret_key:
-    # Use a default key only in DEBUG mode for development convenience
     if DEBUG:
-        _secret_key = 'django-insecure-dev-only-key-do-not-use-in-production'
+        import secrets as _secrets
+        _secret_key = 'django-insecure-dev-' + _secrets.token_hex(32)
+        logger.warning(
+            "DJANGO_SECRET_KEY not set; generated a random dev-only key. "
+            "Set DJANGO_SECRET_KEY in your .env for stable sessions across restarts."
+        )
     else:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production")
 SECRET_KEY = _secret_key
@@ -41,7 +50,7 @@ SECRET_KEY = _secret_key
 # Configure allowed hosts via environment variable (comma-separated). Default: allow localhost for development.
 # If no ALLOWED_HOSTS is set, default to localhost and 127.0.0.1 for development.
 _allowed = os.getenv('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else ['localhost', '127.0.0.1', 'testserver', '0.0.0.0']
+ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else (['localhost', '127.0.0.1', 'testserver'] if DEBUG else ['localhost', '127.0.0.1'])
 
 
 # Application definition
@@ -94,10 +103,101 @@ WSGI_APPLICATION = 'factly_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+def get_sqlite_db_path():
+    """
+    Resolve a healthy SQLite path for runtime.
+    Falls back to an in-memory DB only if all on-disk candidates fail.
+    """
+    def _parent_dir_is_writable(db_path: Path) -> bool:
+        """
+        Verify we can create files in the target DB directory.
+        This avoids selecting paths that look writable but are blocked by OS policy.
+        """
+        try:
+            parent = db_path.expanduser().resolve().parent
+            parent.mkdir(parents=True, exist_ok=True)
+            probe = parent / f".factly-write-test-{os.getpid()}.tmp"
+            with probe.open('w', encoding='utf-8') as handle:
+                handle.write('ok')
+            probe.unlink(missing_ok=True)
+            return True
+        except OSError:
+            return False
+
+    def _sqlite_accepts_writes(db_path: Path) -> bool:
+        """
+        Verify SQLite can open and acquire a write lock for the target DB file.
+        """
+        if not _parent_dir_is_writable(db_path):
+            return False
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(db_path), timeout=5)
+            conn.execute("PRAGMA busy_timeout = 5000;")
+            conn.execute("BEGIN IMMEDIATE;")
+            conn.execute("ROLLBACK;")
+            return True
+        except sqlite3.Error:
+            return False
+        finally:
+            if conn is not None:
+                conn.close()
+
+    default_path = BASE_DIR / 'db.sqlite3'
+    fallback_path = None
+    local_appdata = os.getenv('LOCALAPPDATA')
+    if local_appdata:
+        fallback_path = Path(local_appdata) / 'factly-db.sqlite3'
+
+    candidates = []
+    configured_path = os.getenv('SQLITE_DB_PATH')
+    if configured_path:
+        candidates.append(Path(configured_path).expanduser())
+    candidates.append(default_path)
+    if fallback_path:
+        candidates.append(fallback_path)
+
+    for candidate in candidates:
+        if _sqlite_accepts_writes(candidate):
+            return candidate
+
+    # Try bootstrapping to LOCALAPPDATA as a last disk-based fallback if available.
+    if fallback_path and not fallback_path.exists() and default_path.exists():
+        try:
+            shutil.copy2(default_path, fallback_path)
+            if _sqlite_accepts_writes(fallback_path):
+                return fallback_path
+        except OSError:
+            pass
+
+    strict_sqlite_path = os.getenv('STRICT_SQLITE_PATH', 'True').lower() in ('1', 'true', 'yes')
+    if strict_sqlite_path:
+        raise RuntimeError(
+            "No writable SQLite path found. Set SQLITE_DB_PATH to a writable location."
+        )
+
+    allow_memory_fallback = os.getenv('ALLOW_MEMORY_DB', 'False').lower() in ('1', 'true', 'yes')
+    if not allow_memory_fallback:
+        raise RuntimeError(
+            "No writable SQLite path found and in-memory fallback is disabled. "
+            "Set SQLITE_DB_PATH to a writable location, or set ALLOW_MEMORY_DB=True "
+            "to enable the in-memory fallback (not recommended for production)."
+        )
+
+    logger.error(
+        "No writable SQLite path found. Falling back to in-memory database; "
+        "data will not persist across restarts. Set STRICT_SQLITE_PATH=True to fail fast."
+    )
+    return ':memory:'
+
+
+SQLITE_DB_PATH = get_sqlite_db_path()
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': SQLITE_DB_PATH,
     }
 }
 
@@ -275,51 +375,51 @@ def custom_exception_handler(exc, context):
     """
     Custom exception handler that returns proper error messages
     instead of generic 500 Internal Server Errors.
+
+    Sanitizes responses to avoid leaking internal details.
     """
-    from rest_framework.views import exception_handler
+    from rest_framework.views import exception_handler as drf_exception_handler
     from rest_framework.response import Response
     from rest_framework import status
     import traceback
-    
+
     # Call REST framework's default exception handler
-    response = exception_handler(exc, context)
-    
+    response = drf_exception_handler(exc, context)
+
     # If response is None, an unhandled exception occurred
     if response is None:
         # Get the view and request for logging
         view = context.get('view')
         request = context.get('request')
-        
-        # Log the full exception with stack trace
+
+        # Log the full exception with stack trace (server-side only)
         logger.error(
-            f"Unhandled exception in {view}: {exc}",
+            "Unhandled exception in %s: %s",
+            view, exc,
             exc_info=True,
             extra={
                 'request': str(request) if request else 'No request',
                 'traceback': traceback.format_exc()
             }
         )
-        
+
         # Determine appropriate status code based on exception type
         if isinstance(exc, ValueError):
             status_code = status.HTTP_400_BAD_REQUEST
-            error_message = str(exc)
+            error_message = 'Invalid input. Please check your data and try again.'
         elif isinstance(exc, KeyError):
             status_code = status.HTTP_400_BAD_REQUEST
-            error_message = f"Missing required field: {str(exc)}"
+            error_message = 'Missing required field.'
         else:
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            # In DEBUG mode, show the actual error; in production, show generic message
-            if DEBUG:
-                error_message = f"{exc.__class__.__name__}: {str(exc)}"
-            else:
-                error_message = "An unexpected error occurred. Please try again later."
-        
+            # Never expose internal error details to clients
+            error_message = "An unexpected error occurred. Please try again later."
+
         response = Response(
             {'error': error_message},
             status=status_code
         )
-    
+
     return response
 
 # JWT Settings for djangorestframework-simplejwt
@@ -354,13 +454,17 @@ X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 # Additional security headers
 SECURE_BROWSER_XSS_FILTER = True
+_csp_connect_src = ("'self'",)
+if DEBUG:
+    _csp_connect_src = ("'self'", "http://localhost:8000")
+
 SECURE_CONTENT_SECURITY_POLICY = {
     "default-src": ("'self'",),
     "script-src": ("'self'",),
-    "style-src": ("'self'", "'unsafe-inline'"),  # unsafe-inline needed for inline styles if any
+    "style-src": ("'self'", "'unsafe-inline'"),
     "img-src": ("'self'", "data:", "https:"),
     "font-src": ("'self'",),
-    "connect-src": ("'self'", "http://localhost:8000"),
+    "connect-src": _csp_connect_src,
     "frame-ancestors": ("'none'",),
 }
 
@@ -390,6 +494,11 @@ _allowed_cors = os.getenv('ALLOWED_CORS', 'http://localhost:3000,http://127.0.0.
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _allowed_cors.split(',') if o.strip()] if _allowed_cors else []
 # For development, allow all origins (remove in production)
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
+if not DEBUG and CORS_ALLOW_ALL_ORIGINS:
+    logger.warning(
+        "CORS_ALLOW_ALL_ORIGINS is True in production — this is insecure. "
+        "Set ALLOWED_CORS to restrict origins."
+    )
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',

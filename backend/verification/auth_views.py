@@ -7,11 +7,17 @@ JWT-based authentication endpoints for user login, signup, token refresh, and pa
 import logging
 import uuid
 import os
+import re
+from threading import Lock
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.core.mail import send_mail
 from django.core.validators import validate_email
+from django.db import connection
+from django.db.utils import OperationalError
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
@@ -33,6 +39,94 @@ from django.conf import settings
 from .models import PasswordResetToken
 
 logger = logging.getLogger(__name__)
+_AUTH_SCHEMA_INIT_LOCK = Lock()
+_AUTH_SCHEMA_READY = False
+
+
+def _ensure_auth_schema_ready():
+    """
+    Ensure auth tables exist before handling auth requests.
+    This avoids login/signup 500s on fresh or in-memory databases.
+
+    Should only be called at module load or app startup, not per-request.
+    Uses a lock to prevent race conditions during initialization.
+    """
+    global _AUTH_SCHEMA_READY
+    if _AUTH_SCHEMA_READY:
+        return
+
+    with _AUTH_SCHEMA_INIT_LOCK:
+        if _AUTH_SCHEMA_READY:
+            return
+
+        try:
+            from django.apps import apps
+            if apps.is_installed('django.contrib.auth'):
+                try:
+                    apps.get_model('auth', 'User')
+                    _AUTH_SCHEMA_READY = True
+                    return
+                except LookupError:
+                    pass
+
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='auth_user'"
+                )
+                table_exists = cursor.fetchone() is not None
+        except Exception:
+            table_exists = False
+
+        if not table_exists:
+            logger.warning("auth_user table missing; running migrations to bootstrap auth schema.")
+            call_command('migrate', interactive=False, run_syncdb=True, verbosity=0)
+
+        _AUTH_SCHEMA_READY = True
+
+
+# Run schema check at module import time instead of per-request
+try:
+    _ensure_auth_schema_ready()
+except Exception as e:
+    logger.error(f"Failed to initialize auth schema at startup: {e}", exc_info=True)
+
+
+def _looks_like_placeholder_secret(value):
+    """Detect obvious placeholder values that cannot deliver real email."""
+    normalized = (value or '').strip().lower()
+    if not normalized:
+        return True
+
+    placeholder_markers = (
+        'your-',
+        'your_',
+        'example.com',
+        'placeholder',
+        'change-this',
+        'app-password',
+    )
+    return any(marker in normalized for marker in placeholder_markers)
+
+
+def _has_real_smtp_credentials():
+    """
+    Validate whether SMTP credentials are configured for actual inbox delivery.
+    We enforce this only for SMTP/fallback backends that are expected to send real email.
+    """
+    backend = (getattr(settings, 'EMAIL_BACKEND', '') or '').lower()
+    uses_smtp_credentials = (
+        'django.core.mail.backends.smtp.emailbackend' in backend
+        or 'verification.email_backend.fallbackemailbackend' in backend
+    )
+    if not uses_smtp_credentials:
+        return True
+
+    host_user = getattr(settings, 'EMAIL_HOST_USER', '')
+    host_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+    return not (
+        _looks_like_placeholder_secret(host_user)
+        or _looks_like_placeholder_secret(host_password)
+    )
 
 
 class LoginView(APIView):
@@ -136,6 +230,16 @@ class SignupView(APIView):
                 {'error': 'Password must be at least 8 characters'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Enforce Django password validators (complexity, common passwords, etc.)
+        try:
+            temp_user = User(username=email, email=email, first_name=name)
+            validate_password(password, user=temp_user)
+        except ValidationError as e:
+            return Response(
+                {'error': ' '.join(e.messages)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # check for existing account with same email (case-insensitive)
         if User.objects.filter(email__iexact=email).exists():
@@ -217,6 +321,20 @@ class ForgotPasswordView(APIView):
                 {'error': 'Please provide a valid email address'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        if not _has_real_smtp_credentials():
+            logger.error(
+                "Password reset email service is not configured with real SMTP credentials."
+            )
+            return Response(
+                {
+                    'error': (
+                        'Email service is not configured. '
+                        'Set valid EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in backend/.env.'
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
         
         # Fetch at most two rows so we can detect duplicates without an extra count query.
         matching_users = list(
@@ -293,7 +411,6 @@ FACTLY Team
                         status=status.HTTP_503_SERVICE_UNAVAILABLE
                     )
                 logger.info(f"Password reset email sent successfully to: {email}")
-                logger.debug(f"Reset link: {reset_link}")
             except Exception as email_error:
                 logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
                 return Response(
@@ -377,16 +494,25 @@ class ResetPasswordView(APIView):
                 {'error': 'Password must be at least 8 characters'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             reset_token = PasswordResetToken.objects.get(token=token)
-            
+
             if not reset_token.is_valid():
                 return Response(
                     {'error': 'Reset link has expired or already been used'},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
-            
+
+            # Enforce Django password validators on reset too
+            try:
+                validate_password(new_password, user=reset_token.user)
+            except ValidationError as e:
+                return Response(
+                    {'error': ' '.join(e.messages)},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             # Update password
             user = reset_token.user
             user.set_password(new_password)

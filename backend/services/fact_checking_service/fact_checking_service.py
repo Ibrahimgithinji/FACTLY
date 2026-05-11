@@ -13,7 +13,6 @@ from .newsldr_api import NewsLdrClient
 from .unified_schema import VerificationResult, ClaimReview, RelatedNews, SourceReliability
 from .cache_manager import CacheManager
 from .evidence_search_service import EvidenceSearchService
-from .evidence_search_service import EvidenceSearchService
 
 logger = logging.getLogger(__name__)
 

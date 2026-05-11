@@ -46,23 +46,34 @@ class UserProfileView(APIView):
         try:
             user = request.user
             data = request.data
-            
-            # Update allowed fields
+
             if 'name' in data:
                 user.first_name = data['name']
-            
+
             if 'email' in data:
-                # Check if email is already used
-                if data['email'] != user.email:
-                    if User.objects.filter(email__iexact=data['email']).exclude(id=user.id).exists():
+                new_email = data['email'].strip().lower()
+                if new_email != user.email:
+                    # Require current password confirmation for email change
+                    current_password = data.get('current_password')
+                    if not current_password:
+                        return Response(
+                            {'error': 'Current password is required to change your email address'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    if not user.check_password(current_password):
+                        return Response(
+                            {'error': 'Current password is incorrect'},
+                            status=status.HTTP_401_UNAUTHORIZED
+                        )
+                    if User.objects.filter(email__iexact=new_email).exclude(id=user.id).exists():
                         return Response(
                             {'error': 'Email already in use'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
-                user.email = data['email']
-            
+                    user.email = new_email
+
             user.save()
-            
+
             return Response({
                 'id': user.id,
                 'email': user.email,
@@ -106,5 +117,27 @@ class UserStatisticsView(APIView):
             logger.exception("Failed to fetch user statistics")
             return Response(
                 {'error': 'Failed to fetch user statistics'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class VerificationHistoryView(APIView):
+    """"Verification history endpoint - returns user's verification history."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """"Get user's verification history."""
+        try:
+            # For now, return empty history since we don't store history in DB yet
+            # In future, this would query a VerificationHistory model
+            return Response({
+                'history': [],
+                'total_count': 0,
+                'message': 'Verification history feature coming soon'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.exception("Failed to fetch verification history")
+            return Response(
+                {'error': 'Failed to fetch verification history'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

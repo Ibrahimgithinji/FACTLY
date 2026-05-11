@@ -71,12 +71,12 @@ const ScoreDisplay = () => {
   }
 
   const { score, confidence, factors = {} } = results;
-  
+
   // Handle different API response formats
   const actualScore = results.factly_score?.factly_score ?? results.factly_score?.score ?? score ?? 0;
-  const actualConfidence = results.factly_score?.confidence_level ? 
-    (results.factly_score.confidence_level === 'High' ? 0.9 : 
-     results.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) : 
+  const actualConfidence = results.factly_score?.confidence_level ?
+    (results.factly_score.confidence_level === 'High' ? 0.9 :
+     results.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) :
     (confidence ?? 0.5);
   const actualFactors = results.factly_score?.components ?? factors;
   
@@ -121,12 +121,12 @@ const ScoreDisplay = () => {
       <div className="confidence-section">
         <div className="confidence-label">
           <span>Confidence Level</span>
-          <span className="confidence-value">{Math.round(confidence * 100)}%</span>
+          <span className="confidence-value">{Math.round(actualConfidence * 100)}%</span>
         </div>
-        <div className="confidence-bar" role="progressbar" aria-valuenow={Math.round(confidence * 100)} aria-valuemin="0" aria-valuemax="100">
+        <div className="confidence-bar" role="progressbar" aria-valuenow={Math.round(actualConfidence * 100)} aria-valuemin="0" aria-valuemax="100">
           <div 
             className="confidence-fill" 
-            style={{ width: isVisible ? `${confidence * 100}%` : '0%' }}
+            style={{ width: isVisible ? `${actualConfidence * 100}%` : '0%' }}
             aria-hidden="true"
           ></div>
         </div>
