@@ -35,37 +35,37 @@ def debug_task(self):
 app.conf.beat_schedule = {
     # Refresh real-time news cache every 5 minutes
     'refresh-realtime-news': {
-        'task': 'services.tasks.refresh_realtime_data',
+        'task': 'factly_backend.services.tasks.refresh_realtime_data',
         'schedule': 300.0,  # 5 minutes
         'options': {'queue': 'high_priority'}
     },
     # Refresh trending topics every 15 minutes
     'update-trending-topics': {
-        'task': 'services.tasks.update_trending_topics',
+        'task': 'factly_backend.services.tasks.update_trending_topics',
         'schedule': 900.0,  # 15 minutes
         'options': {'queue': 'ingestion'}
     },
     # Update trending stories every 10 minutes (NewsAPI + NewsData.io)
     'update-trending-stories': {
-        'task': 'services.tasks.update_trending.update_trending_stories',
+        'task': 'factly_backend.services.tasks.update_trending.update_trending_stories',
         'schedule': 600.0,  # 10 minutes
         'options': {'queue': 'ingestion'}
     },
     # Clear old cache entries every hour
     'cleanup-old-cache': {
-        'task': 'services.tasks.cleanup_cache',
+        'task': 'factly_backend.services.tasks.cleanup_cache',
         'schedule': 3600.0,  # 1 hour
         'options': {'queue': 'low_priority'}
     },
     # Update global events digest every 30 minutes
     'update-global-events': {
-        'task': 'services.tasks.update_global_events',
+        'task': 'factly_backend.services.tasks.update_global_events',
         'schedule': 1800.0,  # 30 minutes
         'options': {'queue': 'ingestion'}
     },
     # Refresh fact-check database daily
     'daily-fact-check-refresh': {
-        'task': 'services.tasks.refresh_fact_check_cache',
+        'task': 'factly_backend.services.tasks.refresh_fact_check_cache',
         'schedule': 86400.0,  # 24 hours
         'options': {'queue': 'low_priority'}
     },

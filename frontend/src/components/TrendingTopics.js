@@ -140,6 +140,30 @@ const DEMO_TOPICS = [
   }
 ];
 
+const normalizeTopics = (payload) => {
+  if (Array.isArray(payload?.trending_topics) && payload.trending_topics.length > 0) {
+    return {
+      topics: payload.trending_topics,
+      source: payload.data_source || 'api',
+      isFallback: payload.data_source === 'demo_fallback'
+    };
+  }
+
+  if (Array.isArray(payload) && payload.length > 0) {
+    return {
+      topics: payload,
+      source: 'api',
+      isFallback: false
+    };
+  }
+
+  return {
+    topics: DEMO_TOPICS,
+    source: 'demo_fallback',
+    isFallback: true
+  };
+};
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -255,7 +279,6 @@ const TrendingTopics = ({ onTopicClick }) => {
       // Validate Content-Type header
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
         console.error(`[TrendingTopics] Invalid Content-Type: ${response.status}`);
         throw new Error(`Server returned non-JSON response (${response.status})`);
       }
@@ -267,19 +290,15 @@ const TrendingTopics = ({ onTopicClick }) => {
       const data = await response.json();
       console.log('[TrendingTopics] API Response received:', data);
 
-        setTopics(data.trending_topics);
-        setDataSource(data.data_source || 'api');
-      } else if (Array.isArray(data) && data.length > 0) {
-        setTopics(data);
-        setDataSource('api');
-      } else {
-        // No data returned, will retry or show demo
-        throw new Error('Empty response from API');
-      }
+      const normalizedData = normalizeTopics(data);
+      setTopics(normalizedData.topics);
+      setDataSource(normalizedData.source);
 
       // Set additional data if available
-      if (data.global_events) {
+      if (Array.isArray(data.global_events)) {
         setGlobalEvents(data.global_events);
+      } else {
+        setGlobalEvents([]);
       }
       if (data.last_updated) {
         setLastUpdated(data.last_updated);
@@ -289,8 +308,8 @@ const TrendingTopics = ({ onTopicClick }) => {
       }
 
       // Clear error states on success
-      setFetchFailed(false);
-      setRefreshError(null);
+      setFetchFailed(normalizedData.isFallback);
+      setRefreshError(normalizedData.isFallback ? 'Showing fallback demo topics while live data warms up.' : null);
       setLoading(false);
       retryCountRef.current = 0;
       console.log('[TrendingTopics] Fetch successful');

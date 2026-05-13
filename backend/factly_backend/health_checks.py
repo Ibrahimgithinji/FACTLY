@@ -5,6 +5,7 @@ Provides basic health check endpoints for monitoring and load balancer checks.
 """
 
 import logging
+from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.views.decorators.cache import never_cache
@@ -22,7 +23,7 @@ def liveness_check(request):
     return JsonResponse({
         "status": "alive",
         "service": "factly-backend",
-        "timestamp": "2026-03-05T12:00:00Z"
+        "timestamp": datetime.now().isoformat() + "Z"
     })
 
 
@@ -44,7 +45,7 @@ def readiness_check(request):
             "status": "ready",
             "service": "factly-backend",
             "database": "connected",
-            "timestamp": "2026-03-05T12:00:00Z"
+            "timestamp": datetime.now().isoformat() + "Z"
         })
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
@@ -52,7 +53,7 @@ def readiness_check(request):
             "status": "not ready",
             "service": "factly-backend",
             "error": str(e),
-            "timestamp": "2026-03-05T12:00:00Z"
+            "timestamp": datetime.now().isoformat() + "Z"
         }, status=503)
 
 
@@ -66,7 +67,7 @@ def startup_check(request):
     return JsonResponse({
         "status": "started",
         "service": "factly-backend",
-        "timestamp": "2026-03-05T12:00:00Z"
+        "timestamp": datetime.now().isoformat() + "Z"
     })
 
 
@@ -80,7 +81,7 @@ def comprehensive_health_check(request):
     health_status = {
         "status": "healthy",
         "service": "factly-backend",
-        "timestamp": "2026-03-05T12:00:00Z",
+        "timestamp": datetime.now().isoformat() + "Z",
         "checks": {}
     }
 

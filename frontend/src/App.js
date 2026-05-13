@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ResultsProvider } from './context/ResultsContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -50,20 +50,60 @@ const ResultsPage = () => (
 
 // Home page with trending topics
 const HomePage = () => {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  const [selectedTopic, setSelectedTopic] = useState('');
+
   const handleTopicClick = (topic) => {
-    setSearchQuery(topic);
-    // Navigate to verification with the topic
-    navigate('/results', { state: { topic } });
+    setSelectedTopic(topic);
+
+    const formSection = document.getElementById('verification-form-section');
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
-  
+
   return (
     <div className="home-container">
-      {/* verification form is now part of the home landing page */}
-      <VerificationForm />
-      <TrendingTopics onTopicClick={handleTopicClick} />
+      <section className="home-hero">
+        <div className="hero-copy">
+          <span className="hero-eyebrow">Fact checking workspace</span>
+          <h1>Verify fast-moving stories before they spread.</h1>
+          <p>
+            Run a credibility check, review supporting evidence, and use the trending
+            stream to inspect the stories people are talking about right now.
+          </p>
+          <div className="hero-metrics" aria-label="Factly highlights">
+            <div className="hero-metric">
+              <strong>Live</strong>
+              <span>Trending topics feed</span>
+            </div>
+            <div className="hero-metric">
+              <strong>Multi-source</strong>
+              <span>Evidence-led scoring</span>
+            </div>
+            <div className="hero-metric">
+              <strong>Instant</strong>
+              <span>Verification workflow</span>
+            </div>
+          </div>
+        </div>
+
+        <aside className="hero-panel">
+          <h2>How to use Factly</h2>
+          <ol className="hero-steps">
+            <li>Paste a headline, article text, or URL into the verifier.</li>
+            <li>Use Trending Topics to prefill the form with a current story.</li>
+            <li>Review the score, evidence, and source credibility before sharing.</li>
+          </ol>
+        </aside>
+      </section>
+
+      <section id="verification-form-section" className="home-primary-section">
+        <VerificationForm initialValue={selectedTopic} />
+      </section>
+
+      <section className="home-secondary-section">
+        <TrendingTopics onTopicClick={handleTopicClick} />
+      </section>
     </div>
   );
 };
@@ -76,8 +116,8 @@ function App() {
           <div className="App">
             <Navbar />
             <main id="main-content" className="app-main" role="main">
-              <Suspense fallback={<PageLoader />}>
-                <ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
@@ -130,8 +170,8 @@ function App() {
                     } 
                   />
                 </Routes>
-              </ErrorBoundary>
-            </Suspense>
+                </Suspense>
+                </ErrorBoundary>
           </main>
         </div>
       </Router>

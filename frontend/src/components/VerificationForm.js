@@ -1,24 +1,28 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useResults } from '../context/ResultsContext';
 import { API_ENDPOINTS } from '../utils/api';
 import { apiPost } from '../utils/apiClient';
 import './VerificationForm.css';
 
-const VerificationForm = () => {
-  const [input, setInput] = useState('');
+const VerificationForm = ({ initialValue = '' }) => {
+  const [input, setInput] = useState(initialValue);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [charCount, setCharCount] = useState(0);
   const navigate = useNavigate();
-  const { getValidAccessToken, isAuthenticated } = useAuth();
   const { updateResults } = useResults();
   
   // Ref for abort controller
   const abortControllerRef = useRef(null);
 
   const MAX_CHARS = 5000;
+
+  useEffect(() => {
+    setInput(initialValue);
+    setCharCount(initialValue.length);
+    setError(null);
+  }, [initialValue]);
 
   const handleInputChange = useCallback((e) => {
     const value = e.target.value;

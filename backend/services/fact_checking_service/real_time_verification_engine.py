@@ -309,7 +309,7 @@ class RealTimeVerificationEngine:
             'regions': regions
         }
         cached = self.cache.get('realtime_verification', cache_key, 
-                               data_type='verification', ttl_hours=0.083)  # 5 minutes
+                               data_type='realtime')  # 5 minutes
         if cached:
             logger.info("Returning cached real-time verification")
             return cached
@@ -341,7 +341,7 @@ class RealTimeVerificationEngine:
         
         # Cache result
         self.cache.set('realtime_verification', cache_key, result, 
-                      data_type='verification', ttl_hours=0.083)
+                      data_type='realtime')
         
         return result
 

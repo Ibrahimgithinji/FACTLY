@@ -59,6 +59,20 @@ class PasswordResetTests(TestCase):
         self.assertIn('Unable to send reset email', resp.json().get('error', ''))
         mocked_send_mail.assert_called_once()
 
+    @override_settings(
+        EMAIL_BACKEND='verification.email_backend.FallbackEmailBackend',
+        EMAIL_HOST_USER='your-email@example.com',
+        EMAIL_HOST_PASSWORD='your-gmail-app-password',
+    )
+    @patch('verification.auth_views.send_mail')
+    def test_forgot_password_returns_503_when_smtp_credentials_are_placeholders(self, mocked_send_mail):
+        url = reverse('verification:forgot_password')
+        resp = self.client.post(url, {'email': self.user_email}, content_type='application/json')
+        self.assertEqual(resp.status_code, 503)
+        self.assertIn('Email service is not configured', resp.json().get('error', ''))
+        self.assertFalse(PasswordResetToken.objects.filter(user=self.user).exists())
+        mocked_send_mail.assert_not_called()
+
     # --- authentication tests ---
     def test_login_success(self):
         url = reverse('verification:login')
