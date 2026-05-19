@@ -59,17 +59,23 @@ class EvidenceCollection:
     def get_data_age_hours(self) -> float:
         """Get the age of the data in hours."""
         if not self.timestamp:
-            return float('inf')
+            return None
         age = datetime.now() - self.timestamp
         return age.total_seconds() / 3600
 
     def is_fresh(self, threshold_hours: float = 12) -> bool:
         """Check if the data is still fresh based on threshold."""
-        return self.get_data_age_hours() <= threshold_hours
+        age = self.get_data_age_hours()
+        if age is None:
+            return False
+        return age <= threshold_hours
 
     def needs_refresh(self, max_age_hours: float = 24) -> bool:
         """Check if the data needs to be refreshed."""
-        return self.get_data_age_hours() > max_age_hours
+        age = self.get_data_age_hours()
+        if age is None:
+            return True
+        return age > max_age_hours
 
 
 class EvidenceSearchService:

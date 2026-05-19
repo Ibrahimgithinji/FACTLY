@@ -551,32 +551,36 @@ class VerificationView(APIView):
     def _calculate_evidence_age(self, result) -> float:
         """Calculate the age of the most recent evidence in hours."""
         if not result.evidence_collection or not result.evidence_collection.evidence_items:
-            return float('inf')
-        
+            return None
+
         # Find the most recent evidence
         most_recent = max(
-            (item for item in result.evidence_collection.evidence_items 
+            (item for item in result.evidence_collection.evidence_items
              if item.published_date),
             key=lambda x: x.published_date,
             default=None
         )
-        
+
         if most_recent and most_recent.published_date:
             age = datetime.now() - most_recent.published_date.replace(tzinfo=None)
             return age.total_seconds() / 3600
-        
-        return float('inf')
+
+        return None
     
     def _is_data_fresh(self, result) -> bool:
         """Check if the verification data is considered fresh."""
         evidence_age = self._calculate_evidence_age(result)
-        return evidence_age <= 24  # Consider fresh if evidence is less than 24 hours old
+        if evidence_age is None:
+            return False
+        return evidence_age <= 24
     
     def _get_data_age_warning(self, result) -> str:
         """Get a warning message about data age."""
         evidence_age = self._calculate_evidence_age(result)
-        
-        if evidence_age <= 1:
+
+        if evidence_age is None:
+            return "No evidence with timestamps available for freshness assessment"
+        elif evidence_age <= 1:
             return "Data is very recent (less than 1 hour old)"
         elif evidence_age <= 6:
             return "Data is recent (less than 6 hours old)"
@@ -638,7 +642,7 @@ class VerificationView(APIView):
                 except:
                     pass
         
-        avg_age_hours = float('inf')
+        avg_age_hours = None
         if dates:
             ages = [(now - date).total_seconds() / 3600 for date in dates]
             avg_age_hours = sum(ages) / len(ages)
@@ -680,9 +684,9 @@ class VerificationView(APIView):
             },
             'evidence_freshness': {
                 'average_age_hours': avg_age_hours,
-                'freshness_level': self._get_freshness_level(avg_age_hours),
-                'is_fresh': avg_age_hours <= 24,
-                'is_stale': avg_age_hours > 168  # 1 week
+                'freshness_level': self._get_freshness_level(avg_age_hours) if avg_age_hours is not None else 'Unknown',
+                'is_fresh': avg_age_hours is not None and avg_age_hours <= 24,
+                'is_stale': avg_age_hours is None or avg_age_hours > 168
             },
             'cross_verification': {
                 'unique_sources': len(unique_sources),
@@ -704,6 +708,8 @@ class VerificationView(APIView):
     
     def _get_freshness_level(self, hours):
         """Get freshness level label from age in hours."""
+        if hours is None:
+            return 'Unknown'
         if hours <= 1: return 'Very Recent'
         if hours <= 6: return 'Recent'
         if hours <= 24: return 'Moderately Recent'
