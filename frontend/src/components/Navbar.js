@@ -41,8 +41,8 @@ const Navbar = () => {
     // Add shadow when scrolled
     setIsScrolled(currentScrollY > 10);
     
-    // Hide/show on scroll direction (optional - can be removed if always visible preferred)
-    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+    // Hide navbar on scroll down (only after significant scroll distance)
+    if (currentScrollY > lastScrollY && currentScrollY > 300) {
       setIsVisible(false);
     } else {
       setIsVisible(true);
