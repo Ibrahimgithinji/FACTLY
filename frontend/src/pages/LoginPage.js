@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
@@ -15,9 +15,34 @@ const LoginPage = () => {
   const { login, setTokens } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const popupRef = useRef(null);
 
   // Get the page user was trying to access, or default to home
   const from = location.state?.from?.pathname || '/';
+
+  // Listen for postMessage from GitHub OAuth popup
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.origin !== 'http://localhost:8000' && event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (data && data.access && data.refresh && data.user) {
+        setTokens(data.access, data.refresh, data.user);
+        navigate(from, { replace: true });
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [navigate, from, setTokens]);
+
+  // Check URL for OAuth error from redirect
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get('error');
+    if (error) {
+      setSubmitError(decodeURIComponent(error));
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const validateForm = useCallback(() => {
     const newErrors = {};
@@ -104,12 +129,29 @@ const LoginPage = () => {
       });
       window.google.accounts.id.prompt();
     } else {
-      window.location.href = '/accounts/google/login/?process=login';
+      setSubmitError('Google Sign-In library not loaded. Please refresh the page.');
+    }
+  };
+
+  const handleGitHubLogin = () => {
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(
+      '/api/verification/auth/github/login/',
+      'github-oauth',
+      `width=${width},height=${height},left=${left},top=${top},popup=1`
+    );
+    if (popup) {
+      popupRef.current = popup;
+    } else {
+      setSubmitError('Popup was blocked. Please allow popups for this site.');
     }
   };
 
   // Load Google Identity Services on mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
@@ -146,7 +188,7 @@ const LoginPage = () => {
           <button
             type="button"
             className="social-btn social-btn-github"
-            onClick={() => window.location.href = '/accounts/github/login/?process=login'}
+            onClick={handleGitHubLogin}
             disabled={isSubmitting}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:8}}>

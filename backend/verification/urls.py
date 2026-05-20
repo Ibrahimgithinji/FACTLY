@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, auth_views, user_views
+from . import views, auth_views, user_views, github_oauth_views
 # from . import fast_views  # Disabled temporarily - requires additional dependencies
 
 app_name = 'verification'
@@ -13,6 +13,9 @@ urlpatterns = [
     path('verification/auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
     path('verification/auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
     path('verification/auth/social/', auth_views.SocialLoginView.as_view(), name='social_login'),
+    # GitHub OAuth popup flow (backend-initiated, redirect-based)
+    path('verification/auth/github/login/', github_oauth_views.GitHubLoginInitView.as_view(), name='github_login'),
+    path('verification/auth/github/callback/', github_oauth_views.GitHubCallbackView.as_view(), name='github_callback'),
     
     # User endpoints
     path('verification/user/', user_views.UserProfileView.as_view(), name='user_profile'),
