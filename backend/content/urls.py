@@ -13,4 +13,5 @@ urlpatterns = [
     path('newsletter/', views.newsletter_subscribe, name='newsletter-subscribe'),
     path('bookmarks/', views.my_bookmarks, name='my-bookmarks'),
     path('bookmarks/<int:article_id>/', views.toggle_bookmark, name='toggle-bookmark'),
+    path('authors/<int:author_id>/', views.author_detail, name='author-detail'),
 ]

@@ -9,7 +9,7 @@ from .models import Category, Tag, Article, Comment
 from .serializers import (
     CategorySerializer, TagSerializer, ArticleListSerializer,
     ArticleDetailSerializer, CommentSerializer, CommentCreateSerializer,
-    GuestArticleSerializer,
+    GuestArticleSerializer, AuthorProfileSerializer,
 )
 
 
@@ -208,6 +208,27 @@ def my_bookmarks(request):
     return Response({
         'count': len(articles),
         'results': ArticleListSerializer(articles, many=True).data,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def author_detail(request, author_id):
+    from .models import AuthorProfile
+    try:
+        author = AuthorProfile.objects.get(id=author_id)
+    except AuthorProfile.DoesNotExist:
+        return Response({'error': 'Author not found'}, status=404)
+
+    articles = Article.objects.filter(
+        author=author, status='published',
+        published_at__lte=timezone.now()
+    ).order_by('-published_at')
+
+    return Response({
+        'author': AuthorProfileSerializer(author).data,
+        'articles': ArticleListSerializer(articles, many=True).data,
+        'article_count': articles.count(),
     })
 
 

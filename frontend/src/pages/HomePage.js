@@ -4,6 +4,7 @@ import ArticleCard from '../components/ArticleCard';
 import Sidebar from '../components/Sidebar';
 import TrendingTopics from '../components/TrendingTopics';
 import { ArticleCardSkeleton, SidebarSkeleton } from '../components/Skeleton';
+import SEOMeta from '../components/SEOMeta';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './HomePage.css';
 
@@ -86,6 +87,7 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
+      <SEOMeta />
       {/* What's New / Trending strip */}
       {data?.trending && data.trending.length > 0 && (
         <section className="home-trending">

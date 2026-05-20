@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { ResultsProvider } from './context/ResultsContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -30,6 +31,8 @@ const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const GuestSubmitPage = lazy(() => import('./pages/GuestSubmitPage'));
 const BookmarksPage = lazy(() => import('./pages/BookmarksPage'));
+const AuthorPage = lazy(() => import('./pages/AuthorPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
   <div className="loading-container" role="status" aria-live="polite">
@@ -55,6 +58,7 @@ function App() {
     <AuthProvider>
       <ResultsProvider>
         <ThemeProvider>
+          <HelmetProvider>
           <Router future={{ v7_relativeSplatPath: true }}>
             <div className="App">
               <Navbar />
@@ -71,6 +75,7 @@ function App() {
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/write-for-us" element={<GuestSubmitPage />} />
                     <Route path="/bookmarks" element={<BookmarksPage />} />
+                    <Route path="/author/:id" element={<AuthorPage />} />
                     <Route
                       path="/"
                       element={
@@ -101,18 +106,7 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
-                    <Route
-                      path="*"
-                      element={
-                        <div className="error-container" role="alert">
-                          <div className="error-icon" aria-hidden="true">404</div>
-                          <h1 className="error-title">Page Not Found</h1>
-                          <p className="error-message">
-                            The page you're looking for doesn't exist or has been moved.
-                          </p>
-                        </div>
-                      }
-                    />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                   </Suspense>
                   </ErrorBoundary>
@@ -120,6 +114,7 @@ function App() {
             <Footer />
           </div>
         </Router>
+        </HelmetProvider>
       </ThemeProvider>
     </ResultsProvider>
     </AuthProvider>

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import Sidebar from '../components/Sidebar';
 import { ArticleCardSkeleton, SidebarSkeleton } from '../components/Skeleton';
+import SEOMeta from '../components/SEOMeta';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './CategoryPage.css';
 
@@ -71,6 +72,10 @@ export default function CategoryPage() {
 
   return (
     <div className="category-page">
+      <SEOMeta
+        title={category?.name || slug}
+        description={category?.description}
+      />
       <div className="category-page__header">
         <h1 className="category-page__title">
           {category?.icon && <span>{category.icon} </span>}

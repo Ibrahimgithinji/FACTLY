@@ -16,6 +16,7 @@ export default function ArticleCard({ article, featured }) {
           {featured_image && (
             <div className="article-card__image">
               <img src={featured_image} alt={title} loading="lazy" />
+              {read_time && <span className="article-card__badge">{read_time} min</span>}
             </div>
           )}
           <div className="article-card__body">
@@ -39,6 +40,7 @@ export default function ArticleCard({ article, featured }) {
         {featured_image && (
           <div className="article-card__image">
             <img src={featured_image} alt={title} loading="lazy" />
+            {read_time && <span className="article-card__badge">{read_time} min</span>}
           </div>
         )}
         <div className="article-card__body">

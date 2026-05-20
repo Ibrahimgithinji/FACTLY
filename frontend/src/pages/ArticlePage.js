@@ -6,6 +6,7 @@ import Sidebar from '../components/Sidebar';
 import CommentsSection from '../components/CommentsSection';
 import ReadingProgress from '../components/ReadingProgress';
 import BookmarkButton from '../components/BookmarkButton';
+import SEOMeta from '../components/SEOMeta';
 import { ArticlePageSkeleton, SidebarSkeleton } from '../components/Skeleton';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './ArticlePage.css';
@@ -74,6 +75,16 @@ export default function ArticlePage() {
 
   return (
     <div className="article-page">
+      <SEOMeta
+        title={article.title}
+        description={article.excerpt}
+        image={article.featured_image}
+        url={window.location.href}
+        type="article"
+        publishedAt={article.published_at}
+        author={article.author?.display_name}
+        tags={article.tags?.map(t => t.name)}
+      />
       <ReadingProgress />
       <div className="article-page__layout">
         <article className="article-page__main">
@@ -93,7 +104,7 @@ export default function ArticlePage() {
                   <img src={article.author.avatar} alt="" className="article-page__author-img" />
                 )}
                 <div>
-                  <span className="article-page__author-name">{article.author.display_name}</span>
+                  <Link to={`/author/${article.author.id}`} className="article-page__author-name">{article.author.display_name}</Link>
                   {article.author.position && (
                     <span className="article-page__author-position">{article.author.position}</span>
                   )}
