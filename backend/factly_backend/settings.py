@@ -171,7 +171,7 @@ def get_sqlite_db_path():
         except OSError:
             pass
 
-    strict_sqlite_path = os.getenv('STRICT_SQLITE_PATH', 'True').lower() in ('1', 'true', 'yes')
+    strict_sqlite_path = os.getenv('STRICT_SQLITE_PATH', 'False').lower() in ('1', 'true', 'yes')
     if strict_sqlite_path:
         raise RuntimeError(
             "No writable SQLite path found. Set SQLITE_DB_PATH to a writable location."

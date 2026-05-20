@@ -67,11 +67,16 @@ yarn-error.log
 /build
 /dist
 .cache/
+frontend/build_temp/
+frontend/build_temp_check/
 
 # Database files
 *.db
 *.sqlite
 *.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 
 # Logs
 *.log

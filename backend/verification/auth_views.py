@@ -43,12 +43,17 @@ _AUTH_SCHEMA_INIT_LOCK = Lock()
 _AUTH_SCHEMA_READY = False
 
 
+def _reset_auth_schema_flag():
+    global _AUTH_SCHEMA_READY
+    _AUTH_SCHEMA_READY = False
+
+
 def _ensure_auth_schema_ready():
     """
     Ensure auth tables exist before handling auth requests.
     This avoids login/signup 500s on fresh or in-memory databases.
 
-    Should only be called at module load or app startup, not per-request.
+    Safe to call per-request; returns immediately if already initialized.
     Uses a lock to prevent race conditions during initialization.
     """
     global _AUTH_SCHEMA_READY
@@ -84,11 +89,12 @@ def _ensure_auth_schema_ready():
         _AUTH_SCHEMA_READY = True
 
 
-# Run schema check at module import time instead of per-request
+# Run schema check at module import time for warm start
 try:
     _ensure_auth_schema_ready()
 except Exception as e:
     logger.error(f"Failed to initialize auth schema at startup: {e}", exc_info=True)
+    _reset_auth_schema_flag()  # Allow retry on first request
 
 
 def _looks_like_placeholder_secret(value):
@@ -135,6 +141,8 @@ class LoginView(APIView):
     throttle_classes = [LoginRateThrottle]
     
     def post(self, request):
+        _ensure_auth_schema_ready()
+
         email = request.data.get('email') or ''
         password = request.data.get('password')
         
@@ -163,6 +171,7 @@ class LoginView(APIView):
             )
         except Exception as e:
             logger.error(f"Database error during user lookup: {e}", exc_info=True)
+            _reset_auth_schema_flag()  # Allow schema retry on next request
             return Response(
                 {'error': 'Server error. Please try again later.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -211,6 +220,8 @@ class SignupView(APIView):
     throttle_classes = [AnonRateThrottle]
     
     def post(self, request):
+        _ensure_auth_schema_ready()
+
         name = request.data.get('name', '')
         email = request.data.get('email')
         password = request.data.get('password')
@@ -268,6 +279,7 @@ class SignupView(APIView):
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Signup error: {e}")
+            _reset_auth_schema_flag()  # Allow schema retry on next request
             return Response(
                 {'error': 'Unable to create account'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
