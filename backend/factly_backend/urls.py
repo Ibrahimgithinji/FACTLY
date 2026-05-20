@@ -33,6 +33,9 @@ urlpatterns = [
     path('api/', include('verification.urls')),
     path('api/content/', include('content.urls')),
     
+    # Social Auth (django-allauth)
+    path('accounts/', include('allauth.urls')),
+
     # Health Check Endpoints (Kubernetes probes)
     path('health/', comprehensive_health_check, name='health_check'),
     path('health/live/', liveness_check, name='liveness_check'),

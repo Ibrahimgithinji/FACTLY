@@ -46,6 +46,19 @@ export default function ArticlePage() {
     fetchData();
   }, [slug]);
 
+  // Log page view
+  useEffect(() => {
+    if (!article) return;
+    fetch('/api/content/analytics/log-view/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: `/article/${slug}`,
+        article_id: article.id,
+      }),
+    }).catch(() => {});
+  }, [article, slug]);
+
   if (loading) {
     return (
       <div className="article-page">

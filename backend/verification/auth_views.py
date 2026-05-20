@@ -552,3 +552,132 @@ class ResetPasswordView(APIView):
             )
 
 
+class SocialLoginView(APIView):
+    """Social login endpoint that accepts OAuth tokens and returns JWT tokens."""
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    def post(self, request):
+        _ensure_auth_schema_ready()
+
+        provider = request.data.get('provider')
+        access_token = request.data.get('access_token')
+
+        if not provider or not access_token:
+            return Response(
+                {'error': 'Provider and access_token required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        provider = provider.lower()
+        if provider not in ('google', 'github'):
+            return Response(
+                {'error': 'Unsupported provider. Use google or github.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from allauth.socialaccount.models import SocialAccount
+        from django.contrib.auth.models import User
+        import requests
+
+        # Verify token with the provider
+        user_info = None
+        try:
+            if provider == 'google':
+                resp = requests.get(
+                    'https://www.googleapis.com/oauth2/v3/userinfo',
+                    headers={'Authorization': f'Bearer {access_token}'},
+                    timeout=10
+                )
+                if resp.status_code != 200:
+                    return Response({'error': 'Invalid Google token'}, status=status.HTTP_401_UNAUTHORIZED)
+                data = resp.json()
+                user_info = {
+                    'id': data['sub'],
+                    'email': data.get('email', ''),
+                    'name': data.get('name', ''),
+                    'picture': data.get('picture', ''),
+                }
+            elif provider == 'github':
+                resp = requests.get(
+                    'https://api.github.com/user',
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'Accept': 'application/vnd.github+json',
+                    },
+                    timeout=10
+                )
+                if resp.status_code != 200:
+                    return Response({'error': 'Invalid GitHub token'}, status=status.HTTP_401_UNAUTHORIZED)
+                data = resp.json()
+                email_resp = requests.get(
+                    'https://api.github.com/user/emails',
+                    headers={'Authorization': f'Bearer {access_token}',
+                             'Accept': 'application/vnd.github+json'},
+                    timeout=10
+                )
+                primary_email = ''
+                if email_resp.status_code == 200:
+                    emails = email_resp.json()
+                    for e in emails:
+                        if e.get('primary'):
+                            primary_email = e['email']
+                            break
+                    if not primary_email and emails:
+                        primary_email = emails[0]['email']
+                user_info = {
+                    'id': str(data['id']),
+                    'email': primary_email or data.get('email', ''),
+                    'name': data.get('login', ''),
+                    'picture': data.get('avatar_url', ''),
+                }
+        except requests.RequestException as e:
+            logger.error(f"Social auth verification error: {e}")
+            return Response(
+                {'error': 'Failed to verify token with provider'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+        if not user_info or not user_info.get('email'):
+            return Response(
+                {'error': 'Could not retrieve email from provider'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Find or create user
+        email = user_info['email'].lower()
+        try:
+            user = User.objects.get(email=email)
+            created = False
+        except User.DoesNotExist:
+            name = user_info.get('name', email.split('@')[0])
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=None,
+                first_name=name,
+            )
+            user.set_unusable_password()
+            user.save()
+            created = True
+
+        # Link social account
+        SocialAccount.objects.get_or_create(
+            user=user,
+            provider=provider,
+            uid=user_info['id'],
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.first_name or user.username,
+                'picture': user_info.get('picture', ''),
+            }
+        })
+

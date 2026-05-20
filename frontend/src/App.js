@@ -8,6 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
+import InstallPrompt from './components/InstallPrompt';
+import PushNotificationPrompt from './components/PushNotificationPrompt';
 import { setupChunkErrorRecovery } from './utils/chunkRecovery';
 import './App.css';
 
@@ -33,6 +35,7 @@ const GuestSubmitPage = lazy(() => import('./pages/GuestSubmitPage'));
 const BookmarksPage = lazy(() => import('./pages/BookmarksPage'));
 const AuthorPage = lazy(() => import('./pages/AuthorPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 const PageLoader = () => (
   <div className="loading-container" role="status" aria-live="polite">
@@ -76,6 +79,7 @@ function App() {
                     <Route path="/write-for-us" element={<GuestSubmitPage />} />
                     <Route path="/bookmarks" element={<BookmarksPage />} />
                     <Route path="/author/:id" element={<AuthorPage />} />
+                    <Route path="/dashboard" element={<AdminDashboard />} />
                     <Route
                       path="/"
                       element={
@@ -112,6 +116,8 @@ function App() {
                   </ErrorBoundary>
             </main>
             <Footer />
+            <InstallPrompt />
+            <PushNotificationPrompt />
           </div>
         </Router>
         </HelmetProvider>

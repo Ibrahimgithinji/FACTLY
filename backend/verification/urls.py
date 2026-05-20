@@ -12,6 +12,7 @@ urlpatterns = [
     path('verification/auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('verification/auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
     path('verification/auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
+    path('verification/auth/social/', auth_views.SocialLoginView.as_view(), name='social_login'),
     
     # User endpoints
     path('verification/user/', user_views.UserProfileView.as_view(), name='user_profile'),

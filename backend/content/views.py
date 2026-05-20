@@ -140,6 +140,11 @@ def homepage_data(request):
 @permission_classes([AllowAny])
 def newsletter_subscribe(request):
     from .models import NewsletterSubscriber
+    from django.core.mail import send_mail
+    from django.conf import settings
+    import logging
+    logger = logging.getLogger(__name__)
+
     email = request.data.get('email', '').strip()
     name = request.data.get('name', '').strip()
     if not email:
@@ -150,6 +155,26 @@ def newsletter_subscribe(request):
     if not created and not sub.is_active:
         sub.is_active = True
         sub.save(update_fields=['is_active'])
+
+    # Send welcome email
+    if created:
+        try:
+            send_mail(
+                subject='Welcome to Factly!',
+                message=(
+                    f'Hi{ " " + name if name else "" },\n\n'
+                    f'Thanks for subscribing to Factly!\n\n'
+                    f'You\'ll get the latest tech news, fact-checks, and startup stories delivered to your inbox.\n\n'
+                    f'Stay curious,\nThe Factly Team\n'
+                    f'{settings.SITE_URL}'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            logger.warning(f'Welcome email failed for {email}: {e}')
+
     return Response({'message': 'Subscribed successfully!'})
 
 
