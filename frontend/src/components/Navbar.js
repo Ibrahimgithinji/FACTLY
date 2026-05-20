@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import SearchOverlay from './SearchOverlay';
 import './Navbar.css';
 
 /**
@@ -14,13 +16,24 @@ import './Navbar.css';
  * - Semantic HTML structure
  */
 
+const NAV_CATEGORIES = [
+  { name: 'News', slug: 'news' },
+  { name: 'Reviews', slug: 'reviews' },
+  { name: 'Startups', slug: 'startups' },
+  { name: 'Business', slug: 'business' },
+  { name: 'Opinion', slug: 'opinion' },
+  { name: 'Deep Dive', slug: 'deep-dive' },
+];
+
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { darkMode, toggleTheme } = useTheme();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Handle scroll behavior for sticky header
   const handleScroll = useCallback(() => {
@@ -83,29 +96,19 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Navigation items based on auth state
-  const getNavItems = () => {
-    // provide both a dedicated verify page and a home/trending page
-    const items = [
-      { path: '/verify', label: 'Verify', icon: '🔍' },
-      { path: '/', label: 'Trending', icon: '📈', exact: true }
-    ];
+  const navItems = [
+    { path: '/', label: 'Home', exact: true },
+    { path: '/verify', label: 'Verify' },
+    { path: '/write-for-us', label: 'Write for Us' },
+    { path: '/about', label: 'About' },
+  ];
 
-    if (isAuthenticated) {
-      items.push(
-        { path: '/results', label: 'Results', icon: '📊' },
-        { path: '/history', label: 'History', icon: '📜' }
-      );
-    }
-
-    items.push(
-      { path: '/about', label: 'About', icon: 'ℹ️' }
+  if (isAuthenticated) {
+    navItems.push(
+      { path: '/results', label: 'Results' },
+      { path: '/history', label: 'History' }
     );
-
-    return items;
-  };
-
-  const navItems = getNavItems();
+  }
 
   return (
     <>
@@ -120,7 +123,7 @@ const Navbar = () => {
               <span className="navbar__logo-icon">✓</span>
               <span className="navbar__logo-text">FACTLY</span>
             </Link>
-            <span className="navbar__tagline">Truth Verification</span>
+            <span className="navbar__tagline">Verify. Understand. Share.</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -135,51 +138,79 @@ const Navbar = () => {
                       `navbar__link ${isActive ? 'navbar__link--active' : ''}`
                     }
                   >
-                    <span className="navbar__link-icon" aria-hidden="true">
-                      {item.icon}
-                    </span>
                     <span className="navbar__link-text">{item.label}</span>
                   </NavLink>
                 </li>
               ))}
+              {/* Categories dropdown */}
+              <li className="navbar__menu-item navbar__dropdown">
+                <button className="navbar__link navbar__dropdown-trigger">
+                  Categories
+                  <span className="navbar__dropdown-arrow">▾</span>
+                </button>
+                <div className="navbar__dropdown-menu">
+                  {NAV_CATEGORIES.map(cat => (
+                    <Link key={cat.slug} to={`/category/${cat.slug}`} className="navbar__dropdown-item">
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </li>
             </ul>
           </nav>
 
-          {/* Auth Section */}
-          <div className="navbar__auth">
-            {isAuthenticated ? (
-              <div className="navbar__user">
-                <div className="navbar__user-info">
-                  <span className="navbar__user-avatar">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                  <span className="navbar__user-name">{user?.name}</span>
+          {/* Actions */}
+          <div className="navbar__actions">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="navbar__action-btn"
+              aria-label="Search articles"
+            >
+              🔍
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="navbar__action-btn"
+              aria-label="Toggle theme"
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+
+            {/* Auth Section */}
+            <div className="navbar__auth">
+              {isAuthenticated ? (
+                <div className="navbar__user">
+                  <div className="navbar__user-info">
+                    <span className="navbar__user-avatar">
+                      {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                    <span className="navbar__user-name">{user?.name}</span>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="navbar__button navbar__button--secondary"
+                    aria-label="Sign out"
+                  >
+                    Sign Out
+                  </button>
                 </div>
-                <button 
-                  onClick={handleLogout}
-                  className="navbar__button navbar__button--secondary"
-                  aria-label="Sign out"
-                >
-                  <span className="navbar__button-icon">🚪</span>
-                  <span className="navbar__button-text">Sign Out</span>
-                </button>
-              </div>
-            ) : (
-              <div className="navbar__auth-actions">
-                <Link 
-                  to="/login" 
-                  className="navbar__button navbar__button--ghost"
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  to="/signup" 
-                  className="navbar__button navbar__button--primary"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
+              ) : (
+                <div className="navbar__auth-actions">
+                  <Link 
+                    to="/login" 
+                    className="navbar__button navbar__button--ghost"
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    to="/signup" 
+                    className="navbar__button navbar__button--primary"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -235,12 +266,39 @@ const Navbar = () => {
                   }
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <span className="navbar__mobile-icon">{item.icon}</span>
                   <span className="navbar__mobile-text">{item.label}</span>
                 </NavLink>
               </li>
             ))}
+            <li className="navbar__mobile-item">
+              <span className="navbar__mobile-link navbar__mobile-link--label">Categories</span>
+            </li>
+            {NAV_CATEGORIES.map(cat => (
+              <li key={cat.slug} className="navbar__mobile-item">
+                <Link
+                  to={`/category/${cat.slug}`}
+                  className="navbar__mobile-link"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <span className="navbar__mobile-text">{cat.name}</span>
+                </Link>
+              </li>
+            ))}
           </ul>
+          <div className="navbar__mobile-actions">
+            <button
+              onClick={() => { setSearchOpen(true); setIsMobileMenuOpen(false); }}
+              className="navbar__mobile-action-btn"
+            >
+              🔍 Search
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="navbar__mobile-action-btn"
+            >
+              {darkMode ? '☀️' : '🌙'} {darkMode ? 'Light' : 'Dark'} Mode
+            </button>
+          </div>
         </nav>
 
         <div className="navbar__mobile-footer">
@@ -279,6 +337,8 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 };

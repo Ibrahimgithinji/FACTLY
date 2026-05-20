@@ -10,12 +10,16 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f2e 50%, var(--bg-secondary) 100%);
+  background: var(--bg-primary);
   position: relative;
 }
 
-/* Subtle background pattern */
-.App::before {
+[data-theme="dark"] .App {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f2e 50%, var(--bg-secondary) 100%);
+}
+
+/* Subtle background pattern - dark mode only */
+[data-theme="dark"] .App::before {
   content: '';
   position: fixed;
   top: 0;
@@ -41,8 +45,8 @@
   z-index: 1;
 }
 
-/* Container for consistent max-width */
-.app-main > * {
+/* Container for consistent max-width - only for pages that opt in */
+.app-main > .container-page {
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;

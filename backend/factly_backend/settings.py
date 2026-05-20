@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'verification',
+    'content',
 ]
 
 MIDDLEWARE = [
@@ -116,10 +117,13 @@ def get_sqlite_db_path():
         try:
             parent = db_path.expanduser().resolve().parent
             parent.mkdir(parents=True, exist_ok=True)
-            probe = parent / f".factly-write-test-{os.getpid()}.tmp"
+            probe = parent / f"factly-write-test-{os.getpid()}.tmp"
             with probe.open('w', encoding='utf-8') as handle:
                 handle.write('ok')
-            probe.unlink(missing_ok=True)
+            try:
+                probe.unlink(missing_ok=True)
+            except OSError:
+                logger.warning("Could not remove SQLite write probe: %s", probe)
             return True
         except OSError:
             return False

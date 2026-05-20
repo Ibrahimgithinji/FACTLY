@@ -98,3 +98,15 @@ frontend/npm.log
 *.tmp
 *.bak
 .git-credentials
+
+# Security reports (auto-generated)
+*SECURITY_*.md
+VULNERABILITY_SUMMARY.md
+COMPREHENSIVE_SECURITY_REPORT.md
+REMEDIATION_CODE_SAMPLES.md
+SECURITY_FINDINGS_INDEX.md
+
+# Temp directories
+_ul/
+build_temp/
+build_temp_check/

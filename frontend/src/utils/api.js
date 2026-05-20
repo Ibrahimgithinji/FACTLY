@@ -35,5 +35,17 @@ export const API_ENDPOINTS = {
   REFRESH_DATA: `${API_BASE_URL}/api/verification/refresh/`,
 };
 
+// Content/Article API endpoints
+export const CONTENT_ENDPOINTS = {
+  HOMEPAGE: `${API_BASE_URL}/api/content/homepage/`,
+  ARTICLES: `${API_BASE_URL}/api/content/articles/`,
+  ARTICLE: (slug) => `${API_BASE_URL}/api/content/articles/${slug}/`,
+  RELATED: (slug) => `${API_BASE_URL}/api/content/articles/${slug}/related/`,
+  COMMENTS: (id) => `${API_BASE_URL}/api/content/articles/${id}/comments/`,
+  CATEGORIES: `${API_BASE_URL}/api/content/categories/`,
+  SEARCH: `${API_BASE_URL}/api/content/search/`,
+  GUEST_SUBMIT: `${API_BASE_URL}/api/content/guest-submit/`,
+};
+
 // Export for use in fetch requests
 export default API_BASE_URL;

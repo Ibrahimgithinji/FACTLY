@@ -31,6 +31,7 @@ urlpatterns = [
     
     # API Endpoints
     path('api/', include('verification.urls')),
+    path('api/content/', include('content.urls')),
     
     # Health Check Endpoints (Kubernetes probes)
     path('health/', comprehensive_health_check, name='health_check'),

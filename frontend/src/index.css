@@ -126,6 +126,43 @@
   --navbar-height-mobile: 64px;
   --max-width: 1280px;
   --content-padding: 1.5rem;
+
+  /* Component-level tokens (dark theme default) */
+  --accent-color: #22c55e;
+  --card-bg: #1e293b;
+  --hover-bg: #334155;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --text-tertiary: #64748b;
+  --skeleton-bg: #334155;
+  --navbar-hover: rgba(255, 255, 255, 0.1);
+}
+
+/* Light theme overrides */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.12);
+  --card-bg: #ffffff;
+  --hover-bg: #f1f5f9;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --text-tertiary: #94a3b8;
+  --skeleton-bg: #e2e8f0;
+  --navbar-hover: rgba(0, 0, 0, 0.05);
+  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --navbar-bg-scrolled: rgba(255, 255, 255, 0.98);
+  --navbar-border: rgba(0, 0, 0, 0.08);
+  --navbar-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --navbar-shadow-scrolled: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --color-primary: #16a34a;
 }
 
 /* ============================================
