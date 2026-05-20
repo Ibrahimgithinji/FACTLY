@@ -20,10 +20,21 @@ PUBLISHER_TAGS = {
     'reuters.com': 'Reuters',
     'bbc.com': 'BBC',
     'bbc.co.uk': 'BBC',
+    'benjamindada.com': 'Benjamin Dada',
+    'african.business': 'African Business',
 }
 
-MAX_CONTENT_LENGTH = 50000
-MAX_EXCERPT_LENGTH = 300
+MIN_CONTENT_LENGTH = 200
+
+
+def extract_first_image(html):
+    match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    if match:
+        src = match.group(1)
+        if src.startswith('//'):
+            src = 'https:' + src
+        return src
+    return ''
 
 
 def clean_html(html):
@@ -80,17 +91,14 @@ def import_feed(source):
         if not content:
             continue
 
-        content = clean_html(content)[:MAX_CONTENT_LENGTH]
+        content = clean_html(content)
         text_content = strip_html(content)
-        if len(text_content) < 50:
+
+        if len(text_content) < MIN_CONTENT_LENGTH:
+            logger.info(f'  Skipped (too short): {title[:60]}')
             continue
 
-        excerpt = ''
-        summary = entry.get('summary', '')
-        if summary:
-            excerpt = strip_html(summary)[:MAX_EXCERPT_LENGTH]
-        if not excerpt:
-            excerpt = text_content[:MAX_EXCERPT_LENGTH]
+        excerpt = (text_content[:297] + '...') if len(text_content) > 300 else text_content
 
         published = None
         if entry.get('published_parsed'):
@@ -100,19 +108,11 @@ def import_feed(source):
 
         source_name = get_source_name(article_url)
 
-        image_url = ''
-        if hasattr(entry, 'media_content') and entry.media_content:
-            for media in entry.media_content:
-                if media.get('medium') == 'image' or 'image' in media.get('type', ''):
-                    image_url = media.get('url', '')
-                    break
-        if not image_url and hasattr(entry, 'links'):
-            for link in entry.links:
-                if link.get('rel') == 'enclosure' and 'image' in link.get('type', ''):
-                    image_url = link.get('href', '')
-                    break
+        image_url = extract_first_image(content)
 
         read_time = max(1, len(text_content) // 2000 + 1)
+
+        is_quality = len(text_content) > 500
 
         article = Article(
             title=title,
@@ -124,7 +124,7 @@ def import_feed(source):
             source_name=source_name,
             is_imported=True,
             category=source.category,
-            status='draft',
+            status='published' if is_quality else 'draft',
             published_at=published or dj_timezone.now(),
             read_time=read_time,
         )
@@ -135,7 +135,8 @@ def import_feed(source):
             article.tags.add(tag)
 
         new_count += 1
-        logger.info(f'  Imported: {title[:60]}')
+        status_tag = 'LIVE' if is_quality else 'DRAFT'
+        logger.info(f'  [{status_tag}] {title[:60]}')
 
     source.last_imported_at = dj_timezone.now()
     source.save(update_fields=['last_imported_at'])
@@ -146,9 +147,8 @@ class Command(BaseCommand):
     help = 'Import articles from configured RSS feed sources'
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--source', type=int, help='Import only from a specific FeedSource ID',
-        )
+        parser.add_argument('--source', type=int, help='Import only from a specific FeedSource ID')
+        parser.add_argument('--force-publish', action='store_true', help='Publish all imported articles regardless of quality')
 
     def handle(self, *args, **options):
         sources = FeedSource.objects.filter(is_active=True)

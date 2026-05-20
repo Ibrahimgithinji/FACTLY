@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import SocialShare from '../components/SocialShare';
 import Sidebar from '../components/Sidebar';
+import CommentsSection from '../components/CommentsSection';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './ArticlePage.css';
 
@@ -138,6 +139,8 @@ export default function ArticlePage() {
               </div>
             </div>
           )}
+
+          <CommentsSection articleId={article.id} />
         </article>
 
         <aside className="article-page__sidebar">
