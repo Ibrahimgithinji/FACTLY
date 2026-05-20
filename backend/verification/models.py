@@ -3,6 +3,24 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import uuid
 import os
+import json
+
+
+class VerificationLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    claim = models.TextField()
+    overall_confidence = models.FloatField(default=0.0)
+    factly_score = models.IntegerField(default=0)
+    classification = models.CharField(max_length=50, default='')
+    source = models.CharField(max_length=100, default='api')
+    api_sources = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.claim[:60]}... ({self.classification})'
 
 # Create your models here.
 

@@ -539,6 +539,20 @@ class VerificationView(APIView):
                 "processing_time": processing_time
             }
             
+            # Log verification for trending claims
+            try:
+                from .models import VerificationLog
+                VerificationLog.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    claim=text[:500],
+                    overall_confidence=verification_result.overall_confidence,
+                    factly_score=factly_score.factly_score,
+                    classification=factly_score.classification,
+                    api_sources=json.dumps(verification_result.api_sources),
+                )
+            except Exception as log_err:
+                logger.warning(f'Failed to log verification: {log_err}')
+
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -1339,11 +1353,9 @@ class AnalyticsAPIView(APIView):
                     'period': period,
                     'timestamp': datetime.now().isoformat(),
                     'status': 'demo'
-                }, status=status.HTTP_200_OK)
-            
+                    }, status=status.HTTP_200_OK)
         except Exception as e:
             logger.exception("Failed to fetch analytics")
-            # Return demo data on error
             return Response({
                 'total_trends': 8,
                 'high_risk_trends': 3,
@@ -1352,8 +1364,33 @@ class AnalyticsAPIView(APIView):
                 'average_risk_score': 43.76,
                 'average_engagement': 75.61,
                 'active_alerts': 2,
-                'period': period,
+                'period': period or 'week',
                 'timestamp': datetime.now().isoformat(),
                 'status': 'demo',
                 'message': 'Showing example data. Please configure API keys for live analytics.'
             }, status=status.HTTP_200_OK)
+
+
+class TrendingClaimsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            from .models import VerificationLog
+            claims = VerificationLog.objects.all()[:10]
+            return Response({
+                'claims': [
+                    {
+                        'id': c.id,
+                        'claim': c.claim[:120],
+                        'score': c.factly_score,
+                        'classification': c.classification,
+                        'confidence': c.overall_confidence,
+                        'source': c.source,
+                        'verified_at': c.created_at.isoformat(),
+                    }
+                    for c in claims
+                ]
+            })
+        except Exception:
+            return Response({'claims': []})

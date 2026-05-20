@@ -34,6 +34,8 @@ const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const GuestSubmitPage = lazy(() => import('./pages/GuestSubmitPage'));
 const BookmarksPage = lazy(() => import('./pages/BookmarksPage'));
 const AuthorPage = lazy(() => import('./pages/AuthorPage'));
+const StartupsPage = lazy(() => import('./pages/StartupsPage'));
+const SearchResultsPage = lazy(() => import('./pages/SearchResultsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
@@ -79,6 +81,8 @@ function App() {
                     <Route path="/write-for-us" element={<GuestSubmitPage />} />
                     <Route path="/bookmarks" element={<BookmarksPage />} />
                     <Route path="/author/:id" element={<AuthorPage />} />
+                    <Route path="/startups" element={<StartupsPage />} />
+                    <Route path="/search" element={<SearchResultsPage />} />
                     <Route path="/dashboard" element={<AdminDashboard />} />
                     <Route
                       path="/"

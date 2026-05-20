@@ -261,6 +261,10 @@ def author_detail(request, author_id):
 @permission_classes([AllowAny])
 def search_articles(request):
     query = request.query_params.get('q', '').strip()
+    category = request.query_params.get('category', '').strip()
+    date_from = request.query_params.get('date_from', '').strip()
+    date_to = request.query_params.get('date_to', '').strip()
+
     if not query:
         return Response({'results': []})
 
@@ -278,10 +282,39 @@ def search_articles(request):
         excerpt__icontains=query
     )
 
-    articles = articles.distinct().order_by('-published_at')[:20]
+    articles = articles.distinct()
+
+    if category:
+        articles = articles.filter(category__slug=category)
+    if date_from:
+        articles = articles.filter(published_at__gte=date_from)
+    if date_to:
+        articles = articles.filter(published_at__lte=date_to)
+
+    articles = articles.order_by('-published_at')[:20]
 
     return Response({
         'query': query,
         'count': articles.count(),
         'results': ArticleListSerializer(articles, many=True).data,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def search_suggestions(request):
+    query = request.query_params.get('q', '').strip()
+    if not query or len(query) < 2:
+        return Response({'suggestions': []})
+
+    articles = Article.objects.filter(
+        status='published', published_at__lte=timezone.now(),
+        title__icontains=query,
+    ).order_by('-published_at')[:6]
+
+    return Response({
+        'suggestions': [
+            {'id': a.id, 'title': a.title, 'slug': a.slug, 'category': a.category.slug if a.category else ''}
+            for a in articles
+        ]
     })

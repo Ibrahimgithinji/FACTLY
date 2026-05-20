@@ -97,6 +97,7 @@ const Navbar = () => {
 
   const navItems = [
     { path: '/', label: 'Home', exact: true },
+    { path: '/startups', label: 'Startups' },
     { path: '/verify', label: 'Verify' },
     { path: '/write-for-us', label: 'Write for Us' },
     { path: '/about', label: 'About' },

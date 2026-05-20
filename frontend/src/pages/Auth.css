@@ -323,36 +323,19 @@
 }
 
 /* ============================================
-   Social Auth (Optional)
+   Social Login Buttons
    ============================================ */
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin: var(--space-6) 0;
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border-light);
-}
-
-.social-auth {
+.social-login-buttons {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  margin-bottom: var(--space-6);
 }
 
-.social-button {
+.social-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
@@ -362,11 +345,44 @@
   font-weight: var(--font-medium);
   cursor: pointer;
   transition: all var(--transition-fast);
+  width: 100%;
 }
 
-.social-button:hover {
+.social-btn:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--border-medium);
+}
+
+.social-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.social-btn-google:hover {
+  border-color: #4285F4;
+  background: rgba(66, 133, 244, 0.05);
+}
+
+.social-btn-github:hover {
+  border-color: #333;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-2) 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.social-divider::before,
+.social-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
 }
 
 /* ============================================

@@ -33,6 +33,7 @@ urlpatterns = [
     path('verification/trends/', views.TrendsAPIView.as_view(), name='trends'),
     path('verification/trends/collect/', views.TrendsCollectAPIView.as_view(), name='trends_collect'),
     path('verification/analytics/', views.AnalyticsAPIView.as_view(), name='analytics'),
+    path('verification/claims/', views.TrendingClaimsView.as_view(), name='trending_claims'),
     
     # Fast verification endpoints (async, optimized)
     # path('verify/fast/', fast_views.FastVerificationView.as_view(), name='verify_fast'),

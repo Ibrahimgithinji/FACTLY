@@ -205,6 +205,14 @@ export const AuthProvider = ({ children }) => {
     return () => clearInterval(checkInterval);
   }, [isAuthenticated, refreshAccessToken]);
 
+  const setTokens = useCallback((access, refresh, userData) => {
+    setStoredToken(ACCESS_TOKEN_KEY, access);
+    setStoredToken(REFRESH_TOKEN_KEY, refresh);
+    setStoredUser(userData);
+    setUser(userData);
+    setIsAuthenticated(true);
+  }, []);
+
   const login = async (email, password) => {
     try {
       const normalizedEmail = email?.trim();
@@ -520,6 +528,7 @@ export const AuthProvider = ({ children }) => {
     verifyResetToken,
     resetPassword,
     getValidAccessToken,
+    setTokens,
   };
 
   return (

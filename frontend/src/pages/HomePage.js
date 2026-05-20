@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import Sidebar from '../components/Sidebar';
 import TrendingTopics from '../components/TrendingTopics';
+import TrendingClaims from '../components/TrendingClaims';
 import { ArticleCardSkeleton, SidebarSkeleton } from '../components/Skeleton';
 import SEOMeta from '../components/SEOMeta';
 import { CONTENT_ENDPOINTS } from '../utils/api';
@@ -121,7 +122,7 @@ export default function HomePage() {
         <section className="home-section home-section--startups">
           <div className="home-section__header">
             <h2 className="home-section__title">🚀 Startup Spotlight</h2>
-            <Link to="/category/startups" className="home-section__view-all">All startups →</Link>
+            <Link to="/startups" className="home-section__view-all">All startups →</Link>
           </div>
           <div className="home-section__grid">
             {startupSection.articles.slice(0, 3).map(article => (
@@ -130,6 +131,8 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      <TrendingClaims />
 
       {/* Main content + sidebar layout */}
       <div className="home-layout">

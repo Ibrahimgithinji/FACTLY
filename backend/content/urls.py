@@ -11,6 +11,7 @@ urlpatterns = [
     path('articles/<int:article_id>/comments/', views.CommentListView.as_view(), name='article-comments'),
     path('homepage/', views.homepage_data, name='homepage-data'),
     path('search/', views.search_articles, name='article-search'),
+    path('search/suggestions/', views.search_suggestions, name='article-search-suggestions'),
     path('guest-submit/', views.guest_submit, name='guest-submit'),
     path('newsletter/', views.newsletter_subscribe, name='newsletter-subscribe'),
     path('bookmarks/', views.my_bookmarks, name='my-bookmarks'),
