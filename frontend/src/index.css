@@ -141,6 +141,10 @@
   --text-tertiary: #64748b;
   --skeleton-bg: #334155;
   --navbar-hover: rgba(255, 255, 255, 0.1);
+  --text: #f8fafc;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #22c55e;
+  --link: #3b82f6;
 }
 
 /* Light theme overrides */
@@ -186,6 +190,10 @@
   --footer-bg: #f8fafc;
   --footer-border: rgba(0, 0, 0, 0.08);
   --accent-color: #16a34a;
+  --text: #0f172a;
+  --border: rgba(0, 0, 0, 0.1);
+  --accent: #16a34a;
+  --link: #2563eb;
 }
 
 /* Theme transition — added via JS after initial load to prevent flash */
