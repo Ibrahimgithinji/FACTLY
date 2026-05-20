@@ -1,23 +1,66 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 const ThemeContext = createContext();
 
+const STORAGE_KEY = 'factly-theme';
+
+function getInitialTheme() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === 'dark' || stored === 'light') return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 export function ThemeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    const stored = localStorage.getItem('factly-theme');
-    if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const [theme, setTheme] = useState(getInitialTheme);
+  const [ready, setReady] = useState(false);
+  const mqRef = useRef(null);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-    localStorage.setItem('factly-theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    mqRef.current = mq;
 
-  const toggleTheme = useCallback(() => setDarkMode(prev => !prev), []);
+    const handler = (e) => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+
+    mq.addEventListener('change', handler);
+    const timer = setTimeout(() => setReady(true), 80);
+
+    return () => {
+      mq.removeEventListener('change', handler);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (ready) {
+      document.documentElement.classList.add('theme-transition');
+    } else {
+      document.documentElement.classList.remove('theme-transition');
+    }
+  }, [ready]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  }, []);
+
+  const value = {
+    theme,
+    darkMode: theme === 'dark',
+    toggleTheme,
+    ready,
+  };
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

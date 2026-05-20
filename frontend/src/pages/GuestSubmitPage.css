@@ -69,8 +69,8 @@
 .guest-submit__btn {
   align-self: flex-start;
   padding: 12px 28px;
-  background: #00c853;
-  color: #000;
+  background: var(--accent-color);
+  color: var(--bg-primary);
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -109,8 +109,8 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: #00c853;
-  color: #000;
+  background: var(--accent-color);
+  color: var(--bg-primary);
   border-radius: 50%;
   font-size: 1.5rem;
   font-weight: bold;

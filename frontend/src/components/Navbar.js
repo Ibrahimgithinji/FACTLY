@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import SearchOverlay from './SearchOverlay';
+import ThemeToggle from './ThemeToggle';
 import './Navbar.css';
 
 /**
@@ -27,7 +27,6 @@ const NAV_CATEGORIES = [
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const { darkMode, toggleTheme } = useTheme();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -168,13 +167,7 @@ const Navbar = () => {
             >
               🔍
             </button>
-            <button
-              onClick={toggleTheme}
-              className="navbar__action-btn"
-              aria-label="Toggle theme"
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
+            <ThemeToggle />
 
             {/* Auth Section */}
             <div className="navbar__auth">
@@ -292,12 +285,7 @@ const Navbar = () => {
             >
               🔍 Search
             </button>
-            <button
-              onClick={toggleTheme}
-              className="navbar__mobile-action-btn"
-            >
-              {darkMode ? '☀️' : '🌙'} {darkMode ? 'Light' : 'Dark'} Mode
-            </button>
+            <ThemeToggle />
           </div>
         </nav>
 

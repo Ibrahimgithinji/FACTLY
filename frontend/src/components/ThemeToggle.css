@@ -1,0 +1,82 @@
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.theme-toggle__icon {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle__sun,
+.theme-toggle__moon {
+  position: absolute;
+  transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+              opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle__sun {
+  color: #f59e0b;
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+}
+
+.theme-toggle__moon {
+  color: #a78bfa;
+  transform: scale(0) rotate(90deg);
+  opacity: 0;
+}
+
+.theme-toggle--dark .theme-toggle__sun {
+  transform: scale(0) rotate(-90deg);
+  opacity: 0;
+}
+
+.theme-toggle--dark .theme-toggle__moon {
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+}
+
+/* Label slide animation */
+.theme-toggle__label {
+  position: relative;
+  display: inline-block;
+  min-width: 32px;
+  text-align: left;
+  transition: color 0.3s ease;
+}
+
+/* Subtle background shift on toggle */
+.theme-toggle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--hover-bg);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+.theme-toggle:hover::before {
+  opacity: 1;
+}
