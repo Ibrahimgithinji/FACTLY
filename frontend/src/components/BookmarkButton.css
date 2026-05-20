@@ -1,0 +1,25 @@
+.bookmark-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bookmark-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--hover-bg);
+}
+
+.bookmark-btn--active {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  background: rgba(22, 163, 74, 0.1);
+}

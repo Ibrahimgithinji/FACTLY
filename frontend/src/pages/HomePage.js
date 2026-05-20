@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import Sidebar from '../components/Sidebar';
 import TrendingTopics from '../components/TrendingTopics';
+import { ArticleCardSkeleton, SidebarSkeleton } from '../components/Skeleton';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './HomePage.css';
 
@@ -58,7 +59,27 @@ export default function HomePage() {
   }, []);
 
   if (loading) {
-    return <div className="home-loading">Loading...</div>;
+    return (
+      <div className="home-page">
+        <div className="home-hero">
+          <ArticleCardSkeleton featured />
+          <div className="home-hero__side">
+            <ArticleCardSkeleton />
+            <ArticleCardSkeleton />
+          </div>
+        </div>
+        <div className="home-layout">
+          <div className="home-layout__main">
+            <ArticleCardSkeleton />
+            <ArticleCardSkeleton />
+            <ArticleCardSkeleton />
+          </div>
+          <aside className="home-layout__sidebar">
+            <SidebarSkeleton />
+          </aside>
+        </div>
+      </div>
+    );
   }
 
   const sectionKeys = data?.sections ? Object.keys(data.sections) : [];

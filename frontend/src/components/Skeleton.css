@@ -1,0 +1,70 @@
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 25%,
+    var(--hover-bg) 50%,
+    var(--skeleton-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  display: inline-block;
+}
+
+.skeleton-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.skeleton-card--featured {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+@media (max-width: 768px) {
+  .skeleton-card--featured {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skeleton-card__img {
+  min-height: 200px;
+}
+
+.skeleton-card__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-sidebar__item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.skeleton-article {
+  max-width: 720px;
+  padding: 20px 0;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}

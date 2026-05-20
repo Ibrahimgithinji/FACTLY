@@ -4,6 +4,9 @@ import ArticleCard from '../components/ArticleCard';
 import SocialShare from '../components/SocialShare';
 import Sidebar from '../components/Sidebar';
 import CommentsSection from '../components/CommentsSection';
+import ReadingProgress from '../components/ReadingProgress';
+import BookmarkButton from '../components/BookmarkButton';
+import { ArticlePageSkeleton, SidebarSkeleton } from '../components/Skeleton';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './ArticlePage.css';
 
@@ -43,7 +46,16 @@ export default function ArticlePage() {
   }, [slug]);
 
   if (loading) {
-    return <div className="page-loading">Loading article...</div>;
+    return (
+      <div className="article-page">
+        <div className="article-page__layout">
+          <ArticlePageSkeleton />
+          <aside className="article-page__sidebar">
+            <SidebarSkeleton />
+          </aside>
+        </div>
+      </div>
+    );
   }
 
   if (!article) {
@@ -62,6 +74,7 @@ export default function ArticlePage() {
 
   return (
     <div className="article-page">
+      <ReadingProgress />
       <div className="article-page__layout">
         <article className="article-page__main">
           {article.category && (
@@ -93,7 +106,10 @@ export default function ArticlePage() {
             </div>
           </div>
 
-          <SocialShare url={url} title={article.title} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+            <SocialShare url={url} title={article.title} />
+            <BookmarkButton articleId={article.id} />
+          </div>
 
           {article.featured_image && (
             <div className="article-page__featured">

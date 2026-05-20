@@ -1,0 +1,127 @@
+.newsletter--sidebar {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.newsletter__title {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+
+.newsletter__desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.newsletter__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.newsletter__form--inline .newsletter__inline-row {
+  display: flex;
+  gap: 8px;
+}
+
+.newsletter__input {
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.newsletter__input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.newsletter__btn {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.newsletter__btn:hover { opacity: 0.9; }
+.newsletter__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.newsletter__footnote {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin: 12px 0 0;
+}
+
+.newsletter__error {
+  font-size: 0.8rem;
+  color: #ef4444;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+}
+
+.newsletter--done {
+  text-align: center;
+  padding: 24px;
+}
+
+.newsletter--done .newsletter__icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.newsletter--done p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Inline variant (for footer) */
+.newsletter--inline {
+  width: 100%;
+}
+
+.newsletter--inline .newsletter__inline-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.newsletter--inline .newsletter__input {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .newsletter--inline .newsletter__inline-row {
+    flex-direction: column;
+  }
+  .newsletter__form--inline .newsletter__inline-row {
+    flex-direction: column;
+  }
+}

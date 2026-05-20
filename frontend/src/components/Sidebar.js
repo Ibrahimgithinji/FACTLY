@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import NewsletterSignup from './NewsletterSignup';
 import './Sidebar.css';
 
 export default function Sidebar({ categories, recentPosts }) {
@@ -43,6 +44,10 @@ export default function Sidebar({ categories, recentPosts }) {
           </ul>
         </div>
       )}
+
+      <div className="sidebar__widget">
+        <NewsletterSignup />
+      </div>
 
       <div className="sidebar__widget sidebar__cta">
         <h3 className="sidebar__title">Verify a Claim</h3>

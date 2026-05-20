@@ -105,7 +105,8 @@ const Navbar = () => {
   if (isAuthenticated) {
     navItems.push(
       { path: '/results', label: 'Results' },
-      { path: '/history', label: 'History' }
+      { path: '/history', label: 'History' },
+      { path: '/bookmarks', label: 'Saved' }
     );
   }
 

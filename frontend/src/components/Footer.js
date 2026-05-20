@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import NewsletterSignup from './NewsletterSignup';
 import './Footer.css';
 
 export default function Footer() {
@@ -9,6 +10,11 @@ export default function Footer() {
         <div className="footer__brand">
           <h3 className="footer__logo">FACTLY</h3>
           <p className="footer__tagline">Verifying claims, tracking tech, keeping you informed.</p>
+        </div>
+
+        <div className="footer__newsletter">
+          <h4 className="footer__col-title">Subscribe to our newsletter</h4>
+          <NewsletterSignup variant="inline" />
         </div>
 
         <div className="footer__links">

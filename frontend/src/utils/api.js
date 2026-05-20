@@ -45,6 +45,9 @@ export const CONTENT_ENDPOINTS = {
   CATEGORIES: `${API_BASE_URL}/api/content/categories/`,
   SEARCH: `${API_BASE_URL}/api/content/search/`,
   GUEST_SUBMIT: `${API_BASE_URL}/api/content/guest-submit/`,
+  NEWSLETTER: `${API_BASE_URL}/api/content/newsletter/`,
+  BOOKMARKS: `${API_BASE_URL}/api/content/bookmarks/`,
+  BOOKMARK: (articleId) => `${API_BASE_URL}/api/content/bookmarks/${articleId}/`,
 };
 
 // Export for use in fetch requests

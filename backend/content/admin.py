@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Tag, AuthorProfile, Article, Comment, FeedSource
+from .models import Category, Tag, AuthorProfile, Article, Comment, FeedSource, NewsletterSubscriber, Bookmark
 
 
 @admin.register(Category)
@@ -37,6 +37,20 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = ('name', 'article', 'is_approved', 'created_at')
     list_filter = ('is_approved',)
     search_fields = ('name', 'email', 'content')
+
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ('email', 'name', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('email', 'name')
+
+
+@admin.register(Bookmark)
+class BookmarkAdmin(admin.ModelAdmin):
+    list_display = ('user', 'article', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'article__title')
 
 
 @admin.register(FeedSource)

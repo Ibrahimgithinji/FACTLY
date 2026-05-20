@@ -29,6 +29,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const GuestSubmitPage = lazy(() => import('./pages/GuestSubmitPage'));
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage'));
 
 const PageLoader = () => (
   <div className="loading-container" role="status" aria-live="polite">
@@ -69,6 +70,7 @@ function App() {
                     <Route path="/article/:slug" element={<ArticlePage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/write-for-us" element={<GuestSubmitPage />} />
+                    <Route path="/bookmarks" element={<BookmarksPage />} />
                     <Route
                       path="/"
                       element={

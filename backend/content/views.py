@@ -1,5 +1,6 @@
 from django.db.models import Count
 from rest_framework import generics, permissions, filters
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -18,9 +19,16 @@ class CategoryListView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
 
+class ArticlePagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
+
 class ArticleListView(generics.ListAPIView):
     serializer_class = ArticleListSerializer
     permission_classes = [AllowAny]
+    pagination_class = ArticlePagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'excerpt', 'content']
     ordering_fields = ['published_at', 'title']
@@ -130,6 +138,23 @@ def homepage_data(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+def newsletter_subscribe(request):
+    from .models import NewsletterSubscriber
+    email = request.data.get('email', '').strip()
+    name = request.data.get('name', '').strip()
+    if not email:
+        return Response({'error': 'Email is required'}, status=400)
+    sub, created = NewsletterSubscriber.objects.get_or_create(
+        email=email, defaults={'name': name, 'is_active': True}
+    )
+    if not created and not sub.is_active:
+        sub.is_active = True
+        sub.save(update_fields=['is_active'])
+    return Response({'message': 'Subscribed successfully!'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def guest_submit(request):
     serializer = GuestArticleSerializer(data=request.data)
     if not serializer.is_valid():
@@ -153,6 +178,37 @@ def guest_submit(request):
         'message': 'Article submitted for review. Thank you!',
         'id': article.id,
     }, status=201)
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def toggle_bookmark(request, article_id):
+    from .models import Bookmark
+    try:
+        article = Article.objects.get(id=article_id, status='published')
+    except Article.DoesNotExist:
+        return Response({'error': 'Article not found'}, status=404)
+
+    if request.method == 'POST':
+        _, created = Bookmark.objects.get_or_create(
+            user=request.user, article=article
+        )
+        return Response({'bookmarked': True, 'created': created})
+
+    Bookmark.objects.filter(user=request.user, article=article).delete()
+    return Response({'bookmarked': False})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def my_bookmarks(request):
+    from .models import Bookmark
+    bookmarks = Bookmark.objects.filter(user=request.user).select_related('article')
+    articles = [b.article for b in bookmarks if b.article.status == 'published']
+    return Response({
+        'count': len(articles),
+        'results': ArticleListSerializer(articles, many=True).data,
+    })
 
 
 @api_view(['GET'])

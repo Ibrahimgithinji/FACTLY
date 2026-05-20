@@ -1,0 +1,48 @@
+.bookmarks-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.bookmarks-page__title {
+  font-size: 1.75rem;
+  margin: 0 0 24px;
+  color: var(--text-primary);
+}
+
+.bookmarks-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.bookmarks-page__empty {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.bookmarks-page__empty h2 {
+  font-size: 1.5rem;
+  margin: 0 0 12px;
+}
+
+.bookmarks-page__empty p {
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+}
+
+.bookmarks-page__btn {
+  display: inline-flex;
+  padding: 10px 24px;
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.bookmarks-page__btn:hover {
+  opacity: 0.9;
+  color: var(--bg-primary);
+}
