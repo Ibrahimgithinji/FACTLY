@@ -105,6 +105,40 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* Intro Hero */}
+      <section className="home-intro-hero">
+        <div className="hero-copy">
+          <span className="hero-eyebrow">🔍 Fact Check & Analysis</span>
+          <h1>Separating Fact from Fiction in Tech</h1>
+          <p>Real-time fact-checking, claim verification, and in-depth analysis of the latest technology news, trends, and controversies.</p>
+          <div className="hero-metrics">
+            <div className="hero-metric">
+              <strong>1,200+</strong>
+              <span>Claims Verified</span>
+            </div>
+            <div className="hero-metric">
+              <strong>94%</strong>
+              <span>Accuracy Rate</span>
+            </div>
+            <div className="hero-metric">
+              <strong>500+</strong>
+              <span>Sources Tracked</span>
+            </div>
+          </div>
+        </div>
+        <div className="hero-panel">
+          <h2>How It Works</h2>
+          <ol className="hero-steps">
+            <li><strong>Submit</strong> — Paste any claim or news headline</li>
+            <li><strong>Analyze</strong> — Our AI cross-references trusted sources</li>
+            <li><strong>Verify</strong> — Get a real-time verdict with evidence</li>
+          </ol>
+          <Link to="/verify" className="btn btn-primary" style={{marginTop: 20, display: 'inline-flex'}}>
+            Verify a Claim Now →
+          </Link>
+        </div>
+      </section>
+
       {/* Hero / Featured */}
       {data?.featured && data.featured.length > 0 && (
         <section className="home-hero">
