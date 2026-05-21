@@ -10,7 +10,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export default function PushNotificationPrompt() {
-  const [status, setStatus] = useState('idle'); // idle | denied | subscribed | unsupported
+  const [, setStatus] = useState('idle'); // idle | denied | subscribed | unsupported
   const [show, setShow] = useState(false);
 
   useEffect(() => {

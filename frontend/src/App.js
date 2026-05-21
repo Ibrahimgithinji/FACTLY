@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
@@ -19,7 +19,6 @@ const VerificationForm = lazy(() => import('./components/VerificationForm'));
 const ScoreDisplay = lazy(() => import('./components/ScoreDisplay'));
 const EvidencePanel = lazy(() => import('./components/EvidencePanel'));
 const CredibilityChart = lazy(() => import('./components/CredibilityChart'));
-const TrendingTopics = lazy(() => import('./components/TrendingTopics'));
 const RealTimeVerification = lazy(() => import('./components/RealTimeVerification'));
 const EnhancedVerification = lazy(() => import('./components/EnhancedVerification'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));

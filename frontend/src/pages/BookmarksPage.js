@@ -31,7 +31,7 @@ export default function BookmarksPage() {
         setLoading(false);
       }
     })();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, getValidAccessToken]);
 
   if (!isAuthenticated) {
     return (

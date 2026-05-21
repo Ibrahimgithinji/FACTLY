@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import './ArticleCard.css';
 
 export default function ArticleCard({ article, featured }) {
-  const { title, slug, excerpt, featured_image, category, author, published_at, read_time, tags } = article;
+  const { title, slug, excerpt, featured_image, category, author, published_at, read_time } = article;
 
   const date = published_at ? new Date(published_at).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric'

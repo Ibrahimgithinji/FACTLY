@@ -9,7 +9,7 @@
  * - Verification timeline
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './RealTimeVerification.css';
 
 const RealTimeVerification = ({ verificationData }) => {
@@ -39,7 +39,6 @@ const RealTimeVerification = ({ verificationData }) => {
   }
 
   const {
-    verified = false,
     confidence_score = 0,
     freshness = 'unknown',
     global_consensus = 'unverified',

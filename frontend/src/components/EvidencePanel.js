@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useResults } from '../context/ResultsContext';
 import './EvidencePanel.css';
 

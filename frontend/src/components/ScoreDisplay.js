@@ -78,7 +78,6 @@ const ScoreDisplay = () => {
     (results.factly_score.confidence_level === 'High' ? 0.9 :
      results.factly_score.confidence_level === 'Medium' ? 0.6 : 0.3) :
     (confidence ?? 0.5);
-  const actualFactors = results.factly_score?.components ?? factors;
   
   const scorePercentage = Math.round(actualScore);
 

@@ -89,23 +89,6 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Check for existing tokens on mount - use sessionStorage for XSS protection
-    const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
-    const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
-    const storedUser = getStoredUser();
-    
-    if (accessToken && storedUser) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
-    } else if (refreshToken && storedUser) {
-      // If we have refresh token but no access token, try to refresh
-      // This handles cases where access token expired but refresh token is still valid
-      refreshAccessToken(refreshToken, storedUser);
-    }
-    setIsLoading(false);
-  }, []);
-
   // Function to refresh access token using refresh token
   const refreshAccessToken = useCallback(async (refreshToken, userData) => {
     try {
@@ -162,6 +145,23 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
   }, []);
+
+  useEffect(() => {
+    // Check for existing tokens on mount - use sessionStorage for XSS protection
+    const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+    const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
+    const storedUser = getStoredUser();
+    
+    if (accessToken && storedUser) {
+      setUser(storedUser);
+      setIsAuthenticated(true);
+    } else if (refreshToken && storedUser) {
+      // If we have refresh token but no access token, try to refresh
+      // This handles cases where access token expired but refresh token is still valid
+      refreshAccessToken(refreshToken, storedUser);
+    }
+    setIsLoading(false);
+  }, [refreshAccessToken]);
 
   // Function to get valid access token (refreshes if needed)
   const getValidAccessToken = useCallback(async () => {

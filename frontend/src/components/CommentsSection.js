@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './CommentsSection.css';
 
@@ -75,7 +75,7 @@ export default function CommentsSection({ articleId }) {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const res = await fetch(CONTENT_ENDPOINTS.COMMENTS(articleId));
       if (res.ok) {
@@ -88,9 +88,9 @@ export default function CommentsSection({ articleId }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [articleId]);
 
-  useEffect(() => { fetchComments(); }, [articleId]);
+  useEffect(() => { fetchComments(); }, [articleId, fetchComments]);
 
   return (
     <section className="comments-section">

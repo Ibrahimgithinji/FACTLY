@@ -22,7 +22,7 @@ export default function BookmarkButton({ articleId }) {
         })
         .catch(() => {});
     })();
-  }, [isAuthenticated, articleId]);
+  }, [isAuthenticated, articleId, getValidAccessToken]);
 
   const toggle = async () => {
     if (!isAuthenticated) {

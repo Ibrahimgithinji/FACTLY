@@ -328,8 +328,10 @@ export const authApi = {
     }),
 };
 
-export default {
+const apiClient = {
   apiPost,
   apiGet,
   authApi,
 };
+
+export default apiClient;
