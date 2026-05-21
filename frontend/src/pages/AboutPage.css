@@ -254,7 +254,7 @@
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  color: #fff;
+  color: var(--color-white);
   font-weight: 700;
 }
 
@@ -311,7 +311,7 @@
 
 .about-cta .cta-btn.primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--color-white);
 }
 
 .about-cta .cta-btn.secondary {

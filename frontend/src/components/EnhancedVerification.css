@@ -1,13 +1,13 @@
 .enhanced-verification {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .enhanced-verification h3 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 20px;
   font-size: 1.5rem;
   font-weight: 600;
@@ -20,14 +20,14 @@
 }
 
 .analysis-card {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 8px;
   padding: 20px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-color);
 }
 
 .analysis-card h4 {
-  color: #495057;
+  color: var(--text-primary);
   margin-bottom: 16px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -47,12 +47,12 @@
   display: block;
   font-size: 2rem;
   font-weight: bold;
-  color: #007bff;
+  color: var(--color-secondary);
 }
 
 .metric .label {
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--text-tertiary);
   margin-top: 4px;
 }
 
@@ -72,49 +72,49 @@
 }
 
 .verdict-percentage {
-  color: #6c757d;
+  color: var(--text-tertiary);
   font-size: 0.9rem;
 }
 
 .conflict-warning {
-  background: #fff3cd;
-  color: #856404;
+  background: var(--color-warning);
+  color: var(--text-primary);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 0.9rem;
-  border: 1px solid #ffeaa7;
+  border: 1px solid var(--color-warning);
 }
 
 .consensus-result.positive {
-  border-left: 4px solid #28a745;
+  border-left: 4px solid var(--color-success);
 }
 
 .consensus-result.positive .verdict-label {
-  color: #28a745;
+  color: var(--color-success);
 }
 
 .consensus-result.negative {
-  border-left: 4px solid #dc3545;
+  border-left: 4px solid var(--color-error);
 }
 
 .consensus-result.negative .verdict-label {
-  color: #dc3545;
+  color: var(--color-error);
 }
 
 .consensus-result.mixed {
-  border-left: 4px solid #ffc107;
+  border-left: 4px solid var(--color-warning);
 }
 
 .consensus-result.mixed .verdict-label {
-  color: #856404;
+  color: var(--color-warning);
 }
 
 .consensus-result.unknown {
-  border-left: 4px solid #6c757d;
+  border-left: 4px solid var(--text-tertiary);
 }
 
 .consensus-result.unknown .verdict-label {
-  color: #6c757d;
+  color: var(--text-tertiary);
 }
 
 .credibility-score {
@@ -126,14 +126,14 @@
 .credibility-gauge {
   flex: 1;
   height: 8px;
-  background: #e9ecef;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .credibility-fill {
   height: 100%;
-  background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+  background: linear-gradient(90deg, var(--color-error) 0%, var(--color-warning) 50%, var(--color-success) 100%);
   transition: width 0.5s ease;
 }
 
@@ -149,7 +149,7 @@
 }
 
 .credibility-percent {
-  color: #6c757d;
+  color: var(--text-tertiary);
   font-size: 0.9rem;
 }
 
@@ -173,20 +173,20 @@
 }
 
 .freshness-status {
-  color: #6c757d;
+  color: var(--text-tertiary);
   font-size: 0.9rem;
 }
 
 .freshness-indicator.fresh .freshness-status {
-  color: #28a745;
+  color: var(--color-success);
 }
 
 .freshness-indicator.stale .freshness-status {
-  color: #dc3545;
+  color: var(--color-error);
 }
 
 .freshness-indicator.moderate .freshness-status {
-  color: #ffc107;
+  color: var(--color-warning);
 }
 
 .cross-verification-score {
@@ -198,14 +198,14 @@
 .verification-gauge {
   flex: 1;
   height: 8px;
-  background: #e9ecef;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .verification-fill {
   height: 100%;
-  background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+  background: linear-gradient(90deg, var(--color-error) 0%, var(--color-warning) 50%, var(--color-success) 100%);
   transition: width 0.5s ease;
 }
 
@@ -220,12 +220,12 @@
 }
 
 .verification-strength {
-  color: #6c757d;
+  color: var(--text-tertiary);
   font-size: 0.9rem;
 }
 
 .methodology-content p {
-  color: #495057;
+  color: var(--text-secondary);
   margin-bottom: 12px;
   line-height: 1.5;
 }
@@ -237,7 +237,7 @@
 }
 
 .factor {
-  color: #28a745;
+  color: var(--color-success);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -252,8 +252,8 @@
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #007bff;
+  border: 3px solid var(--bg-tertiary);
+  border-top: 3px solid var(--color-secondary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;

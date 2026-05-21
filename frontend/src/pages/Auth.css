@@ -152,7 +152,7 @@
    Field Errors
    ============================================ */
 .field-error {
-  color: #fca5a5;
+  color: var(--color-error);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   display: flex;
@@ -215,7 +215,7 @@
 .auth-error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  color: var(--color-error);
   padding: var(--space-4);
   border-radius: var(--radius-xl);
   font-size: var(--text-sm);

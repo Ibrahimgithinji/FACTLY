@@ -65,7 +65,7 @@
   right: 10px;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
-  color: #fff;
+  color: var(--color-white);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;

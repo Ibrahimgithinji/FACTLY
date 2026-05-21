@@ -71,7 +71,7 @@
 
 .newsletter__error {
   font-size: 0.8rem;
-  color: #ef4444;
+  color: var(--color-error);
   padding: 8px 12px;
   background: rgba(239, 68, 68, 0.1);
   border-radius: 6px;

@@ -144,7 +144,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-lg);
-  color: #fca5a5;
+  color: var(--color-error);
   font-size: var(--text-base);
   text-align: left;
 }

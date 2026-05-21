@@ -1,8 +1,8 @@
 /* Real-Time Verification Component Styles */
 
 .realtime-verification {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 2px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 24px;
   margin-top: 20px;
@@ -22,8 +22,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
-  border: 2px solid #059669;
+  background: var(--card-bg);
+  border: 2px solid var(--color-success);
   border-radius: 20px;
   padding: 10px 16px;
   box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
@@ -35,7 +35,7 @@
 
 .consensus-label {
   font-weight: 600;
-  color: #059669;
+  color: var(--color-success);
   font-size: 14px;
 }
 
@@ -47,7 +47,7 @@
 
 .confidence-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-tertiary);
   font-weight: 600;
   margin-bottom: 6px;
   display: block;
@@ -55,7 +55,7 @@
 
 .confidence-bar-container {
   height: 8px;
-  background: #e2e8f0;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -69,13 +69,13 @@
 .confidence-value {
   font-size: 14px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 /* Freshness Badge */
 .freshness-badge {
-  background: #fff;
-  border: 2px solid #f59e0b;
+  background: var(--card-bg);
+  border: 2px solid var(--color-warning);
   border-radius: 20px;
   padding: 10px 16px;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
@@ -83,7 +83,7 @@
 
 .freshness-label {
   font-weight: 600;
-  color: #b45309;
+  color: var(--color-warning);
   font-size: 13px;
 }
 
@@ -99,10 +99,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: white;
+  background: var(--card-bg);
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .stat-icon {
@@ -115,7 +115,7 @@
 
 .stat-label {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-tertiary);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -124,7 +124,7 @@
 .stat-value {
   font-size: 16px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-top: 2px;
 }
 
@@ -133,8 +133,8 @@
 .info-section,
 .timeline-section {
   margin-bottom: 20px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -144,39 +144,39 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s;
 }
 
 .section-header:hover {
-  background: #f1f5f9;
+  background: var(--hover-bg);
 }
 
 .header-title {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .expand-icon {
-  color: #64748b;
+  color: var(--text-tertiary);
   transition: transform 0.2s;
 }
 
 .section-header:hover .expand-icon {
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .section-label {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   font-size: 13px;
   padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
 }
 
 /* Sources List */
@@ -187,13 +187,13 @@
 .source-item {
   padding: 12px;
   margin-bottom: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: #fafbfc;
+  background: var(--bg-secondary);
 }
 
 .source-item.primary {
-  border-left: 4px solid #059669;
+  border-left: 4px solid var(--color-success);
 }
 
 .source-header {
@@ -207,21 +207,21 @@
 
 .source-name {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   font-size: 13px;
 }
 
 .source-credibility {
   font-size: 11px;
-  color: #64748b;
-  background: white;
+  color: var(--text-tertiary);
+  background: var(--card-bg);
   padding: 2px 8px;
   border-radius: 4px;
 }
 
 .source-info {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -233,27 +233,27 @@
 .info-item {
   padding: 12px;
   margin-bottom: 8px;
-  border-left: 4px solid #10b981;
-  background: #ecfdf5;
+  border-left: 4px solid var(--color-success);
+  background: rgba(34, 197, 94, 0.08);
   border-radius: 4px;
 }
 
 .info-item.conflicting-item {
-  border-left-color: #ef4444;
-  background: #fef2f2;
+  border-left-color: var(--color-error);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .info-source {
   display: block;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   font-size: 12px;
   margin-bottom: 4px;
 }
 
 .info-text {
   font-size: 12px;
-  color: #475569;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.4;
 }
@@ -266,14 +266,14 @@
 .timeline-item {
   padding: 12px;
   margin-bottom: 8px;
-  border-left: 3px solid #3b82f6;
-  background: #eff6ff;
+  border-left: 3px solid var(--color-secondary);
+  background: rgba(59, 130, 246, 0.08);
   border-radius: 4px;
 }
 
 .timeline-time {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-tertiary);
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -294,13 +294,13 @@
 }
 
 .timeline-source.verified {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
 }
 
 .timeline-source.unverified {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
 }
 
 /* Methodology Note */
@@ -309,8 +309,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px 16px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 8px;
   margin-top: 16px;
 }
@@ -322,7 +322,7 @@
 
 .note-text {
   font-size: 12px;
-  color: #1e40af;
+  color: var(--color-secondary);
   line-height: 1.5;
 }
 

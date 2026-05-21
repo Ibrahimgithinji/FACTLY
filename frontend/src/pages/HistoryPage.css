@@ -17,7 +17,7 @@
 }
 
 .history-item {
-  background: #1e293b;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -27,13 +27,13 @@
 }
 
 .history-item:hover {
-  background: #334155;
+  background: var(--hover-bg);
   transform: translateX(4px);
 }
 
 .history-item.selected {
-  border-color: #3b82f6;
-  background: #334155;
+  border-color: var(--color-secondary);
+  background: var(--hover-bg);
 }
 
 .history-item-header {
@@ -48,17 +48,17 @@
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.875rem;
-  color: white;
+  color: var(--color-white);
 }
 
 .classification {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .history-claim {
   font-size: 0.875rem;
-  color: #f8fafc;
+  color: var(--text-primary);
   margin: 0.5rem 0;
   line-height: 1.4;
 }
@@ -69,18 +69,18 @@
   align-items: center;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border-color);
 }
 
 .history-date {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-tertiary);
 }
 
 .delete-button {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-tertiary);
   font-size: 1.25rem;
   cursor: pointer;
   padding: 0.25rem;
@@ -89,12 +89,12 @@
 }
 
 .delete-button:hover {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .history-details {
   flex: 1;
-  background: #1e293b;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 1.5rem;
   max-height: 600px;
@@ -107,19 +107,19 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .details-header h2 {
   margin: 0;
   font-size: 1.25rem;
-  color: #f8fafc;
+  color: var(--text-primary);
 }
 
 .close-button {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.25rem;
@@ -127,7 +127,7 @@
 }
 
 .close-button:hover {
-  color: #f8fafc;
+  color: var(--text-primary);
 }
 
 .details-section {
@@ -136,14 +136,14 @@
 
 .details-section h3 {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-tertiary);
   margin: 0 0 0.75rem 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .details-section p {
-  color: #f8fafc;
+  color: var(--text-primary);
   line-height: 1.6;
   margin: 0;
 }
@@ -161,7 +161,7 @@
 
 .classification-large {
   font-size: 1.25rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .component-item {
@@ -176,24 +176,24 @@
 
 .component-name {
   font-size: 0.875rem;
-  color: #f8fafc;
+  color: var(--text-primary);
 }
 
 .component-score {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .component-bar {
   height: 8px;
-  background: #334155;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .component-fill {
   height: 100%;
-  background: #3b82f6;
+  background: var(--color-secondary);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -201,7 +201,7 @@
 .justifications-list {
   margin: 0;
   padding-left: 1.5rem;
-  color: #f8fafc;
+  color: var(--text-primary);
 }
 
 .justifications-list li {
@@ -212,7 +212,7 @@
 .details-actions {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border-color);
 }
 
 .history-controls {
@@ -220,18 +220,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .history-count {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-tertiary);
 }
 
 .clear-button {
   background: none;
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -240,8 +240,8 @@
 }
 
 .clear-button:hover {
-  background: #ef4444;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-white);
 }
 
 @media (max-width: 768px) {
