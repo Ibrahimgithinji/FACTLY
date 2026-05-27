@@ -229,11 +229,30 @@ export const AuthProvider = ({ children }) => {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Login error: Non-JSON response received:', text.substring(0, 500));
-        
+
         if (!response.ok) {
+          let extractedError = null;
+          if (response.status === 500) {
+            const exceptionMatch = text.match(/<pre class="exception_value">(.*?)<\/pre>/s);
+            if (exceptionMatch && exceptionMatch[1]) {
+              extractedError = exceptionMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            }
+            if (!extractedError) {
+              const errorSectionMatch = text.match(/<h1[^>]*>(.*?)<\/h1>/s);
+              if (errorSectionMatch && errorSectionMatch[1]) {
+                extractedError = errorSectionMatch[1].trim();
+              }
+            }
+            if (extractedError) {
+              if (extractedError.includes('DisallowedHost') || extractedError.includes('Invalid HTTP_HOST')) {
+                throw new Error('Server configuration error. Please check ALLOWED_HOSTS or try again later.');
+              }
+              throw new Error(`Server error: ${extractedError.substring(0, 200)}`);
+            }
+          }
           throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
-        
+
         throw new Error('Invalid response from server. Please try again.');
       }
 

@@ -510,8 +510,7 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 # Default: allow localhost for development only
 _allowed_cors = os.getenv('ALLOWED_CORS', 'http://localhost:3000,http://127.0.0.1:3000')
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _allowed_cors.split(',') if o.strip()] if _allowed_cors else []
-# For development, allow all origins (remove in production)
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
+CORS_ALLOW_ALL_ORIGINS = DEBUG or os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
 if not DEBUG and CORS_ALLOW_ALL_ORIGINS:
     logger.warning(
         "CORS_ALLOW_ALL_ORIGINS is True in production — this is insecure. "
@@ -578,14 +577,6 @@ LOGGING = {
     },
 }
 
-# Email Configuration
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Factly <noreply@factly.tech>')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:3000')
 
 # Web Push (VAPID)
