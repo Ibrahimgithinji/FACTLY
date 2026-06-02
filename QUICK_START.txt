@@ -1,0 +1,151 @@
+================================================================================
+FACTLY - QUICK START GUIDE
+================================================================================
+
+TO START THE APPLICATION:
+  1. Double-click: startup.bat
+  2. Wait for two terminal windows to appear
+  3. Wait for the browser to open to http://localhost:3000
+
+That's it! The app should now be running.
+
+================================================================================
+WHAT GETS FIXED
+================================================================================
+
+ERROR: "500 Internal Server Error on Login"
+  Root Cause: Backend server was not running on port 8000
+  Solution: startup.bat script now starts both backend and frontend servers
+
+THE FIX:
+  ✓ Updated backend/.env to allow in-memory database fallback
+  ✓ Created startup.bat to start both servers automatically
+  ✓ Backend now runs migrations on startup
+  ✓ Frontend connects to backend via proxy (localhost:8000)
+
+================================================================================
+WHAT HAPPENS WHEN YOU RUN startup.bat
+================================================================================
+
+1. Migrates the database (creates tables if needed)
+2. Starts Django backend server on port 8000
+3. Waits 8 seconds for backend to fully initialize
+4. Starts React frontend server on port 3000
+5. Waits 5 seconds for frontend to compile
+6. Opens http://localhost:3000 in your default browser
+
+================================================================================
+HOW IT WORKS
+================================================================================
+
+Frontend (port 3000)
+  ↓ (proxy configured in package.json)
+  ↓ routes to http://127.0.0.1:8000
+  ↓
+Backend (port 8000)
+  ↓
+  ↓ API endpoints at:
+  ↓   - /api/verification/auth/login/
+  ↓   - /api/verification/auth/signup/
+  ↓   - /api/verification/auth/refresh/
+  ↓   - etc...
+  ↓
+SQLite Database
+  (In-memory or file-based)
+
+================================================================================
+WHAT TO DO IF IT DOESN'T WORK
+================================================================================
+
+Terminal window appears but nothing happens:
+  → The server is starting. Wait 30-60 seconds.
+  → Check the terminal for error messages.
+
+Browser doesn't open:
+  → Manually open http://localhost:3000 in your browser
+
+Still getting 500 error:
+  → Check the backend terminal window for error messages
+  → Visit http://localhost:8000/health/ to verify backend is running
+
+================================================================================
+STOPPING THE APPLICATION
+================================================================================
+
+Method 1: Close the terminal windows (click X button)
+Method 2: Press Ctrl+C in either terminal window
+
+The servers will stop immediately.
+
+================================================================================
+IMPORTANT FILES
+================================================================================
+
+startup.bat
+  Main startup script. Run this to start everything.
+
+backend/.env
+  Configuration file for Django backend.
+  Contains database path, email settings, API keys, etc.
+
+frontend/package.json
+  Contains proxy configuration: "proxy": "http://127.0.0.1:8000"
+
+backend/factly_backend/settings.py
+  Django settings. Handles database initialization and schema creation.
+
+LOGIN_ERROR_FIX.md
+  Detailed explanation of the 500 error and how it was fixed.
+
+================================================================================
+PORTS AND URLS
+================================================================================
+
+Frontend:    http://localhost:3000
+Backend API: http://localhost:8000
+Health Check: http://localhost:8000/health/
+Admin Panel:  http://localhost:8000/admin/
+
+================================================================================
+DATABASE
+================================================================================
+
+Default location: C:\Users\DELL\AppData\Local\factly-db.sqlite3
+Fallback: :memory: (in-memory, data lost on restart)
+
+When ALLOW_MEMORY_DB=True:
+  If the file-based database is not accessible, an in-memory database
+  is used instead. This means data won't persist across restarts.
+  This is fine for testing but not for production.
+
+================================================================================
+TROUBLESHOOTING CHECKLIST
+================================================================================
+
+□ Did you run startup.bat?
+□ Are two terminal windows showing?
+□ Are there any error messages in the terminal windows?
+□ Can you access http://localhost:8000/health/?
+□ Can you access http://localhost:3000/?
+□ Did you wait at least 30 seconds after starting?
+
+If still stuck:
+  1. Close all terminal windows
+  2. Delete any migration-error.log files
+  3. Run startup.bat again
+  4. Wait at least 60 seconds
+  5. Check terminal for error messages
+
+================================================================================
+GETTING HELP
+================================================================================
+
+Common errors and solutions are in: LOGIN_ERROR_FIX.md
+Detailed startup information is in: README_STARTUP.md
+
+If you still have issues, check:
+  1. backend/factly.log (server logs)
+  2. Terminal window error messages
+  3. Browser console (F12 → Console tab)
+
+================================================================================
