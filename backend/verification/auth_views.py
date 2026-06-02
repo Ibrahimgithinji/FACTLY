@@ -127,6 +127,10 @@ def _has_real_smtp_credentials():
     if not uses_smtp_credentials:
         return True
 
+    if 'resend' in backend:
+        resend_key = getattr(settings, 'RESEND_API_KEY', '') or ''
+        return bool(resend_key) and not _looks_like_placeholder_secret(resend_key)
+
     host_user = getattr(settings, 'EMAIL_HOST_USER', '')
     host_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
     return not (
@@ -141,16 +145,30 @@ class LoginView(APIView):
     throttle_classes = [LoginRateThrottle]
     
     def post(self, request):
-        _ensure_auth_schema_ready()
-
-        email = request.data.get('email') or ''
-        password = request.data.get('password')
-        
-        email = email.strip().lower()
-
-        if not email or not password:
+        try:
+            _ensure_auth_schema_ready()
+        except Exception as e:
+            logger.error(f"Schema initialization failed: {e}", exc_info=True)
             return Response(
-                {'error': 'Email and password required'},
+                {'error': 'Server initialization error. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        try:
+            email = request.data.get('email') or ''
+            password = request.data.get('password') or ''
+            
+            email = (email or '').strip().lower()
+
+            if not email or not password:
+                return Response(
+                    {'error': 'Email and password required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Exception as e:
+            logger.error(f"Error parsing login request: {e}", exc_info=True)
+            return Response(
+                {'error': 'Invalid request format'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -197,7 +215,7 @@ class LoginView(APIView):
         # Generate JWT tokens
         try:
             refresh = RefreshToken.for_user(user)
-            return Response({
+            response_data = {
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
                 'user': {
@@ -205,7 +223,8 @@ class LoginView(APIView):
                     'email': user.email,
                     'name': user.first_name or user.username,
                 }
-            }, status=status.HTTP_200_OK)
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"JWT token generation error: {e}", exc_info=True)
             return Response(
