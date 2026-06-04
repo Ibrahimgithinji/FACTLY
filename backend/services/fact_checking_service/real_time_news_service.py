@@ -313,35 +313,40 @@ class RealTimeNewsService:
     def _fetch_rss_feeds(self, query: str, max_results: int) -> List[RealTimeNewsItem]:
         """Fetch from RSS feeds."""
         all_items = []
+        results_per_feed = max(max_results // len(self.RSS_FEEDS), 3)
 
         for source_name, feed_url in self.RSS_FEEDS.items():
             try:
                 feed = feedparser.parse(feed_url)
 
-                for entry in feed.entries[:max_results // len(self.RSS_FEEDS)]:
-                    # Check if entry matches query (simple text search)
-                    text_content = f"{entry.title} {getattr(entry, 'description', '')}".lower()
-                    if query.lower() not in text_content:
-                        continue
+                for entry in feed.entries[:results_per_feed]:
+                    try:
+                        published_date = self._parse_rss_date(entry)
 
-                    published_date = self._parse_rss_date(entry)
+                        # Calculate freshness score
+                        hours_old = (datetime.now() - published_date).total_seconds() / 3600
+                        freshness_score = max(0, 1 - (hours_old / 24))
 
-                    # Calculate freshness score
-                    hours_old = (datetime.now() - published_date).total_seconds() / 3600
-                    freshness_score = max(0, 1 - (hours_old / 24))
+                        # Calculate simple relevance based on query match (optional)
+                        text_content = f"{entry.title} {getattr(entry, 'description', '')}".lower()
+                        relevance_score = 0.7
+                        if query.lower() in text_content:
+                            relevance_score = 0.9  # Boost if query matches
 
-                    news_item = RealTimeNewsItem(
-                        title=entry.title,
-                        content=getattr(entry, 'description', ''),
-                        url=entry.link,
-                        published_date=published_date,
-                        source=source_name.upper(),
-                        freshness_score=freshness_score,
-                        relevance_score=0.7,  # RSS feeds are curated
-                        credibility_score=self._get_source_credibility(source_name),
-                        metadata={'api': 'rss', 'feed': source_name}
-                    )
-                    all_items.append(news_item)
+                        news_item = RealTimeNewsItem(
+                            title=entry.title,
+                            content=getattr(entry, 'description', ''),
+                            url=entry.link,
+                            published_date=published_date,
+                            source=source_name.upper(),
+                            freshness_score=freshness_score,
+                            relevance_score=relevance_score,
+                            credibility_score=self._get_source_credibility(source_name),
+                            metadata={'api': 'rss', 'feed': source_name}
+                        )
+                        all_items.append(news_item)
+                    except Exception as e:
+                        logger.warning(f"Error parsing RSS entry from {source_name}: {e}")
 
             except Exception as e:
                 logger.error(f"RSS feed error for {source_name}: {e}")

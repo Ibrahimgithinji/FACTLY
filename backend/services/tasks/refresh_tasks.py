@@ -354,7 +354,7 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
     trending = []
     now = datetime.now()
     for idx, (word, count) in enumerate(word_counts.most_common(10)):
-        if count >= 2:  # Only include if mentioned multiple times
+        if count >= 1:  # Include even single occurrences for better coverage
             # Generate deterministic ID from topic
             topic_text = word.title()
             id_hash = hashlib.md5(topic_text.encode()).hexdigest()[:8]
@@ -492,8 +492,8 @@ DEMO_GLOBAL_EVENTS = _make_demo_global_events()
 def get_trending_topics() -> Dict[str, Any]:
     """
     Get current trending topics (called by views).
-    FIXED: Now rebuilds demo topics with live timestamps on every call.
-    Returns demo data if cache is empty.
+    FIXED: Now fetches live data on-demand when cache is empty.
+    Returns live trending topics extracted from real news sources.
     """
     # Try to get from cache first
     cached = cache_manager.get('trending_service', {'type': 'trending_topics'}, data_type='realtime')
@@ -514,13 +514,88 @@ def get_trending_topics() -> Dict[str, Any]:
             'source': 'memory'
         }
     
-    # FIXED Bug 3: Return LIVE demo data - rebuild topics with fresh timestamps
+    # FIXED: Fetch live data on-demand instead of returning demo data
+    logger.info("Cache empty - fetching live trending topics on-demand")
+    live_topics = _fetch_live_trending_topics()
+    if live_topics:
+        return {
+            'topics': live_topics,
+            'global_events': _make_demo_global_events(),
+            'last_updated': datetime.now(),
+            'source': 'live'
+        }
+    
+    # Fallback only if live fetch completely fails
+    logger.warning("Live fetch failed - returning demo topics as last resort")
     return {
-        'topics': _make_demo_topics(),  # Generate fresh timestamps on every call
+        'topics': _make_demo_topics(),
         'global_events': _make_demo_global_events(),
         'last_updated': datetime.now(),
         'source': 'demo_fallback'
     }
+
+
+def _fetch_live_trending_topics() -> List[Dict[str, Any]]:
+    """
+    Fetch live trending topics from news sources (RSS/API).
+    Returns list of trending topics or empty list on failure.
+    """
+    try:
+        breaking_news = []
+        world_news = []
+        
+        # Try to fetch from API first (use 24h age limit to get more data)
+        try:
+            breaking_news = realtime_news.get_real_time_news(
+                "breaking news",
+                max_results=50,
+                max_age_hours=24
+            )
+        except Exception as e:
+            logger.warning(f"Failed to fetch breaking news from API: {e}")
+        
+        try:
+            world_news = realtime_news.get_real_time_news(
+                "world news",
+                max_results=50,
+                max_age_hours=24
+            )
+        except Exception as e:
+            logger.warning(f"Failed to fetch world news from API: {e}")
+        
+        # Combine results
+        all_news = breaking_news + world_news
+        
+        # RSS Feed Fallback - if no results from API, use RSS directly
+        if not all_news:
+            logger.info("No API results, falling back to RSS feeds")
+            try:
+                for feed_name, feed_url in RealTimeNewsService.RSS_FEEDS.items():
+                    try:
+                        rss_results = realtime_news._fetch_single_rss(
+                            feed_url,
+                            query="news",
+                            max_results=10
+                        )
+                        all_news.extend(rss_results)
+                        logger.info(f"Fetched {len(rss_results)} items from RSS feed: {feed_name}")
+                    except Exception as rss_err:
+                        logger.warning(f"Failed to fetch RSS feed {feed_name}: {rss_err}")
+            except Exception as rss_fallback_err:
+                logger.warning(f"RSS fallback failed: {rss_fallback_err}")
+        
+        # Extract trending topics from fetched news
+        if all_news:
+            logger.info(f"Total news items for extraction: {len(all_news)}")
+            trending = extract_trending_topics(all_news)
+            logger.info(f"Extracted {len(trending)} live trending topics")
+            return trending
+        
+        return []
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch live trending topics: {e}")
+        return []
 
 
 def get_global_events() -> List[Dict[str, Any]]:
