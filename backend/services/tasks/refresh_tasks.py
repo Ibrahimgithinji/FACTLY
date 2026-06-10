@@ -322,58 +322,110 @@ def refresh_fact_check_cache(self):
 def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
     """
     Extract trending topics from news items.
-    FIXED: Now emits the correct frontend schema with all required fields.
+    FIXED: Now extracts full headlines/title phrases instead of single words.
     Frontend needs: id, topic, mention_count, trending_score (0-100), freshness (0-1),
                    risk_level, verification_status, last_updated
     """
-    from collections import Counter
     import re
     import hashlib
-    
-    # Common words to exclude
+    from collections import Counter, defaultdict
+
     stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
                   'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during',
                   'before', 'after', 'above', 'below', 'between', 'among', 'is', 'are',
                   'was', 'were', 'been', 'have', 'has', 'had', 'do', 'does', 'did',
                   'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can',
                   'said', 'says', 'say', 'new', 'more', 'all', 'some', 'many', 'most',
-                  'other', 'time', 'year', 'years', 'day', 'days', 'way', 'ways'}
-    
-    # Extract keywords from titles
+                  'other', 'time', 'year', 'years', 'day', 'days', 'way', 'ways',
+                  'this', 'that', 'these', 'those', 'what', 'which', 'who', 'whom',
+                  'their', 'they', 'them', 'have', 'has', 'had', 'just', 'now', 'only'}
+
+    topic_candidates = []
+    now = datetime.now()
+
+    for item in news_items:
+        title = item.title if hasattr(item, 'title') else item.get('title', '')
+        if not title or len(title) < 10:
+            continue
+
+        clean_title = re.sub(r'^\s*(Breaking\s+)?', '', title, flags=re.IGNORECASE).strip()
+        clean_title = re.sub(r'\s*[-|]\s*(BBC|CNN|Reuters|AP|NYT|The Guardian|Al Jazeera)\s*$', '', clean_title, flags=re.IGNORECASE).strip()
+
+        if len(clean_title) > 15:
+            topic_candidates.append({
+                'topic': clean_title,
+                'published': item.published_date if hasattr(item, 'published_date') else item.get('published_date'),
+            })
+
+    if len(topic_candidates) >= 5:
+        seen_topics = set()
+        trending = []
+        for candidate in topic_candidates:
+            topic_text = candidate['topic']
+            topic_lower = topic_text.lower()[:50]
+
+            if topic_lower in seen_topics:
+                continue
+            seen_topics.add(topic_lower)
+
+            published = candidate.get('published')
+            age_hours = 0
+            if published:
+                if isinstance(published, str):
+                    try:
+                        published = datetime.fromisoformat(published.replace('Z', '+00:00'))
+                    except:
+                        published = now
+                age_hours = (now - published).total_seconds() / 3600 if published else 24
+
+            freshness = max(0.1, 1.0 - (age_hours / 48.0))
+
+            id_hash = hashlib.md5(topic_text.encode()).hexdigest()[:8]
+
+            trending.append({
+                'id': f'live-{id_hash}',
+                'topic': topic_text,
+                'mention_count': 1,
+                'trending_score': int(min(100, freshness * 100)),
+                'freshness': round(freshness, 2),
+                'risk_level': 'medium',
+                'verification_status': 'pending',
+                'last_updated': now.isoformat()
+            })
+
+            if len(trending) >= 10:
+                break
+
+        if trending:
+            return trending
+
     all_words = []
     for item in news_items:
         title = item.title if hasattr(item, 'title') else item.get('title', '')
-        # Simple word extraction
         words = re.findall(r'\b[A-Za-z]{4,}\b', title.lower())
         all_words.extend([w for w in words if w not in stop_words])
-    
-    # Count word frequency
+
     word_counts = Counter(all_words)
-    
-    # Get top trending topics with correct schema
+
     trending = []
-    now = datetime.now()
     for idx, (word, count) in enumerate(word_counts.most_common(10)):
-        if count >= 1:  # Include even single occurrences for better coverage
-            # Generate deterministic ID from topic
+        if count >= 1:
             topic_text = word.title()
             id_hash = hashlib.md5(topic_text.encode()).hexdigest()[:8]
-            
-            # Calculate freshness (decay over time - simplified)
-            # Freshness starts at 1.0 and decays based on count (more mentions = more recent)
+
             freshness = min(1.0, count / 10.0)
-            
+
             trending.append({
                 'id': f'live-{id_hash}',
                 'topic': topic_text,
                 'mention_count': count,
-                'trending_score': int(min(100, count * 10)),  # Convert to 0-100 int
+                'trending_score': int(min(100, count * 10)),
                 'freshness': round(freshness, 2),
-                'risk_level': 'medium',  # Default risk level
-                'verification_status': 'pending',  # Default status
+                'risk_level': 'medium',
+                'verification_status': 'pending',
                 'last_updated': now.isoformat()
             })
-    
+
     return trending
 
 
