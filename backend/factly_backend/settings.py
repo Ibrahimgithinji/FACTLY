@@ -19,7 +19,9 @@ from dotenv import load_dotenv
 import ipaddress
 
 # Load environment variables from .env if present
-load_dotenv()
+# Load from backend directory explicitly
+env_path = Path(__file__).resolve().parent.parent / '.env'
+load_dotenv(env_path)
 
 logger = logging.getLogger(__name__)
 

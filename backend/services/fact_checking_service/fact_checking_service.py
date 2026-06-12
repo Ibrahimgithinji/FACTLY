@@ -13,6 +13,7 @@ from .newsldr_api import NewsLdrClient
 from .unified_schema import VerificationResult, ClaimReview, RelatedNews, SourceReliability
 from .cache_manager import CacheManager
 from .evidence_search_service import EvidenceSearchService
+from .misinformation_heuristics import get_misinformation_heuristics
 
 logger = logging.getLogger(__name__)
 
@@ -103,25 +104,37 @@ class FactCheckingService:
             logger.warning("NewsLdr client not available")
 
         # If primary APIs failed, use EvidenceSearchService as fallback
+        heuristic_match = None
         if not claim_reviews and not related_news:
-            logger.info("Primary APIs unavailable, using EvidenceSearchService fallback...")
-            try:
-                evidence_collection = self.evidence_search.search_evidence(claim, language, max_results_per_source=10)
-                # Convert evidence items to RelatedNews format
-                for item in evidence_collection.evidence_items:
-                    if item.published_date:
-                        related_news.append(RelatedNews(
-                            title=item.title,
-                            url=item.url or '',
-                            source=item.source,
-                            publish_date=item.published_date,
-                            relevance_score=item.relevance_score,
-                            sentiment=item.metadata.get('sentiment'),
-                            metadata=item.metadata
-                        ))
-                logger.info(f"Found {len(evidence_collection.evidence_items)} evidence items from fallback search")
-            except Exception as e:
-                logger.error(f"EvidenceSearchService fallback failed: {e}")
+            logger.info("Primary APIs unavailable, trying EvidenceSearchService fallback...")
+
+            # FIRST: Check for known misinformation patterns
+            heuristics = get_misinformation_heuristics()
+            heuristic_match = heuristics.get_heuristic_verdict(claim)
+            if heuristic_match and heuristic_match.get('matched'):
+                logger.info(f"Claim matched known misinformation pattern: {heuristic_match['claim_type']}")
+                api_sources.append("misinformation_heuristics")
+
+            else:
+                # Try EvidenceSearchService
+                try:
+                    evidence_collection = self.evidence_search.search_evidence(claim, language, max_results_per_source=10)
+                    for item in evidence_collection.evidence_items:
+                        if item.published_date:
+                            related_news.append(RelatedNews(
+                                title=item.title,
+                                url=item.url or '',
+                                source=item.source,
+                                publish_date=item.published_date,
+                                relevance_score=item.relevance_score,
+                                sentiment=item.metadata.get('sentiment'),
+                                metadata=item.metadata
+                            ))
+                    logger.info(f"Found {len(evidence_collection.evidence_items)} evidence items from fallback search")
+                    if evidence_collection.evidence_items:
+                        api_sources.append("evidence_search_fallback")
+                except Exception as e:
+                    logger.error(f"EvidenceSearchService fallback failed: {e}")
 
         # Get source reliability (if we have sources from news)
         source_reliability = None
@@ -158,7 +171,8 @@ class FactCheckingService:
             metadata={
                 "language": language,
                 "total_reviews": len(claim_reviews),
-                "total_news": len(related_news)
+                "total_news": len(related_news),
+                "heuristic_match": heuristic_match
             }
         )
 
