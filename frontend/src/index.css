@@ -209,6 +209,58 @@ html.theme-transition *::after {
               stroke 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Font Size Settings */
+[data-font-size="sm"] {
+  font-size: 15px;
+}
+
+[data-font-size="md"] {
+  font-size: 16px;
+}
+
+[data-font-size="lg"] {
+  font-size: 17px;
+}
+
+/* Reading Font Settings */
+[data-reading-font="serif"] {
+  --font-sans: Georgia, 'Times New Roman', Times, serif;
+}
+
+/* Content Density Settings */
+[data-density="compact"] {
+  --space-4: 0.75rem;
+  --space-6: 1rem;
+  --space-8: 1.5rem;
+  --space-10: 2rem;
+  --space-12: 2.5rem;
+}
+
+/* Reduced Motion Settings */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* High Contrast Settings */
+[data-high-contrast="true"] {
+  --border-light: rgba(255, 255, 255, 0.3);
+  --border-medium: rgba(255, 255, 255, 0.5);
+  --text-secondary: #e2e8f0;
+  --text-muted: #cbd5e1;
+}
+
+[data-high-contrast="true"][data-theme="light"] {
+  --border-light: rgba(0, 0, 0, 0.3);
+  --border-medium: rgba(0, 0, 0, 0.5);
+  --text-secondary: #1e293b;
+  --text-muted: #334155;
+}
+
 /* ============================================
    Reset & Base Styles
    ============================================ */

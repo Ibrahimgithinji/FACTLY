@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SearchOverlay from './SearchOverlay';
 import ThemeToggle from './ThemeToggle';
+import UserMenu from './UserMenu';
 import './Navbar.css';
 
 const NAV_CATEGORIES = [
@@ -28,6 +29,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleScroll = useCallback(() => {
     setIsScrolled(window.scrollY > 8);
@@ -40,11 +42,15 @@ const Navbar = () => {
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [location]);
 
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+      if (event.key === 'Escape') {
+        setUserMenuOpen(false);
+        setIsMobileMenuOpen(false);
+      }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
@@ -56,6 +62,11 @@ const Navbar = () => {
       document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
+
+  const toggleUserMenu = () => {
+    setUserMenuOpen(prev => !prev);
+    if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+  };
 
   const accountLinks = isAuthenticated
     ? [
@@ -131,11 +142,18 @@ const Navbar = () => {
               </button>
               <ThemeToggle />
               {isAuthenticated ? (
-                <div className="navbar__user">
-                  <span className="navbar__user-avatar" aria-hidden="true">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                  <button onClick={handleLogout} className="navbar__auth-button">Sign out</button>
+                <div className="navbar__user-wrapper">
+                  <button
+                    onClick={toggleUserMenu}
+                    className="navbar__user-btn"
+                    aria-label="User menu"
+                    aria-expanded={userMenuOpen}
+                  >
+                    <span className="navbar__user-avatar">
+                      {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </button>
+                  <UserMenu isOpen={userMenuOpen} onClose={() => setUserMenuOpen(false)} />
                 </div>
               ) : (
                 <Link to="/login" className="navbar__auth-button">Sign in</Link>
@@ -145,7 +163,7 @@ const Navbar = () => {
 
             <button
               className={`navbar__toggle ${isMobileMenuOpen ? 'navbar__toggle--active' : ''}`}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => { setUserMenuOpen(false); setIsMobileMenuOpen(!isMobileMenuOpen); }}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}

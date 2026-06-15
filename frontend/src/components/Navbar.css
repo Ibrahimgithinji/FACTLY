@@ -80,7 +80,7 @@
 .navbar__logo-mark {
   align-items: center;
   background: var(--color-primary);
-  border-radius: 8px;
+  border-radius: 7px;
   color: #ffffff;
   display: inline-flex;
   font-size: 1.25rem;
@@ -90,17 +90,18 @@
   width: 38px;
 }
 
-.navbar__logo-copy {
-  display: grid;
-  gap: 1px;
-}
-
 .navbar__logo-text {
   color: var(--text-primary);
   font-size: 1.32rem;
   font-weight: 950;
   letter-spacing: 0;
   line-height: 1;
+}
+
+.navbar__logo-copy {
+  display: grid;
+  gap: 1px;
+  text-align: left;
 }
 
 .navbar__tagline {
@@ -202,6 +203,33 @@
   width: 8px;
 }
 
+.navbar__user-wrapper {
+  position: relative;
+}
+
+.navbar__user-btn {
+  align-items: center;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  width: 36px;
+}
+
+.navbar__user-btn:hover {
+  border-color: var(--text-muted);
+}
+
+.navbar__user-btn[aria-expanded="true"] {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+
 .navbar__auth-button {
   background: transparent;
   border: 1px solid var(--border-color);
@@ -226,16 +254,9 @@
   color: #ffffff;
 }
 
-.navbar__user {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-}
-
 .navbar__user-avatar {
   align-items: center;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
   border-radius: 999px;
   color: var(--text-primary);
   display: inline-flex;
@@ -433,7 +454,7 @@
   .navbar__actions .theme-toggle,
   .navbar__actions .navbar__icon-button,
   .navbar__verify-button,
-  .navbar__user {
+  .navbar__user-wrapper {
     display: none;
   }
 

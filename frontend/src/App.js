@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { ResultsProvider } from './context/ResultsContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SettingsProvider } from './context/SettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -62,6 +63,7 @@ function App() {
     <AuthProvider>
       <ResultsProvider>
         <ThemeProvider>
+          <SettingsProvider>
           <HelmetProvider>
           <Router future={{ v7_relativeSplatPath: true }}>
             <div className="App">
@@ -124,7 +126,8 @@ function App() {
           </div>
         </Router>
         </HelmetProvider>
-      </ThemeProvider>
+          </SettingsProvider>
+        </ThemeProvider>
     </ResultsProvider>
     </AuthProvider>
   );
