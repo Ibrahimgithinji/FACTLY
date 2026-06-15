@@ -577,13 +577,13 @@ def get_trending_topics() -> Dict[str, Any]:
             'source': 'live'
         }
     
-    # Fallback only if live fetch completely fails
-    logger.warning("Live fetch failed - returning demo topics as last resort")
+    # No data available
+    logger.warning("Live fetch failed - no trending topics available")
     return {
-        'topics': _make_demo_topics(),
-        'global_events': _make_demo_global_events(),
+        'topics': [],
+        'global_events': [],
         'last_updated': datetime.now(),
-        'source': 'demo_fallback'
+        'source': 'empty'
     }
 
 
@@ -653,7 +653,7 @@ def _fetch_live_trending_topics() -> List[Dict[str, Any]]:
 def get_global_events() -> List[Dict[str, Any]]:
     """
     Get global events digest (called by views).
-    Returns demo data if cache is empty.
+    Returns empty list if no cached data available.
     """
     # Try to get from cache first
     cached = cache_manager.get('global_events', {'type': 'digest'}, data_type='realtime')
@@ -664,5 +664,4 @@ def get_global_events() -> List[Dict[str, Any]]:
     if memory_events:
         return memory_events
     
-    # Return demo data when cache and memory are empty
-    return DEMO_GLOBAL_EVENTS
+    return []
