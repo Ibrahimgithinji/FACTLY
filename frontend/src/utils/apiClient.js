@@ -314,6 +314,89 @@ export const apiGet = async (url, options = {}) => {
   }
 };
 
+/**
+ * Make a PUT request with proper error handling, token refresh, and retry logic
+ * @param {string} url - API endpoint URL
+ * @param {Object} data - Request body data
+ * @param {Object} options - Additional fetch options
+ * @returns {Object} Response data with success status
+ */
+export const apiPut = async (url, data, options = {}) => {
+  let accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+
+  try {
+    const response = await withRetry(() =>
+      fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+          ...options.headers,
+        },
+        body: JSON.stringify(data),
+        ...options,
+      }),
+      'PUT'
+    );
+
+    if (response.status === 401 && accessToken) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        accessToken = getStoredToken(ACCESS_TOKEN_KEY);
+        const retryResponse = await withRetry(() =>
+          fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+              ...options.headers,
+            },
+            body: JSON.stringify(data),
+            ...options,
+          }),
+          'PUT-Retry'
+        );
+
+        const result = await parseResponse(retryResponse);
+
+        if (!retryResponse.ok) {
+          throw new Error(result.error || result.message || 'Request failed');
+        }
+
+        return { success: true, data: result };
+      }
+    }
+
+    const result = await parseResponse(response);
+
+    if (!response.ok) {
+      throw new Error(result.error || result.message || 'Request failed');
+    }
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('API PUT request error:', error);
+
+    if (error.message && (
+      error.message.includes('Server error') ||
+      error.message.includes('Invalid response') ||
+      error.message.includes('Request failed')
+    )) {
+      return { success: false, error: error.message };
+    }
+
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      return { success: false, error: 'Network error. Please check your connection.' };
+    }
+
+    if (error instanceof SyntaxError) {
+      return { success: false, error: 'Invalid response from server. Please try again.' };
+    }
+
+    return { success: false, error: error.message || 'An unexpected error occurred.' };
+  }
+};
+
 // Export convenience methods for auth endpoints
 export const authApi = {
   login: (email, password) => apiPost(API_ENDPOINTS.LOGIN, { email, password }),
@@ -331,6 +414,7 @@ export const authApi = {
 const apiClient = {
   apiPost,
   apiGet,
+  apiPut,
   authApi,
 };
 

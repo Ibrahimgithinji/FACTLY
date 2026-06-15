@@ -49,6 +49,7 @@ export default function UserMenu({ isOpen, onClose }) {
       </div>
 
       <div className="user-menu__links">
+        <Link to="/profile" className="user-menu__link" onClick={onClose}>Profile</Link>
         <Link to="/history" className="user-menu__link" onClick={onClose}>History</Link>
         <Link to="/bookmarks" className="user-menu__link" onClick={onClose}>Saved</Link>
         <Link to="/results" className="user-menu__link" onClick={onClose}>Results</Link>
