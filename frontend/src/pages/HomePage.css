@@ -245,10 +245,6 @@
   white-space: nowrap;
 }
 
-.claim-briefing .trending-claims {
-  border: 0;
-  margin: 0;
-}
 
 .home-layout {
   display: grid;
@@ -280,7 +276,7 @@
 .home-section__grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .home-section__list {
@@ -293,12 +289,7 @@
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 18px;
-}
-
-.home-section--topics .home-section__header {
-  border-top: 0;
-  padding-top: 0;
+  padding: 18px 18px 14px;
 }
 
 .home-layout__sidebar {

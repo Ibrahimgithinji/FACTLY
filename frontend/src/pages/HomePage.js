@@ -23,8 +23,8 @@ function SectionGrid({ section }) {
         <Link to={`/category/${category.slug}`} className="home-section__view-all">View all</Link>
       </div>
       <div className="home-section__grid">
-        {articles.slice(0, 4).map((article, index) => (
-          <ArticleCard key={article.id} article={article} compact={index > 1} />
+        {articles.slice(0, 4).map((article) => (
+          <ArticleCard key={article.id} article={article} compact />
         ))}
       </div>
     </section>
@@ -189,22 +189,6 @@ export default function HomePage() {
           {sectionKeys.map((key) => (
             <SectionGrid key={key} section={data.sections[key]} />
           ))}
-
-          {secondaryArticles.length > 2 && (
-            <section className="home-section">
-              <div className="home-section__header">
-                <div>
-                  <span className="section-label">Editors' queue</span>
-                  <h2 className="home-section__title">Worth your time</h2>
-                </div>
-              </div>
-              <div className="home-section__list">
-                {secondaryArticles.slice(2, 6).map((article) => (
-                  <ArticleCard key={article.id} article={article} horizontal compact />
-                ))}
-              </div>
-            </section>
-          )}
 
           <section className="home-section home-section--topics">
             <div className="home-section__header">
