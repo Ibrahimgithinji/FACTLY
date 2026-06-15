@@ -105,6 +105,7 @@ class FactCheckingService:
 
         # If primary APIs failed, use EvidenceSearchService as fallback
         heuristic_match = None
+        api_sources_determined = False
         if not claim_reviews and not related_news:
             logger.info("Primary APIs unavailable, trying EvidenceSearchService fallback...")
 
@@ -113,7 +114,8 @@ class FactCheckingService:
             heuristic_match = heuristics.get_heuristic_verdict(claim)
             if heuristic_match and heuristic_match.get('matched'):
                 logger.info(f"Claim matched known misinformation pattern: {heuristic_match['claim_type']}")
-                api_sources.append("misinformation_heuristics")
+                api_sources = ["misinformation_heuristics"]
+                api_sources_determined = True
 
             else:
                 # Try EvidenceSearchService
@@ -132,7 +134,8 @@ class FactCheckingService:
                             ))
                     logger.info(f"Found {len(evidence_collection.evidence_items)} evidence items from fallback search")
                     if evidence_collection.evidence_items:
-                        api_sources.append("evidence_search_fallback")
+                        api_sources = ["evidence_search_fallback"]
+                        api_sources_determined = True
                 except Exception as e:
                     logger.error(f"EvidenceSearchService fallback failed: {e}")
 
@@ -152,13 +155,14 @@ class FactCheckingService:
         overall_confidence = self._calculate_overall_confidence(claim_reviews, related_news, source_reliability)
 
         # Determine API sources used
-        api_sources = []
-        if claim_reviews:
-            api_sources.append("google_fact_check")
-        if related_news:
-            api_sources.append("newsldr")
-        if not claim_reviews and not related_news:
-            api_sources.append("evidence_search_fallback")
+        if not api_sources_determined:
+            api_sources = []
+            if claim_reviews:
+                api_sources.append("google_fact_check")
+            if related_news:
+                api_sources.append("newsldr")
+            if not claim_reviews and not related_news:
+                api_sources.append("evidence_search_fallback")
 
         result = VerificationResult(
             claim=claim,

@@ -54,3 +54,6 @@ django-ratelimit2>=0.5.0
 # Production Enhancements
 hiredis>=2.2.0
 msgpack>=1.0.0
+
+# Web Search Fallback (no API key required)
+duckduckgo_search>=8.0.0

@@ -17,6 +17,7 @@ from .unified_schema import ClaimReview, RelatedNews, SourceReliability, Publish
 from .cache_manager import CacheManager
 from .rate_limiter import RateLimiter
 from .real_time_news_service import RealTimeNewsService
+from duckduckgo_search import DDGS
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +168,7 @@ class EvidenceSearchService:
         {'name': 'NewsAPI', 'enabled': True, 'priority': 1},
         {'name': 'Bing News', 'enabled': True, 'priority': 2},
         {'name': 'RSS Feeds', 'enabled': True, 'priority': 3},
-        {'name': 'DuckDuckGo', 'enabled': False, 'priority': 4},
+        {'name': 'DuckDuckGo', 'enabled': True, 'priority': 4},
     ]
 
     def __init__(self, cache_manager: Optional[CacheManager] = None):
@@ -307,6 +308,18 @@ class EvidenceSearchService:
             except Exception as e:
                 logger.error(f"Bing News search failed: {e}")
                 search_errors.append(f"Bing News: {str(e)}")
+
+        # Search DuckDuckGo as free fallback (no API key required)
+        try:
+            ddg_evidence = self._search_duckduckgo(
+                claim, max_results_per_source
+            )
+            all_evidence.extend(ddg_evidence)
+            sources_successfully_used.append('DuckDuckGo')
+            logger.info(f"Found {len(ddg_evidence)} items from DuckDuckGo")
+        except Exception as e:
+            logger.debug(f"DuckDuckGo search failed: {e}")
+            search_errors.append(f"DuckDuckGo: {str(e)}")
 
         # Calculate diversity and agreement
         diversity_score = self._calculate_source_diversity(all_evidence)
@@ -717,4 +730,36 @@ class EvidenceSearchService:
             evidence_items.append(evidence)
 
         self.cache.set('bing_news', cache_key, evidence_items, data_type='news')
+        return evidence_items
+
+    def _search_duckduckgo(self, claim: str, max_results: int) -> List[EvidenceItem]:
+        """Search DuckDuckGo as free web search fallback (no API key required)."""
+        cache_key = {'query': claim, 'max_results': max_results, 'source': 'ddg'}
+        cached = self.cache.get('duckduckgo', cache_key, data_type='news')
+        if cached:
+            return cached
+
+        evidence_items = []
+        try:
+            with DDGS() as ddgs:
+                results = list(ddgs.text(claim, max_results=max_results))
+                for r in results:
+                    domain = self._extract_domain(r.get('href', ''))
+                    credibility = self.TRUSTED_NEWS_DOMAINS.get(domain, 0.5)
+                    evidence_items.append(EvidenceItem(
+                        source='DuckDuckGo',
+                        source_type='news',
+                        title=r.get('title', ''),
+                        content=r.get('body', ''),
+                        url=r.get('href'),
+                        published_date=None,
+                        credibility_score=credibility,
+                        relevance_score=0.6,
+                        verdict=None,
+                        metadata={'domain': domain, 'api': 'duckduckgo'}
+                    ))
+        except Exception as e:
+            logger.warning(f"DuckDuckGo search failed: {e}")
+
+        self.cache.set('duckduckgo', cache_key, evidence_items, data_type='news')
         return evidence_items

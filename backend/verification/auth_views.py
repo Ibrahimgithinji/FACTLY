@@ -65,15 +65,6 @@ def _ensure_auth_schema_ready():
             return
 
         try:
-            from django.apps import apps
-            if apps.is_installed('django.contrib.auth'):
-                try:
-                    apps.get_model('auth', 'User')
-                    _AUTH_SCHEMA_READY = True
-                    return
-                except LookupError:
-                    pass
-
             with connection.cursor() as cursor:
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name='auth_user'"

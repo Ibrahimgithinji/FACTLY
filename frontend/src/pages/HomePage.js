@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import Sidebar from '../components/Sidebar';
@@ -12,21 +12,81 @@ import './HomePage.css';
 function SectionGrid({ section }) {
   if (!section || !section.articles || section.articles.length === 0) return null;
   const { category, articles } = section;
+
   return (
     <section className="home-section">
       <div className="home-section__header">
-        <h2 className="home-section__title">
-          {category.icon && <span>{category.icon} </span>}
-          {category.name}
-        </h2>
-        <Link to={`/category/${category.slug}`} className="home-section__view-all">View all →</Link>
+        <div>
+          <span className="section-label">Desk</span>
+          <h2 className="home-section__title">{category.name}</h2>
+        </div>
+        <Link to={`/category/${category.slug}`} className="home-section__view-all">View all</Link>
       </div>
       <div className="home-section__grid">
-        {articles.slice(0, 4).map(article => (
-          <ArticleCard key={article.id} article={article} />
+        {articles.slice(0, 4).map((article, index) => (
+          <ArticleCard key={article.id} article={article} compact={index > 1} />
         ))}
       </div>
     </section>
+  );
+}
+
+function VerificationWidget() {
+  const [claim, setClaim] = useState('');
+
+  const submitClaim = (event) => {
+    event.preventDefault();
+    const query = claim.trim();
+    window.location.href = query ? `/verify?claim=${encodeURIComponent(query)}` : '/verify';
+  };
+
+  return (
+    <section className="verification-widget" aria-labelledby="verification-widget-title">
+      <div className="verification-widget__header">
+        <span className="section-label">Fact-check engine</span>
+        <h2 id="verification-widget-title">Verify a claim before it travels.</h2>
+      </div>
+      <form className="verification-widget__form" onSubmit={submitClaim}>
+        <label className="sr-only" htmlFor="claim-input">Claim to verify</label>
+        <textarea
+          id="claim-input"
+          value={claim}
+          onChange={(event) => setClaim(event.target.value)}
+          placeholder="Paste a headline, claim, post, or quote..."
+          rows="4"
+        />
+        <button type="submit">Verify this claim</button>
+      </form>
+      <div className="verification-widget__signals">
+        <span>Source trace</span>
+        <span>Evidence score</span>
+        <span>Verdict history</span>
+      </div>
+    </section>
+  );
+}
+
+function LatestRail({ articles }) {
+  if (!articles || articles.length === 0) return null;
+
+  return (
+    <aside className="latest-rail" aria-labelledby="latest-rail-title">
+      <div className="latest-rail__header">
+        <span className="section-label">Live file</span>
+        <h2 id="latest-rail-title">Latest</h2>
+      </div>
+      <div className="latest-rail__list">
+        {articles.slice(0, 6).map((article, index) => (
+          <Link key={article.id} to={`/article/${article.slug}`} className="latest-rail__item">
+            <span className="latest-rail__number">{String(index + 1).padStart(2, '0')}</span>
+            <span className="latest-rail__content">
+              {article.category && <span className="latest-rail__category">{article.category.name}</span>}
+              <strong>{article.title}</strong>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </aside>
   );
 }
 
@@ -35,7 +95,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
 
-  const startupSection = data?.sections?.['startups'];
   const handleTopicClick = (topic) => {
     window.location.href = `/verify?topic=${encodeURIComponent(topic)}`;
   };
@@ -60,141 +119,100 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+  const sectionKeys = data?.sections ? Object.keys(data.sections) : [];
+  const leadArticle = data?.featured?.[0] || data?.latest?.[0];
+  const secondaryArticles = useMemo(() => {
+    const seen = new Set(leadArticle ? [leadArticle.id] : []);
+    return [...(data?.featured || []), ...(data?.latest || [])]
+      .filter((article) => {
+        if (!article || seen.has(article.id)) return false;
+        seen.add(article.id);
+        return true;
+      })
+      .slice(0, 4);
+  }, [data, leadArticle]);
+
   if (loading) {
     return (
       <div className="home-page">
-        <div className="home-hero">
+        <div className="editorial-loader">
           <ArticleCardSkeleton featured />
-          <div className="home-hero__side">
-            <ArticleCardSkeleton />
-            <ArticleCardSkeleton />
-          </div>
-        </div>
-        <div className="home-layout">
-          <div className="home-layout__main">
-            <ArticleCardSkeleton />
-            <ArticleCardSkeleton />
-            <ArticleCardSkeleton />
-          </div>
-          <aside className="home-layout__sidebar">
-            <SidebarSkeleton />
-          </aside>
+          <ArticleCardSkeleton />
+          <ArticleCardSkeleton />
+          <SidebarSkeleton />
         </div>
       </div>
     );
   }
 
-  const sectionKeys = data?.sections ? Object.keys(data.sections) : [];
-
   return (
     <div className="home-page">
       <SEOMeta />
-      {/* What's New / Trending strip */}
+
       {data?.trending && data.trending.length > 0 && (
-        <section className="home-trending">
-          <div className="home-trending__inner">
-            <span className="home-trending__label">What's New</span>
-            <div className="home-trending__list">
-              {data.trending.slice(0, 5).map(article => (
-                <Link key={article.id} to={`/article/${article.slug}`} className="home-trending__item">
-                  {article.title}
-                </Link>
-              ))}
-            </div>
+        <section className="home-ticker" aria-label="Trending articles">
+          <span className="home-ticker__label">Now tracking</span>
+          <div className="home-ticker__items">
+            {data.trending.slice(0, 5).map((article) => (
+              <Link key={article.id} to={`/article/${article.slug}`}>{article.title}</Link>
+            ))}
           </div>
         </section>
       )}
 
-      {/* Intro Hero */}
-      <section className="home-intro-hero">
-        <div className="hero-copy">
-          <span className="hero-eyebrow">🔍 Fact Check & Analysis</span>
-          <h1>Separating Fact from Fiction in Tech</h1>
-          <p>Real-time fact-checking, claim verification, and in-depth analysis of the latest technology news, trends, and controversies.</p>
-          <div className="hero-metrics">
-            <div className="hero-metric">
-              <strong>1,200+</strong>
-              <span>Claims Verified</span>
-            </div>
-            <div className="hero-metric">
-              <strong>94%</strong>
-              <span>Accuracy Rate</span>
-            </div>
-            <div className="hero-metric">
-              <strong>500+</strong>
-              <span>Sources Tracked</span>
-            </div>
-          </div>
+      <section className="editorial-lead" aria-label="Top stories">
+        <div className="editorial-lead__main">
+          {leadArticle && <ArticleCard article={leadArticle} featured />}
         </div>
-        <div className="hero-panel">
-          <h2>How It Works</h2>
-          <ol className="hero-steps">
-            <li><strong>Submit</strong> — Paste any claim or news headline</li>
-            <li><strong>Analyze</strong> — Our AI cross-references trusted sources</li>
-            <li><strong>Verify</strong> — Get a real-time verdict with evidence</li>
-          </ol>
-          <Link to="/verify" className="btn btn-primary" style={{marginTop: 20, display: 'inline-flex'}}>
-            Verify a Claim Now →
-          </Link>
+        <div className="editorial-lead__side">
+          {secondaryArticles.slice(0, 2).map((article) => (
+            <ArticleCard key={article.id} article={article} compact />
+          ))}
+        </div>
+        <LatestRail articles={data?.latest} />
+      </section>
+
+      <section className="home-toolbelt" aria-label="Verification and trending claims">
+        <VerificationWidget />
+        <div className="claim-briefing">
+          <div className="claim-briefing__header">
+            <span className="section-label">Claim briefing</span>
+            <h2>Signals worth checking today</h2>
+            <Link to="/verify">Open verifier</Link>
+          </div>
+          <TrendingClaims />
         </div>
       </section>
 
-      {/* Hero / Featured */}
-      {data?.featured && data.featured.length > 0 && (
-        <section className="home-hero">
-          <ArticleCard article={data.featured[0]} featured />
-          <div className="home-hero__side">
-            {data.featured.slice(1, 3).map(article => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Startup Spotlight */}
-      {startupSection && startupSection.articles && startupSection.articles.length > 0 && (
-        <section className="home-section home-section--startups">
-          <div className="home-section__header">
-            <h2 className="home-section__title">🚀 Startup Spotlight</h2>
-            <Link to="/startups" className="home-section__view-all">All startups →</Link>
-          </div>
-          <div className="home-section__grid">
-            {startupSection.articles.slice(0, 3).map(article => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <TrendingClaims />
-
-      {/* Main content + sidebar layout */}
       <div className="home-layout">
         <div className="home-layout__main">
-          {/* Category sections */}
-          {sectionKeys.map(key => (
+          {sectionKeys.map((key) => (
             <SectionGrid key={key} section={data.sections[key]} />
           ))}
 
-          {/* Latest articles */}
-          {data?.latest && data.latest.length > 0 && (
+          {secondaryArticles.length > 2 && (
             <section className="home-section">
               <div className="home-section__header">
-                <h2 className="home-section__title">Latest</h2>
+                <div>
+                  <span className="section-label">Editors' queue</span>
+                  <h2 className="home-section__title">Worth your time</h2>
+                </div>
               </div>
-              <div className="home-section__grid">
-                {data.latest.slice(0, 6).map(article => (
-                  <ArticleCard key={article.id} article={article} />
+              <div className="home-section__list">
+                {secondaryArticles.slice(2, 6).map((article) => (
+                  <ArticleCard key={article.id} article={article} horizontal compact />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Verification/Trending section */}
-          <section className="home-section">
+          <section className="home-section home-section--topics">
             <div className="home-section__header">
-              <h2 className="home-section__title">Trending Claims</h2>
-              <Link to="/verify" className="home-section__view-all">Verify a claim →</Link>
+              <div>
+                <span className="section-label">Monitor</span>
+                <h2 className="home-section__title">Trending claims</h2>
+              </div>
+              <Link to="/verify" className="home-section__view-all">Verify a claim</Link>
             </div>
             <TrendingTopics onTopicClick={handleTopicClick} />
           </section>

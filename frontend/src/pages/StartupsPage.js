@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import { CategoryPageSkeleton } from '../components/Skeleton';
 import './CategoryPage.css';
@@ -59,12 +60,12 @@ export default function StartupsPage() {
               <div>
                 <h3 style={{ fontSize: 24, margin: '0 0 8px', color: 'var(--text)' }}>{spotlight.title}</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>{spotlight.excerpt}</p>
-                <a
-                  href={`/article/${spotlight.slug}`}
+                <Link
+                  to={`/article/${spotlight.slug}`}
                   style={{ display: 'inline-block', marginTop: 12, padding: '10px 20px', background: 'var(--accent)', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
                 >
                   Read Story →
-                </a>
+                </Link>
               </div>
               {spotlight.featured_image && (
                 <img

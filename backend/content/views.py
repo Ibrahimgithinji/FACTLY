@@ -1,3 +1,6 @@
+import logging
+from django.http import Http404
+from django.db import DatabaseError
 from django.db.models import Count
 from rest_framework import generics, permissions, filters
 from rest_framework.pagination import PageNumberPagination
@@ -11,12 +14,24 @@ from .serializers import (
     ArticleDetailSerializer, CommentSerializer, CommentCreateSerializer,
     GuestArticleSerializer, AuthorProfileSerializer,
 )
+from .fallback_content import DEMO_CATEGORIES, demo_articles, demo_article_detail, demo_homepage
+
+logger = logging.getLogger(__name__)
 
 
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        try:
+            response = super().list(request, *args, **kwargs)
+            if response.data:
+                return response
+        except DatabaseError as exc:
+            logger.warning("Category API falling back to editorial demo data: %s", exc)
+        return Response(DEMO_CATEGORIES)
 
 
 class ArticlePagination(PageNumberPagination):
@@ -57,12 +72,62 @@ class ArticleListView(generics.ListAPIView):
 
         return queryset.distinct()
 
+    def list(self, request, *args, **kwargs):
+        try:
+            response = super().list(request, *args, **kwargs)
+            results = response.data.get('results') if isinstance(response.data, dict) else response.data
+            if results:
+                return response
+        except DatabaseError as exc:
+            logger.warning("Article list API falling back to editorial demo data: %s", exc)
+
+        articles = demo_articles()
+        category = request.query_params.get('category')
+        featured = request.query_params.get('featured')
+        trending = request.query_params.get('trending')
+        query = (request.query_params.get('search') or '').strip().lower()
+
+        if category:
+            articles = [article for article in articles if article['category']['slug'] == category]
+        if featured:
+            articles = [article for article in articles if article['is_featured']]
+        if trending:
+            articles = [article for article in articles if article['is_trending']]
+        if query:
+            articles = [
+                article for article in articles
+                if query in article['title'].lower()
+                or query in article['excerpt'].lower()
+                or query in article['content'].lower()
+            ]
+
+        return Response({
+            'count': len(articles),
+            'next': None,
+            'previous': None,
+            'results': articles,
+            'data_source': 'editorial_fallback',
+        })
+
 
 class ArticleDetailView(generics.RetrieveAPIView):
     queryset = Article.objects.filter(status='published')
     serializer_class = ArticleDetailSerializer
     permission_classes = [AllowAny]
     lookup_field = 'slug'
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            return super().retrieve(request, *args, **kwargs)
+        except DatabaseError as exc:
+            logger.warning("Article detail API falling back to editorial demo data: %s", exc)
+        except (Article.DoesNotExist, Http404):
+            pass
+
+        article = demo_article_detail(kwargs.get('slug'))
+        if article:
+            return Response(article)
+        return Response({'error': 'Article not found'}, status=404)
 
 
 class RelatedArticlesView(generics.ListAPIView):
@@ -78,6 +143,24 @@ class RelatedArticlesView(generics.ListAPIView):
             ).exclude(id=article.id)[:4]
         except Article.DoesNotExist:
             return Article.objects.none()
+
+    def list(self, request, *args, **kwargs):
+        try:
+            response = super().list(request, *args, **kwargs)
+            if response.data:
+                return response
+        except DatabaseError as exc:
+            logger.warning("Related articles API falling back to editorial demo data: %s", exc)
+
+        current = demo_article_detail(self.kwargs.get('slug'))
+        if not current:
+            return Response([])
+        related = [
+            article for article in demo_articles()
+            if article['slug'] != current['slug']
+            and article['category']['slug'] == current['category']['slug']
+        ][:4]
+        return Response(related)
 
 
 class CommentListView(generics.ListCreateAPIView):
@@ -101,39 +184,47 @@ class CommentListView(generics.ListCreateAPIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def homepage_data(request):
-    featured = Article.objects.filter(
-        status='published', is_featured=True,
-        published_at__lte=timezone.now()
-    )[:5]
-    trending = Article.objects.filter(
-        status='published', is_trending=True,
-        published_at__lte=timezone.now()
-    )[:8]
-    latest = Article.objects.filter(
-        status='published', published_at__lte=timezone.now()
-    )[:10]
-    categories = Category.objects.annotate(
-        article_count=Count('articles')
-    ).filter(article_count__gt=0).order_by('order', 'name')
-
-    sections = {}
-    for cat in categories:
-        cat_articles = Article.objects.filter(
-            status='published', category=cat,
+    try:
+        featured = Article.objects.filter(
+            status='published', is_featured=True,
             published_at__lte=timezone.now()
         )[:5]
-        if cat_articles:
-            sections[cat.slug] = {
-                'category': CategorySerializer(cat).data,
-                'articles': ArticleListSerializer(cat_articles, many=True).data,
-            }
+        trending = Article.objects.filter(
+            status='published', is_trending=True,
+            published_at__lte=timezone.now()
+        )[:8]
+        latest = Article.objects.filter(
+            status='published', published_at__lte=timezone.now()
+        )[:10]
+        categories = Category.objects.annotate(
+            article_count=Count('articles')
+        ).filter(article_count__gt=0).order_by('order', 'name')
 
-    return Response({
-        'featured': ArticleListSerializer(featured, many=True).data,
-        'trending': ArticleListSerializer(trending, many=True).data,
-        'latest': ArticleListSerializer(latest, many=True).data,
-        'sections': sections,
-    })
+        sections = {}
+        for cat in categories:
+            cat_articles = Article.objects.filter(
+                status='published', category=cat,
+                published_at__lte=timezone.now()
+            )[:5]
+            if cat_articles:
+                sections[cat.slug] = {
+                    'category': CategorySerializer(cat).data,
+                    'articles': ArticleListSerializer(cat_articles, many=True).data,
+                }
+
+        payload = {
+            'featured': ArticleListSerializer(featured, many=True).data,
+            'trending': ArticleListSerializer(trending, many=True).data,
+            'latest': ArticleListSerializer(latest, many=True).data,
+            'sections': sections,
+            'data_source': 'database',
+        }
+        if payload['featured'] or payload['trending'] or payload['latest'] or payload['sections']:
+            return Response(payload)
+    except DatabaseError as exc:
+        logger.warning("Homepage API falling back to editorial demo data: %s", exc)
+
+    return Response(demo_homepage())
 
 
 @api_view(['POST'])
@@ -268,35 +359,58 @@ def search_articles(request):
     if not query:
         return Response({'results': []})
 
-    articles = Article.objects.filter(
-        status='published', published_at__lte=timezone.now()
-    ).filter(
-        title__icontains=query
-    ) | Article.objects.filter(
-        status='published', published_at__lte=timezone.now()
-    ).filter(
-        content__icontains=query
-    ) | Article.objects.filter(
-        status='published', published_at__lte=timezone.now()
-    ).filter(
-        excerpt__icontains=query
-    )
+    try:
+        articles = Article.objects.filter(
+            status='published', published_at__lte=timezone.now()
+        ).filter(
+            title__icontains=query
+        ) | Article.objects.filter(
+            status='published', published_at__lte=timezone.now()
+        ).filter(
+            content__icontains=query
+        ) | Article.objects.filter(
+            status='published', published_at__lte=timezone.now()
+        ).filter(
+            excerpt__icontains=query
+        )
 
-    articles = articles.distinct()
+        articles = articles.distinct()
 
+        if category:
+            articles = articles.filter(category__slug=category)
+        if date_from:
+            articles = articles.filter(published_at__gte=date_from)
+        if date_to:
+            articles = articles.filter(published_at__lte=date_to)
+
+        articles = articles.order_by('-published_at')[:20]
+        results = ArticleListSerializer(articles, many=True).data
+        if results:
+            return Response({
+                'query': query,
+                'count': articles.count(),
+                'results': results,
+                'data_source': 'database',
+            })
+    except DatabaseError as exc:
+        logger.warning("Search API falling back to editorial demo data: %s", exc)
+
+    fallback_results = [
+        article for article in demo_articles()
+        if query.lower() in article['title'].lower()
+        or query.lower() in article['excerpt'].lower()
+        or query.lower() in article['content'].lower()
+    ]
     if category:
-        articles = articles.filter(category__slug=category)
-    if date_from:
-        articles = articles.filter(published_at__gte=date_from)
-    if date_to:
-        articles = articles.filter(published_at__lte=date_to)
-
-    articles = articles.order_by('-published_at')[:20]
-
+        fallback_results = [
+            article for article in fallback_results
+            if article['category']['slug'] == category
+        ]
     return Response({
         'query': query,
-        'count': articles.count(),
-        'results': ArticleListSerializer(articles, many=True).data,
+        'count': len(fallback_results),
+        'results': fallback_results,
+        'data_source': 'editorial_fallback',
     })
 
 
@@ -307,14 +421,28 @@ def search_suggestions(request):
     if not query or len(query) < 2:
         return Response({'suggestions': []})
 
-    articles = Article.objects.filter(
-        status='published', published_at__lte=timezone.now(),
-        title__icontains=query,
-    ).order_by('-published_at')[:6]
-
-    return Response({
-        'suggestions': [
+    try:
+        articles = Article.objects.filter(
+            status='published', published_at__lte=timezone.now(),
+            title__icontains=query,
+        ).order_by('-published_at')[:6]
+        suggestions = [
             {'id': a.id, 'title': a.title, 'slug': a.slug, 'category': a.category.slug if a.category else ''}
             for a in articles
         ]
-    })
+        if suggestions:
+            return Response({'suggestions': suggestions})
+    except DatabaseError as exc:
+        logger.warning("Search suggestions falling back to editorial demo data: %s", exc)
+
+    suggestions = [
+        {
+            'id': article['id'],
+            'title': article['title'],
+            'slug': article['slug'],
+            'category': article['category']['slug'],
+        }
+        for article in demo_articles()
+        if query.lower() in article['title'].lower()
+    ][:6]
+    return Response({'suggestions': suggestions, 'data_source': 'editorial_fallback'})

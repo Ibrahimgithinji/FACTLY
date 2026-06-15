@@ -102,6 +102,37 @@ class ScoringService:
         """
         logger.info(f"Calculating enhanced Factly Score™ for claim: {verification_result.claim[:100]}...")
 
+        # Check if we have a heuristic match - use it directly for instant verdict
+        heuristic_match = verification_result.metadata.get('heuristic_match') if verification_result.metadata else None
+        if heuristic_match and heuristic_match.get('matched'):
+            score = heuristic_match.get('score', 50)
+            classification = heuristic_match.get('classification', 'Uncertain')
+            confidence = heuristic_match.get('confidence', 'Medium')
+            verdict = heuristic_match.get('verdict', '')
+            evidence = heuristic_match.get('evidence', [])
+
+            return FactlyScoreResult(
+                factly_score=score,
+                classification=classification,
+                confidence_level=confidence,
+                components=[],
+                justifications=[verdict],
+                evidence_summary={
+                    'source': 'misinformation_heuristics',
+                    'claim_type': heuristic_match.get('claim_type'),
+                    'source_note': heuristic_match.get('source_note'),
+                    'evidence_items': evidence
+                },
+                timestamp=datetime.now(),
+                metadata={
+                    'original_claim': verification_result.claim,
+                    'api_sources': verification_result.api_sources,
+                    'processing_timestamp': datetime.now().isoformat(),
+                    'heuristic_used': True
+                },
+                processing_time=0.0
+            )
+
         # Track processing time
         start_time = time.time()
 
