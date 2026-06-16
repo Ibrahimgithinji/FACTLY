@@ -37,6 +37,7 @@ class PasswordResetRateThrottle(AnonRateThrottle):
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from .models import PasswordResetToken
+from .cookie_auth import set_jwt_cookies, unset_jwt_cookies
 
 logger = logging.getLogger(__name__)
 _AUTH_SCHEMA_INIT_LOCK = Lock()
@@ -215,19 +216,18 @@ class LoginView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-        # Generate JWT tokens
+        # Generate JWT tokens and set httpOnly cookies
         try:
             refresh = RefreshToken.for_user(user)
-            response_data = {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
+            response = Response({
                 'user': {
                     'id': user.id,
                     'email': user.email,
                     'name': user.first_name or user.username,
                 }
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
+            }, status=status.HTTP_200_OK)
+            set_jwt_cookies(response, str(refresh.access_token), str(refresh))
+            return response
         except Exception as e:
             logger.error(f"JWT token generation error: {e}", exc_info=True)
             return Response(
@@ -290,15 +290,15 @@ class SignupView(APIView):
             )
             
             refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
+            response = Response({
                 'user': {
                     'id': user.id,
                     'email': user.email,
                     'name': user.first_name or user.username,
                 }
             }, status=status.HTTP_201_CREATED)
+            set_jwt_cookies(response, str(refresh.access_token), str(refresh))
+            return response
         except Exception as e:
             logger.error(f"Signup error: {e}")
             _reset_auth_schema_flag()  # Allow schema retry on next request
@@ -313,7 +313,7 @@ class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        refresh_token = request.data.get('refresh')
+        refresh_token = request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE) or request.data.get('refresh')
         
         if not refresh_token:
             return Response(
@@ -323,15 +323,25 @@ class RefreshTokenView(APIView):
         
         try:
             refresh = RefreshToken(refresh_token)
-            return Response({
-                'access': str(refresh.access_token),
-            })
+            response = Response({'message': 'Token refreshed'})
+            set_jwt_cookies(response, str(refresh.access_token))
+            return response
         except Exception as e:
             logger.warning(f"Invalid refresh token: {e}")
             return Response(
                 {'error': 'Invalid refresh token'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class LogoutView(APIView):
+    """Logout endpoint that clears JWT cookies."""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        response = Response({'message': 'Logged out successfully'})
+        unset_jwt_cookies(response)
+        return response
 
 
 class ForgotPasswordView(APIView):
@@ -692,9 +702,7 @@ class SocialLoginView(APIView):
         )
 
         refresh = RefreshToken.for_user(user)
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
+        response = Response({
             'user': {
                 'id': user.id,
                 'email': user.email,
@@ -702,4 +710,6 @@ class SocialLoginView(APIView):
                 'picture': user_info.get('picture', ''),
             }
         })
+        set_jwt_cookies(response, str(refresh.access_token), str(refresh))
+        return response
 

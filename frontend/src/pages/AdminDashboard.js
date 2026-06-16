@@ -10,7 +10,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch('/api/content/analytics/dashboard/', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
+      credentials: 'include',
     })
       .then((r) => {
         if (!r.ok) throw new Error('Unauthorized');

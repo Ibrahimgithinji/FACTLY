@@ -3,77 +3,9 @@ import { API_ENDPOINTS } from '../utils/api';
 
 const AuthContext = createContext(null);
 
-// Token storage keys
-const ACCESS_TOKEN_KEY = 'authToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_KEY = 'user';
-
-// Token refresh threshold - refresh if token expires in less than this many minutes
-const TOKEN_REFRESH_THRESHOLD_MINUTES = 5;
-
-// Helper to get token expiration time from JWT (without verification)
-const getTokenExpiration = (token) => {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp ? new Date(payload.exp * 1000) : null;
-  } catch (e) {
-    return null;
-  }
-};
-
-// Check if token is expired or about to expire
-const isTokenExpiringSoon = (token) => {
-  if (!token) return true;
-  const expiration = getTokenExpiration(token);
-  if (!expiration) return false; // Can't determine, assume valid
-  
-  const now = new Date();
-  const threshold = new Date(now.getTime() + TOKEN_REFRESH_THRESHOLD_MINUTES * 60 * 1000);
-  return expiration < threshold;
-};
-
-// Storage helpers (using sessionStorage for XSS protection)
-const getStoredToken = (key) => {
-  try {
-    return sessionStorage.getItem(key);
-  } catch (e) {
-    console.error('Error reading from sessionStorage:', e);
-    return null;
-  }
-};
-
-const setStoredToken = (key, value) => {
-  try {
-    if (value) {
-      sessionStorage.setItem(key, value);
-    } else {
-      sessionStorage.removeItem(key);
-    }
-  } catch (e) {
-    console.error('Error writing to sessionStorage:', e);
-  }
-};
-
-const getStoredUser = () => {
-  try {
-    const userStr = sessionStorage.getItem(USER_KEY);
-    return userStr ? JSON.parse(userStr) : null;
-  } catch (e) {
-    console.error('Error reading user from sessionStorage:', e);
-    return null;
-  }
-};
-
-const setStoredUser = (user) => {
-  try {
-    if (user) {
-      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-    } else {
-      sessionStorage.removeItem(USER_KEY);
-    }
-  } catch (e) {
-    console.error('Error writing user to sessionStorage:', e);
-  }
+const fetchOptions = {
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
 };
 
 export const useAuth = () => {
@@ -89,172 +21,44 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to refresh access token using refresh token
-  const refreshAccessToken = useCallback(async (refreshToken, userData) => {
+  const fetchUser = useCallback(async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.REFRESH, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refresh: refreshToken }),
+      let response = await fetch(API_ENDPOINTS.USER_PROFILE, {
+        ...fetchOptions,
+        method: 'GET',
       });
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Token refresh failed: Non-JSON response');
-        // Clear tokens and log out
-        setStoredToken(ACCESS_TOKEN_KEY, null);
-        setStoredToken(REFRESH_TOKEN_KEY, null);
-        setStoredUser(null);
-        setUser(null);
-        setIsAuthenticated(false);
-        return false;
+      if (response.status === 401) {
+        await fetch(API_ENDPOINTS.REFRESH, {
+          ...fetchOptions,
+          method: 'POST',
+        });
+        response = await fetch(API_ENDPOINTS.USER_PROFILE, {
+          ...fetchOptions,
+          method: 'GET',
+        });
       }
 
-      if (!response.ok) {
-        console.error('Token refresh failed with status:', response.status);
-        // Clear tokens and log out
-        setStoredToken(ACCESS_TOKEN_KEY, null);
-        setStoredToken(REFRESH_TOKEN_KEY, null);
-        setStoredUser(null);
-        setUser(null);
-        setIsAuthenticated(false);
-        return false;
-      }
-
-      const data = await response.json();
-      
-      if (data.access) {
-        // Store new access token
-        setStoredToken(ACCESS_TOKEN_KEY, data.access);
-        setUser(userData);
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data);
         setIsAuthenticated(true);
         return true;
       }
-      
-      return false;
-    } catch (err) {
-      console.error('Token refresh error:', err);
-      // Clear tokens and log out on error
-      setStoredToken(ACCESS_TOKEN_KEY, null);
-      setStoredToken(REFRESH_TOKEN_KEY, null);
-      setStoredUser(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      return false;
+    } catch (e) {
     }
-  }, []);
-
-  useEffect(() => {
-    // Check for existing tokens on mount - use sessionStorage for XSS protection
-    const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
-    const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
-    const storedUser = getStoredUser();
-    
-    if (accessToken && storedUser) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
-    } else if (refreshToken && storedUser) {
-      // If we have refresh token but no access token, try to refresh
-      // This handles cases where access token expired but refresh token is still valid
-      refreshAccessToken(refreshToken, storedUser);
-    }
-    setIsLoading(false);
-  }, [refreshAccessToken]);
-
-  // Function to get valid access token (refreshes if needed)
-  const getValidAccessToken = useCallback(async () => {
-    const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
-    const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
-    
-    if (!accessToken) {
-      // No access token, try to refresh
-      if (refreshToken) {
-        const success = await refreshAccessToken(refreshToken, getStoredUser());
-        if (success) {
-          return getStoredToken(ACCESS_TOKEN_KEY);
-        }
-      }
-      return null;
-    }
-    
-    // Check if token is expiring soon
-    if (isTokenExpiringSoon(accessToken) && refreshToken) {
-      await refreshAccessToken(refreshToken, getStoredUser());
-      return getStoredToken(ACCESS_TOKEN_KEY);
-    }
-    
-    return accessToken;
-  }, [refreshAccessToken]);
-
-  // Set up periodic token refresh check
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Check token validity every minute
-    const checkInterval = setInterval(() => {
-      const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
-      const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
-      
-      if (accessToken && isTokenExpiringSoon(accessToken) && refreshToken) {
-        refreshAccessToken(refreshToken, getStoredUser());
-      }
-    }, 60000); // Check every minute
-
-    return () => clearInterval(checkInterval);
-  }, [isAuthenticated, refreshAccessToken]);
-
-  const setTokens = useCallback((access, refresh, userData) => {
-    setStoredToken(ACCESS_TOKEN_KEY, access);
-    setStoredToken(REFRESH_TOKEN_KEY, refresh);
-    setStoredUser(userData);
-    setUser(userData);
-    setIsAuthenticated(true);
+    setUser(null);
+    setIsAuthenticated(false);
+    return false;
   }, []);
 
   const login = async (email, password) => {
     try {
-      const normalizedEmail = email?.trim();
       const response = await fetch(API_ENDPOINTS.LOGIN, {
+        ...fetchOptions,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: normalizedEmail, password }),
+        body: JSON.stringify({ email: email?.trim(), password }),
       });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Login error: Non-JSON response received:', text.substring(0, 500));
-
-        if (!response.ok) {
-          let extractedError = null;
-          if (response.status === 500) {
-            const exceptionMatch = text.match(/<pre class="exception_value">(.*?)<\/pre>/s);
-            if (exceptionMatch && exceptionMatch[1]) {
-              extractedError = exceptionMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-            }
-            if (!extractedError) {
-              const errorSectionMatch = text.match(/<h1[^>]*>(.*?)<\/h1>/s);
-              if (errorSectionMatch && errorSectionMatch[1]) {
-                extractedError = errorSectionMatch[1].trim();
-              }
-            }
-            if (extractedError) {
-              if (extractedError.includes('DisallowedHost') || extractedError.includes('Invalid HTTP_HOST')) {
-                throw new Error('Server configuration error. Please check ALLOWED_HOSTS or try again later.');
-              }
-              throw new Error(`Server error: ${extractedError.substring(0, 200)}`);
-            }
-          }
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-
-        throw new Error('Invalid response from server. Please try again.');
-      }
 
       if (!response.ok) {
         let errorMessage = 'Login failed';
@@ -262,31 +66,13 @@ export const AuthProvider = ({ children }) => {
           const error = await response.json();
           errorMessage = error.error || error.message || 'Login failed';
         } catch (e) {
-          // If response is not JSON, use default message
         }
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      
-      // Store both access and refresh tokens using localStorage for persistence
-      setStoredToken(ACCESS_TOKEN_KEY, data.access);
-      setStoredToken(REFRESH_TOKEN_KEY, data.refresh);
-      setStoredUser(data.user);
-      
-      setUser(data.user);
-      setIsAuthenticated(true);
+      await fetchUser();
       return { success: true };
     } catch (err) {
-      console.error('Login error:', err);
-      
-      if (err.message && (
-        err.message.includes('Server error') || 
-        err.message.includes('Invalid response')
-      )) {
-        return { success: false, error: err.message };
-      }
-      
       return { success: false, error: err.message || 'Login failed. Please try again.' };
     }
   };
@@ -294,25 +80,10 @@ export const AuthProvider = ({ children }) => {
   const signup = async (name, email, password) => {
     try {
       const response = await fetch(API_ENDPOINTS.SIGNUP, {
+        ...fetchOptions,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ name, email, password }),
       });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Signup error: Non-JSON response received:', text.substring(0, 500));
-        
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-        
-        throw new Error('Invalid response from server. Please try again.');
-      }
 
       if (!response.ok) {
         let errorMessage = 'Signup failed';
@@ -320,154 +91,53 @@ export const AuthProvider = ({ children }) => {
           const error = await response.json();
           errorMessage = error.error || error.message || 'Signup failed';
         } catch (e) {
-          // If response is not JSON, use default message
         }
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      
-      // Store both access and refresh tokens using localStorage for persistence
-      setStoredToken(ACCESS_TOKEN_KEY, data.access);
-      setStoredToken(REFRESH_TOKEN_KEY, data.refresh);
-      setStoredUser(data.user);
-      
-      setUser(data.user);
-      setIsAuthenticated(true);
+      await fetchUser();
       return { success: true };
     } catch (err) {
-      console.error('Signup error:', err);
-      
-      if (err.message && (
-        err.message.includes('Server error') || 
-        err.message.includes('Invalid response')
-      )) {
-        return { success: false, error: err.message };
-      }
-      
       return { success: false, error: err.message || 'Signup failed. Please try again.' };
     }
   };
 
-  const logout = () => {
-    // Clear tokens from sessionStorage
-    setStoredToken(ACCESS_TOKEN_KEY, null);
-    setStoredToken(REFRESH_TOKEN_KEY, null);
-    setStoredUser(null);
-    
+  const logout = async () => {
+    try {
+      await fetch(API_ENDPOINTS.LOGOUT, { ...fetchOptions, method: 'POST' });
+    } catch (e) {
+    }
     setUser(null);
     setIsAuthenticated(false);
   };
 
   const forgotPassword = async (email) => {
     try {
-      const normalizedEmail = email?.trim().toLowerCase();
       const response = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
+        ...fetchOptions,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: normalizedEmail }),
+        body: JSON.stringify({ email: email?.trim().toLowerCase() }),
       });
 
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        // Response is not JSON - handle HTML or other error pages
-        const text = await response.text();
-        console.error('Forgot password error: Non-JSON response received:', text.substring(0, 500));
-        
-        // Try to extract useful error information from HTML response
-        let extractedError = null;
-        
-        // Look for Django error page patterns
-        if (response.status === 500) {
-          // Extract exception value or error message from Django error page
-          const exceptionMatch = text.match(/<pre class="exception_value">(.*?)<\/pre>/s);
-          if (exceptionMatch && exceptionMatch[1]) {
-            extractedError = exceptionMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-          }
-          
-          // Also check for specific error messages in the page
-          if (!extractedError) {
-            const errorSectionMatch = text.match(/<h1[^>]*>(.*?)<\/h1>/s);
-            if (errorSectionMatch && errorSectionMatch[1]) {
-              extractedError = errorSectionMatch[1].trim();
-            }
-          }
-          
-          // Provide helpful message based on common Django 500 errors
-          if (extractedError) {
-            if (extractedError.includes('DisallowedHost')) {
-              throw new Error('Server configuration error. Please contact support or try again later.');
-            }
-            if (extractedError.includes('Invalid HTTP_HOST')) {
-              throw new Error('Server configuration error. Please contact support or try again later.');
-            }
-            throw new Error(`Server error: ${extractedError.substring(0, 200)}`);
-          }
-        }
-        
-        if (!response.ok) {
-          // Server returned an error HTML page (404, 500, etc.)
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-        
-        throw new Error('Invalid response from server. Please try again.');
-      }
-
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || data.message || 'Failed to send reset email');
       }
 
-      return { 
-        success: true, 
-        message: data.message
-      };
+      return { success: true, message: data.message };
     } catch (err) {
-      console.error('Forgot password error:', err);
-      
-      // Re-throw if it's already our error
-      if (err.message && (
-        err.message.includes('Server error') || 
-        err.message.includes('Invalid response') ||
-        err.message.includes('Failed to send reset email')
-      )) {
-        return { success: false, error: err.message };
-      }
-      
-      // Handle network errors or JSON parsing errors
-      return { 
-        success: false, 
-        error: err.message || 'Network error. Please check your connection and try again.' 
-      };
+      return { success: false, error: err.message || 'Network error. Please check your connection and try again.' };
     }
   };
 
   const verifyResetToken = async (token) => {
     try {
       const response = await fetch(API_ENDPOINTS.VERIFY_RESET_TOKEN, {
+        ...fetchOptions,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ token }),
       });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Verify reset token error: Non-JSON response received:', text.substring(0, 500));
-        
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-        
-        throw new Error('Invalid response from server. Please try again.');
-      }
 
       if (!response.ok) {
         const error = await response.json();
@@ -477,16 +147,6 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       return { success: true, email: data.email };
     } catch (err) {
-      console.error('Verify reset token error:', err);
-      
-      if (err.message && (
-        err.message.includes('Server error') || 
-        err.message.includes('Invalid response') ||
-        err.message.includes('Invalid reset token')
-      )) {
-        return { success: false, error: err.message };
-      }
-      
       return { success: false, error: err.message || 'Invalid or expired reset link' };
     }
   };
@@ -494,25 +154,10 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (token, newPassword, confirmPassword) => {
     try {
       const response = await fetch(API_ENDPOINTS.RESET_PASSWORD, {
+        ...fetchOptions,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ token, new_password: newPassword, confirm_password: confirmPassword }),
       });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Reset password error: Non-JSON response received:', text.substring(0, 500));
-        
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-        
-        throw new Error('Invalid response from server. Please try again.');
-      }
 
       if (!response.ok) {
         const error = await response.json();
@@ -522,16 +167,6 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       return { success: true, message: data.message };
     } catch (err) {
-      console.error('Reset password error:', err);
-      
-      if (err.message && (
-        err.message.includes('Server error') || 
-        err.message.includes('Invalid response') ||
-        err.message.includes('Failed to reset password')
-      )) {
-        return { success: false, error: err.message };
-      }
-      
       return { success: false, error: err.message || 'Failed to reset password. Please try again.' };
     }
   };
@@ -546,8 +181,6 @@ export const AuthProvider = ({ children }) => {
     forgotPassword,
     verifyResetToken,
     resetPassword,
-    getValidAccessToken,
-    setTokens,
   };
 
   return (

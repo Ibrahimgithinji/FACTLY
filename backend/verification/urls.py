@@ -12,6 +12,7 @@ urlpatterns = [
     path('verification/auth/forgot-password/', auth_views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('verification/auth/verify-reset-token/', auth_views.VerifyResetTokenView.as_view(), name='verify_reset_token'),
     path('verification/auth/reset-password/', auth_views.ResetPasswordView.as_view(), name='reset_password'),
+    path('verification/auth/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('verification/auth/social/', auth_views.SocialLoginView.as_view(), name='social_login'),
     # GitHub OAuth popup flow (backend-initiated, redirect-based)
     path('verification/auth/github/login/', github_oauth_views.GitHubLoginInitView.as_view(), name='github_login'),

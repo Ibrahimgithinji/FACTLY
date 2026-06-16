@@ -461,6 +461,17 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME_GRACE_PERIOD': timedelta(minutes=5),
 }
 
+# JWT httpOnly cookie names
+JWT_AUTH_COOKIE = 'access_token'
+JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
+
+# Default authentication classes
+REST_FRAMEWORK.setdefault('DEFAULT_AUTHENTICATION_CLASSES', [])
+if 'rest_framework_simplejwt.authentication.JWTAuthentication' not in REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']:
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
+        'verification.cookie_auth.CookieJWTAuthentication',
+    ] + REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']
+
 # Security-related settings
 # Limit upload sizes to mitigate DoS via large payloads
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('DATA_UPLOAD_MAX_MEMORY_SIZE', 5 * 1024 * 1024))  # 5 MB
@@ -512,11 +523,11 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 # Default: allow localhost for development only
 _allowed_cors = os.getenv('ALLOWED_CORS', 'http://localhost:3000,http://127.0.0.1:3000')
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _allowed_cors.split(',') if o.strip()] if _allowed_cors else []
-CORS_ALLOW_ALL_ORIGINS = DEBUG or os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
-if not DEBUG and CORS_ALLOW_ALL_ORIGINS:
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
+if CORS_ALLOW_ALL_ORIGINS:
     logger.warning(
-        "CORS_ALLOW_ALL_ORIGINS is True in production — this is insecure. "
-        "Set ALLOWED_CORS to restrict origins."
+        "CORS_ALLOW_ALL_ORIGINS is True — this is insecure. "
+        "Set ALLOWED_CORS to restrict origins instead."
     )
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [

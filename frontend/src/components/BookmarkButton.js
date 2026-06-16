@@ -1,50 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './BookmarkButton.css';
 
+const fetchOpts = { credentials: 'include' };
+
 export default function BookmarkButton({ articleId }) {
-  const { isAuthenticated, getValidAccessToken } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    (async () => {
-      const token = await getValidAccessToken();
-      if (!token) return;
-      fetch(CONTENT_ENDPOINTS.BOOKMARKS, {
-        headers: { 'Authorization': `Bearer ${token}` },
+    fetch(CONTENT_ENDPOINTS.BOOKMARKS, fetchOpts)
+      .then(r => r.json())
+      .then(data => {
+        const ids = (data.results || data).map(a => a.id);
+        setIsBookmarked(ids.includes(articleId));
       })
-        .then(r => r.json())
-        .then(data => {
-          const ids = (data.results || data).map(a => a.id);
-          setIsBookmarked(ids.includes(articleId));
-        })
-        .catch(() => {});
-    })();
-  }, [isAuthenticated, articleId, getValidAccessToken]);
+      .catch(() => {});
+  }, [isAuthenticated, articleId]);
 
-  const toggle = async () => {
+  const toggle = useCallback(async () => {
     if (!isAuthenticated) {
       window.location.href = '/login';
       return;
     }
-    const token = await getValidAccessToken();
-    if (!token) return;
     const method = isBookmarked ? 'DELETE' : 'POST';
     try {
       const res = await fetch(CONTENT_ENDPOINTS.BOOKMARK(articleId), {
+        ...fetchOpts,
         method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (res.ok) {
         setIsBookmarked(!isBookmarked);
       }
     } catch {}
-  };
+  }, [isAuthenticated, isBookmarked, articleId]);
 
   return (
     <button

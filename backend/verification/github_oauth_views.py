@@ -9,6 +9,8 @@ from django.shortcuts import render
 from django.views import View
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .cookie_auth import set_jwt_cookies, unset_jwt_cookies
+
 logger = logging.getLogger(__name__)
 
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '')
@@ -69,18 +71,16 @@ class GitHubCallbackView(View):
             user = self._find_or_create_user(user_info)
 
             refresh = RefreshToken.for_user(user)
-            tokens = {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'name': user.first_name or user.username,
-                    'picture': user_info.get('avatar_url', ''),
-                }
+            user_data = {
+                'id': user.id,
+                'email': user.email,
+                'name': user.first_name or user.username,
+                'picture': user_info.get('avatar_url', ''),
             }
 
-            return self._render_callback_page(tokens)
+            response = self._render_callback_page(user_data)
+            set_jwt_cookies(response, str(refresh.access_token), str(refresh))
+            return response
 
         except Exception as e:
             logger.exception('GitHub OAuth callback failed')
@@ -158,7 +158,7 @@ class GitHubCallbackView(View):
         )
         return user
 
-    def _render_callback_page(self, tokens):
+    def _render_callback_page(self, user_data):
         import json
         html = f'''<!DOCTYPE html>
 <html>
@@ -167,7 +167,7 @@ class GitHubCallbackView(View):
 <script>
 (function() {{
     if (window.opener) {{
-        window.opener.postMessage({json.dumps(tokens)}, "{FRONTEND_URL}");
+        window.opener.postMessage({{user: {json.dumps(user_data)}}}, "{FRONTEND_URL}");
         window.close();
     }} else {{
         window.location.href = "{FRONTEND_URL}/login?error=popup_blocked";

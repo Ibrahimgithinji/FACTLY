@@ -7,9 +7,7 @@ export default function AboutPage() {
 
   useEffect(() => {
     fetch('/api/content/analytics/dashboard/', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-      },
+      credentials: 'include',
     })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {

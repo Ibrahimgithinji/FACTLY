@@ -10,28 +10,25 @@ import logging
 import os
 from typing import List, Optional, Dict, Any
 from langdetect import detect, LangDetectException
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
 
 logger = logging.getLogger(__name__)
 
-# Configure NLTK data path for Windows compatibility
-if os.name == 'nt':  # Windows
-    nltk.data.path.insert(0, os.path.join(os.environ.get('APPDATA', ''), 'nltk_data'))
-else:
-    nltk.data.path.insert(0, os.path.expanduser('~/nltk_data'))
+_nltk_initialized = False
 
-# Download required NLTK data with error handling
-def _download_nltk_data():
-    """Download required NLTK data with proper error handling."""
+def _ensure_nltk():
+    global _nltk_initialized
+    if _nltk_initialized:
+        return
+    import nltk
+    if os.name == 'nt':
+        nltk.data.path.insert(0, os.path.join(os.environ.get('APPDATA', ''), 'nltk_data'))
+    else:
+        nltk.data.path.insert(0, os.path.expanduser('~/nltk_data'))
     resources = [
-        ('tokenizers/punkt', 'punkt'),
         ('tokenizers/punkt_tab', 'punkt_tab'),
         ('corpora/stopwords', 'stopwords'),
-        ('corpora/averaged_perceptron_tagger', 'averaged_perceptron_tagger'),
+        ('taggers/averaged_perceptron_tagger', 'averaged_perceptron_tagger'),
     ]
-    
     for resource_path, package_name in resources:
         try:
             nltk.data.find(resource_path)
@@ -41,9 +38,7 @@ def _download_nltk_data():
                 nltk.download(package_name, quiet=True)
             except Exception as e:
                 logger.warning(f"Failed to download {package_name}: {e}")
-
-# Initialize NLTK data on module load
-_download_nltk_data()
+    _nltk_initialized = True
 
 
 class TextPreprocessor:
@@ -51,13 +46,14 @@ class TextPreprocessor:
 
     def __init__(self):
         """Initialize the text preprocessor."""
+        _ensure_nltk()
         self.stop_words = set()
         self._load_stop_words()
 
     def _load_stop_words(self):
         """Load stop words for multiple languages."""
+        from nltk.corpus import stopwords
         try:
-            # Load English stop words by default
             self.stop_words.update(stopwords.words('english'))
         except LookupError:
             logger.warning("Could not load NLTK stopwords")
@@ -102,19 +98,9 @@ class TextPreprocessor:
         return text
 
     def tokenize(self, text: str, method: str = "word") -> List[str]:
-        """
-        Tokenize text into words or sentences.
-
-        Args:
-            text: Text to tokenize
-            method: Tokenization method ("word" or "sentence")
-
-        Returns:
-            List of tokens
-        """
         if not text:
             return []
-
+        from nltk.tokenize import word_tokenize, sent_tokenize
         try:
             if method == "sentence":
                 return sent_tokenize(text)

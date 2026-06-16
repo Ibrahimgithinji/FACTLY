@@ -5,7 +5,7 @@ import { API_ENDPOINTS } from '../utils/api';
 import '../pages/Auth.css';
 
 export default function ProfilePage() {
-  const { user, setTokens } = useAuth();
+  const { user } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -47,11 +47,6 @@ export default function ProfilePage() {
     const result = await apiPut(API_ENDPOINTS.USER, body);
 
     if (result.success) {
-      setTokens(
-        sessionStorage.getItem('authToken'),
-        sessionStorage.getItem('refreshToken'),
-        { id: result.data.id, email: result.data.email, name: result.data.name }
-      );
       setCurrentPassword('');
       setMessage(result.data.message || 'Profile updated successfully.');
     } else {

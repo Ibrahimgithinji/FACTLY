@@ -6,8 +6,10 @@ import { ArticleCardSkeleton } from '../components/Skeleton';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './BookmarksPage.css';
 
+const fetchOpts = { credentials: 'include' };
+
 export default function BookmarksPage() {
-  const { isAuthenticated, getValidAccessToken } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,12 +19,8 @@ export default function BookmarksPage() {
       return;
     }
     (async () => {
-      const token = await getValidAccessToken();
-      if (!token) return;
       try {
-        const res = await fetch(CONTENT_ENDPOINTS.BOOKMARKS, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const res = await fetch(CONTENT_ENDPOINTS.BOOKMARKS, fetchOpts);
         if (res.ok) {
           const data = await res.json();
           setArticles(data.results || data);
@@ -31,7 +29,7 @@ export default function BookmarksPage() {
         setLoading(false);
       }
     })();
-  }, [isAuthenticated, getValidAccessToken]);
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return (

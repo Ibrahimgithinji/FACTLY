@@ -13,7 +13,7 @@ const LoginPage = () => {
   const [submitError, setSubmitError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, setTokens } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const popupRef = useRef(null);
@@ -26,14 +26,14 @@ const LoginPage = () => {
     const handleMessage = (event) => {
       if (event.origin !== 'http://localhost:8000' && event.origin !== window.location.origin) return;
       const data = event.data;
-      if (data && data.access && data.refresh && data.user) {
-        setTokens(data.access, data.refresh, data.user);
+      if (data && data.user) {
         navigate(from, { replace: true });
+        window.location.reload();
       }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [navigate, from, setTokens]);
+  }, [navigate, from]);
 
   // Check URL for OAuth error from redirect
   useEffect(() => {
@@ -114,12 +114,13 @@ const LoginPage = () => {
             const res = await fetch('/api/verification/auth/social/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({ provider: 'google', access_token: response.credential }),
             });
             const data = await res.json();
             if (res.ok) {
-              setTokens(data.access, data.refresh, data.user);
               navigate(from, { replace: true });
+              window.location.reload();
             } else {
               setSubmitError(data.error || 'Google login failed');
             }
