@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factly Browser Agent - Code Review</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { font-size: 24px; margin-bottom: 4px; color: #f0f6fc; }
+  h1 span { color: #58a6ff; }
+  .subtitle { color: #8b949e; margin-bottom: 24px; font-size: 14px; }
+  .file { background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .file-header { background: #21262d; padding: 10px 16px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+  .file-header h2 { font-size: 14px; font-weight: 600; color: #f0f6fc; }
+  .file-header .status { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
+  .status-new { background: #1b3a2d; color: #3fb950; }
+  .status-modified { background: #1c2d3d; color: #58a6ff; }
+  .file-body { padding: 0; overflow-x: auto; }
+  pre { font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; padding: 12px 16px; }
+  .line { display: flex; }
+  .line-num { color: #484f58; text-align: right; padding-right: 16px; user-select: none; min-width: 40px; }
+  .line-code { white-space: pre-wrap; word-break: break-all; flex: 1; }
+  .comment { color: #8b949e; font-style: italic; }
+  .keyword { color: #ff7b72; }
+  .string { color: #a5d6ff; }
+  .number { color: #79c0ff; }
+  .func { color: #d2a8ff; }
+  .cls { color: #ffa657; }
+  .var { color: #ffa657; }
+  .prop { color: #79c0ff; }
+  .tag { color: #7ee787; }
+  .attr { color: #ffa657; }
+  .section-title { color: #f0f6fc; font-size: 16px; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
+  .summary { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+  .summary h3 { color: #58a6ff; margin-bottom: 8px; }
+  .summary ul { list-style: none; }
+  .summary li { padding: 4px 0; color: #c9d1d9; font-size: 14px; }
+  .summary li::before { content: "> "; color: #3fb950; }
+  .nav { position: sticky; top: 0; background: #0d1117; padding: 8px 0; margin-bottom: 16px; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; }
+  .nav a { color: #58a6ff; text-decoration: none; font-size: 13px; padding: 4px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 4px; }
+  .nav a:hover { background: #21262d; }
+</style>
+</head>
+<body>
+
+<h1><span>Factly</span> Browser Agent</h1>
+<p class="subtitle">Full scope implementation — Backend API + Chrome Extension</p>
+
+<div class="nav">
+  <a href="#summary">Summary</a>
+  <a href="#backend">Backend</a>
+  <a href="#extension">Extension</a>
+</div>
+
+<div id="summary" class="summary">
+  <h3>Implementation Summary</h3>
+  <ul>
+    <li>Backend: New <code>POST /api/verification/quick-check/</code> endpoint (lightweight, 60 req/hr)</li>
+    <li>Extension: Chrome v3 manifest with context menus, auto-detect on 30+ news domains</li>
+    <li>Popup: SVG score ring, evidence list, history, "Check This Page" button</li>
+    <li>Content script: Inline floating badge + highlights sensational content</li>
+    <li>Keyboard shortcut: Ctrl+Shift+F (Cmd+Shift+F on Mac)</li>
+    <li>History: Saves last 50 verifications in chrome.storage.local</li>
+  </ul>
+</div>
+
+<h2 id="backend" class="section-title">Backend Changes</h2>
+
+<div class="file">
+  <div class="file-header">
+    <h2>backend/verification/views.py</h2>
+    <span class="status status-modified">MODIFIED</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="keyword">class</span> <span class="cls">QuickCheckView</span>(<span class="cls">APIView</span>):
+2:     <span class="string">"""
+3:     Lightweight verification endpoint optimized for browser extension use.
+4:     Returns only essential results for fast, at-a-glance fact-checking.
+5:     Designed for high-frequency calls from the Factly Browser Agent.
+6:     """</span>
+7: 
+8:     <span class="var">permission_classes</span> = [<span class="cls">AllowAny</span>]
+9:     <span class="var">RATE_LIMIT_CONFIG</span> = {
+10:         <span class="string">'max_requests'</span>: <span class="func">int</span>(<span class="func">os.getenv</span>(<span class="string">'QUICK_CHECK_MAX_REQUESTS'</span>, <span class="string">'60'</span>)),
+11:         <span class="string">'window_seconds'</span>: <span class="func">int</span>(<span class="func">os.getenv</span>(<span class="string">'QUICK_CHECK_WINDOW_SECONDS'</span>, <span class="string">'3600'</span>)),
+12:     }
+13: 
+14:     <span class="keyword">def</span> <span class="func">post</span>(<span class="var">self</span>, <span class="var">request</span>):
+15:         <span class="comment"># Validate input</span>
+16:         <span class="var">serializer</span> = <span class="cls">QuickCheckSerializer</span>(<span class="var">data</span>=<span class="var">request.data</span>)
+17:         <span class="keyword">if</span> <span class="keyword">not</span> <span class="var">serializer</span>.is_valid():
+18:             <span class="keyword">return</span> <span class="cls">Response</span>(<span class="var">serializer.errors</span>, status=<span class="number">400</span>)
+19: 
+20:         <span class="comment"># Run fact-checking + scoring (reuses existing services)</span>
+21:         <span class="var">verification_result</span> = <span class="var">self.fact_checker</span>.verify_claim(<span class="var">text</span>, <span class="var">language</span>)
+22:         <span class="var">factly_result</span> = <span class="var">self.scorer</span>.calculate_factly_score(
+23:             <span class="var">verification_result</span>=<span class="var">verification_result</span>,
+24:             <span class="var">text_content</span>=<span class="var">text</span>
+25:         )
+26: 
+27:         <span class="comment"># Build lightweight response</span>
+28:         <span class="keyword">return</span> <span class="cls">Response</span>({
+29:             <span class="string">"factly_score"</span>: <span class="var">factly_result.factly_score</span>,
+30:             <span class="string">"classification"</span>: <span class="var">factly_result.classification</span>,
+31:             <span class="string">"confidence_level"</span>: <span class="var">factly_result.confidence_level</span>,
+32:             <span class="string">"brief_evidence"</span>: <span class="var">brief_evidence</span>,
+33:             <span class="string">"sources_consulted"</span>: <span class="var">sources_count</span>,
+34:             <span class="string">"processing_time"</span>: <span class="var">processing_time</span>,
+35:             <span class="string">"timestamp"</span>: <span class="func">datetime.now()</span>.isoformat()
+36:         })</pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>backend/verification/serializers.py</h2>
+    <span class="status status-modified">MODIFIED</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="keyword">class</span> <span class="cls">QuickCheckSerializer</span>(<span class="cls">serializers.Serializer</span>):
+2:     <span class="var">text</span> = <span class="cls">serializers.CharField</span>(<span class="var">required</span>=<span class="keyword">True</span>, <span class="var">min_length</span>=<span class="number">3</span>, <span class="var">max_length</span>=<span class="number">5000</span>)
+3:     <span class="var">language</span> = <span class="cls">serializers.CharField</span>(<span class="var">required</span>=<span class="keyword">False</span>, <span class="var">default</span>=<span class="string">'en'</span>, <span class="var">max_length</span>=<span class="number">10</span>)
+4: 
+5: <span class="keyword">class</span> <span class="cls">QuickCheckResponseSerializer</span>(<span class="cls">serializers.Serializer</span>):
+6:     <span class="var">factly_score</span> = <span class="cls">serializers.IntegerField</span>()
+7:     <span class="var">classification</span> = <span class="cls">serializers.CharField</span>()
+8:     <span class="var">confidence_level</span> = <span class="cls">serializers.CharField</span>()
+9:     <span class="var">brief_evidence</span> = <span class="cls">serializers.ListField</span>(<span class="var">child</span>=<span class="cls">serializers.CharField</span>())
+10:    <span class="var">sources_consulted</span> = <span class="cls">serializers.IntegerField</span>()
+11:    <span class="var">processing_time</span> = <span class="cls">serializers.FloatField</span>()</pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>backend/verification/urls.py</h2>
+    <span class="status status-modified">MODIFIED</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="comment"># New route added (line 28)</span>
+2: <span class="func">path</span>(<span class="string">'verification/quick-check/'</span>, <span class="var">views.QuickCheckView</span>.as_view(), <span class="var">name</span>=<span class="string">'quick_check'</span>),</pre>
+  </div>
+</div>
+
+<h2 id="extension" class="section-title">Extension Files</h2>
+
+<div class="file">
+  <div class="file-header">
+    <h2>extension/manifest.json</h2>
+    <span class="status status-new">NEW</span>
+  </div>
+  <div class="file-body">
+    <pre>1: { <span class="string">"manifest_version"</span>: <span class="number">3</span>,
+2:   <span class="string">"name"</span>: <span class="string">"Factly Browser Agent"</span>,
+3:   <span class="string">"permissions"</span>: [<span class="string">"activeTab"</span>, <span class="string">"contextMenus"</span>, <span class="string">"storage"</span>, <span class="string">"scripting"</span>],
+4:   <span class="string">"host_permissions"</span>: [<span class="string">"http://localhost:8000/*"</span>],
+5:   <span class="string">"background"</span>: { <span class="string">"service_worker"</span>: <span class="string">"background/background.js"</span> },
+6:   <span class="string">"action"</span>: { <span class="string">"default_popup"</span>: <span class="string">"popup/popup.html"</span> },
+7:   <span class="string">"commands"</span>: { <span class="string">"_execute_action"</span>: { <span class="string">"suggested_key"</span>: { <span class="string">"default"</span>: <span class="string">"Ctrl+Shift+F"</span> } } } }</pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>extension/background/background.js (179 lines)</h2>
+    <span class="status status-new">NEW</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="comment">// Context menus: "Verify with Factly" (selection) + "Fact-Check this Page"</span>
+2: <span class="comment">// Auto-detects 30+ news domains (BBC, CNN, NYT, Reuters, etc.)</span>
+3: <span class="comment">// Sets colored badge (green/yellow/red) with score on extension icon</span>
+4: <span class="comment">// Handles QUICK_CHECK and GET_HISTORY messages from popup/content</span>
+5: <span class="comment">// Saves history (last 50 items) to chrome.storage.local</span>
+6: 
+7: <span class="keyword">const</span> <span class="var">NEWS_DOMAINS</span> = [
+8:   <span class="string">'bbc.com'</span>, <span class="string">'cnn.com'</span>, <span class="string">'reuters.com'</span>, <span class="string">'nytimes.com'</span>,
+9:   <span class="string">'theguardian.com'</span>, <span class="string">'washingtonpost.com'</span>, <span class="string">'foxnews.com'</span>,
+10:  <span class="string">'bloomberg.com'</span>, <span class="string">'npr.org'</span>, <span class="string">'aljazeera.com'</span>, <span class="comment">// + 20 more</span>
+11: ];
+12: 
+13: <span class="keyword">async function</span> <span class="func">autoVerify</span>(<span class="var">tabId</span>, <span class="var">url</span>) {
+14:   <span class="keyword">if</span> (!<span class="func">isNewsDomain</span>(<span class="var">url</span>)) <span class="keyword">return</span>;
+15:   <span class="keyword">const</span> <span class="var">text</span> = <span class="keyword">await</span> <span class="func">getPageText</span>(<span class="var">tabId</span>);
+16:   <span class="keyword">const</span> <span class="var">response</span> = <span class="keyword">await</span> <span class="func">fetch</span>(<span class="string">`.../quick-check/`</span>, { <span class="var">method</span>: <span class="string">'POST'</span>, <span class="var">body</span>: <span class="func">JSON.stringify</span>({ <span class="var">text</span> }) });
+17:   <span class="keyword">await</span> chrome.action.setBadgeText({ <span class="var">tabId</span>, <span class="var">text</span>: <span class="func">String</span>(<span class="var">data.factly_score</span>) });
+18:   <span class="keyword">await</span> chrome.action.setBadgeBackgroundColor({ <span class="var">tabId</span>, <span class="var">color</span>: <span class="var">score</span> >= <span class="number">66</span> ? <span class="string">'#22c55e'</span> : <span class="var">score</span> >= <span class="number">36</span> ? <span class="string">'#eab308'</span> : <span class="string">'#ef4444'</span> });
+19: }</pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>extension/popup/popup.html — 5 Views</h2>
+    <span class="status status-new">NEW</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="comment">&lt;!-- View 1: Input --&gt;</span>
+2: &lt;textarea id="claim-input" placeholder="Paste a headline..."&gt;&lt;/textarea&gt;
+3: &lt;button id="verify-btn"&gt;Verify Now&lt;/button&gt;
+4: &lt;button id="page-btn"&gt;Check This Page&lt;/button&gt;
+5: &lt;button id="history-btn"&gt;History&lt;/button&gt;
+6: 
+7: <span class="comment">&lt;!-- View 2: Result --&gt;</span>
+8: &lt;div class="score-ring"&gt;
+9:   &lt;svg&gt;&lt;circle class="ring-fill" id="score-ring" /&gt;&lt;/svg&gt;
+10:  &lt;span id="score-value"&gt;--&lt;/span&gt;
+11: &lt;/div&gt;
+12: &lt;ul id="evidence-list"&gt;&lt;/ul&gt;
+13: &lt;button id="full-report-btn"&gt;Full Report&lt;/button&gt;
+14: 
+15: <span class="comment">&lt;!-- View 3: History --&gt;</span>
+16: <span class="comment">&lt;!-- View 4: Loading spinner --&gt;</span>
+17: <span class="comment">&lt;!-- View 5: Error state --&gt;</span></pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>extension/popup/popup.js (237 lines)</h2>
+    <span class="status status-new">NEW</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="comment">// API calls to POST /api/verification/quick-check/</span>
+2: <span class="comment">// SVG score ring animation (circumference-based stroke-dashoffset)</span>
+3: <span class="comment">// History: save/load/clear from chrome.storage.local</span>
+4: <span class="comment">// "Check This Page" reads active tab via chrome.scripting.executeScript</span>
+5: <span class="comment">// "Full Report" opens factly.app/verify with the text pre-filled</span>
+6: <span class="comment">// Share button copies "Factly Score: X/100 - Classification" to clipboard</span>
+7: <span class="comment">// On init: checks for pendingVerification (from context menu) + lastAutoResult</span></pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>extension/content/content.js (129 lines)</h2>
+    <span class="status status-new">NEW</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="comment">// Floating badge: bottom-right, conic gradient ring, score + label</span>
+2: <span class="comment">// "View Details" sends QUICK_CHECK message to open popup</span>
+3: <span class="comment">// "X" button dismisses badge</span>
+4: 
+5: <span class="comment">// Sensational content highlighting (runs when score &lt; 50):</span>
+6: <span class="comment">// - TreeWalker scans all text nodes on the page</span>
+7: <span class="comment">// - Flags text with: excessive !, ALL CAPS, sensational words</span>
+8: <span class="comment">// - Wraps in &lt;mark&gt; with red border + tooltip</span>
+9: <span class="comment">// - Clearable via FACTLY_CLEAR message</span>
+10: 
+11: <span class="keyword">const</span> <span class="var">sensationalWords</span> = [<span class="string">'shocking'</span>, <span class="string">'outrageous'</span>, <span class="string">'you won\'t believe'</span>, <span class="string">'doctors hate'</span>];
+12: <span class="keyword">const</span> <span class="var">score</span> = (<span class="var">exclaimCount</span> * <span class="number">0.05</span>) + (<span class="var">capsRatio</span> * <span class="number">10</span>) + (<span class="var">hasSensational</span> ? <span class="number">0.3</span> : <span class="number">0</span>);
+13: <span class="keyword">if</span> (<span class="var">score</span> > <span class="var">sensitivityThreshold</span>) {
+14:   <span class="var">highlight</span>.style.cssText = <span class="string">'background:#fef2f2;border-bottom:2px solid #ef4444'</span>;
+15:   <span class="var">highlight</span>.title = <span class="string">'Potentially misleading content (Factly)'</span>;
+16: }</pre>
+  </div>
+</div>
+
+<div class="file">
+  <div class="file-header">
+    <h2>extension/popup/popup.css (488 lines)</h2>
+    <span class="status status-new">NEW</span>
+  </div>
+  <div class="file-body">
+    <pre>1: <span class="comment">/* Design tokens: matches Factly dark theme */</span>
+2: <span class="prop">--primary</span>: <span class="number">#1f2937</span>; <span class="prop">--success</span>: <span class="number">#22c55e</span>;
+3: <span class="prop">--warning</span>: <span class="number">#eab308</span>; <span class="prop">--danger</span>: <span class="number">#ef4444</span>;
+4: 
+5: <span class="comment">/* Score ring: SVG circle with stroke-dasharray animation */</span>
+6: <span class="tag">.ring-fill</span> { <span class="prop">stroke-dasharray</span>: <span class="number">339.292</span>; <span class="prop">transition</span>: stroke-dashoffset <span class="number">1s</span> ease-out; }
+7: 
+8: <span class="comment">/* History items: clickable, hover effect, color-coded scores */</span>
+9: <span class="tag">.history-item</span>:hover { <span class="prop">background</span>: <span class="number">#f3f4f6</span>; }
+10: <span class="tag">.history-score.high</span> { <span class="prop">background</span>: <span class="number">#22c55e</span>; }</pre>
+  </div>
+</div>
+
+<p style="text-align:center;color:#8b949e;margin-top:32px;font-size:13px;">
+  Generated for review — Factly Browser Agent &bull; Full Scope Implementation
+</p>
+
+</body>
+</html>

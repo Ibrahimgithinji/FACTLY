@@ -25,6 +25,7 @@ urlpatterns = [
     # Standard verification endpoints
     path('verification/verify/', views.VerificationView.as_view(), name='verify'),
     path('verification/verify/enhanced/', views.EnhancedVerificationView.as_view(), name='verify_enhanced'),
+    path('verification/quick-check/', views.QuickCheckView.as_view(), name='quick_check'),
     path('verification/health/', views.health_check, name='health_check'),
     
     # Trending topics and global events endpoints

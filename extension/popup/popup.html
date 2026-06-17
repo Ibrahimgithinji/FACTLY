@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factly Browser Agent</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="header-logo">
+        <span class="logo-icon">&#x2713;</span>
+        <h1>Factly</h1>
+      </div>
+      <span class="header-badge">Agent</span>
+    </header>
+
+    <div id="view-input" class="view active">
+      <div class="input-section">
+        <textarea id="claim-input" placeholder="Paste a headline, claim, or quote to verify..." rows="3"></textarea>
+        <button id="verify-btn" class="btn btn-primary" disabled>
+          <span class="btn-icon">&#x1F50D;</span>
+          Verify Now
+        </button>
+      </div>
+
+      <div class="quick-actions">
+        <button id="page-btn" class="btn btn-outline">
+          <span class="btn-icon">&#x1F4D6;</span>
+          Check This Page
+        </button>
+        <button id="history-btn" class="btn btn-outline">
+          <span class="btn-icon">&#x1F4CB;</span>
+          History
+        </button>
+      </div>
+
+      <div id="status-msg" class="status-message"></div>
+    </div>
+
+    <div id="view-result" class="view">
+      <div class="score-ring-container">
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120" class="ring-svg">
+            <circle cx="60" cy="60" r="54" class="ring-bg" />
+            <circle cx="60" cy="60" r="54" class="ring-fill" id="score-ring" />
+          </svg>
+          <div class="score-inner">
+            <span id="score-value" class="score-value">--</span>
+            <span class="score-unit">/100</span>
+          </div>
+        </div>
+        <span id="score-label" class="score-label">Verifying...</span>
+      </div>
+
+      <div class="result-details">
+        <div class="detail-row">
+          <span class="detail-label">Confidence</span>
+          <span id="confidence-value" class="detail-value">--</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Sources</span>
+          <span id="sources-value" class="detail-value">--</span>
+        </div>
+      </div>
+
+      <div id="evidence-section" class="evidence-section">
+        <div class="section-title">Evidence</div>
+        <ul id="evidence-list" class="evidence-list"></ul>
+      </div>
+
+      <div class="result-actions">
+        <button id="back-btn" class="btn btn-outline">&#x2190; Back</button>
+        <button id="full-report-btn" class="btn btn-secondary">Full Report</button>
+        <button id="share-btn" class="btn btn-outline" title="Share result">&#x1F517;</button>
+      </div>
+    </div>
+
+    <div id="view-history" class="view">
+      <div class="view-header">
+        <button id="history-back-btn" class="btn btn-ghost">&#x2190; Back</button>
+        <h2>History</h2>
+        <button id="clear-history-btn" class="btn btn-ghost" title="Clear history">&#x1F5D1;</button>
+      </div>
+      <div id="history-list" class="history-list"></div>
+    </div>
+
+    <div id="view-loading" class="view">
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Analyzing claim...</p>
+        <p class="loading-sub">Checking fact-check databases & news sources</p>
+      </div>
+    </div>
+
+    <div id="view-error" class="view">
+      <div class="error-container">
+        <div class="error-icon">&#x26A0;</div>
+        <h2 id="error-title">Verification Failed</h2>
+        <p id="error-msg">Something went wrong. Please try again.</p>
+        <button id="error-retry-btn" class="btn btn-primary">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

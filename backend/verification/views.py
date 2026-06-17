@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 
-from .serializers import VerificationRequestSerializer, VerificationResponseSerializer
+from .serializers import VerificationRequestSerializer, VerificationResponseSerializer, QuickCheckSerializer
 from services.nlp_service import TextPreprocessor, URLExtractionService
 from services.fact_checking_service import FactCheckingService
 from services.fact_checking_service.unified_schema import datetime_to_iso
@@ -754,6 +754,97 @@ def health_check(request):
             "Global events digest"
         ]
     }, status=200)
+
+
+class QuickCheckView(APIView):
+    """
+    Lightweight verification endpoint optimized for browser extension use.
+
+    Returns only essential results for fast, at-a-glance fact-checking.
+    Designed for high-frequency calls from the Factly Browser Agent.
+    Uses aggressive caching (30s TTL) for identical requests.
+    """
+
+    permission_classes = [AllowAny]
+
+    RATE_LIMIT_CONFIG = {
+        'max_requests': int(os.getenv('QUICK_CHECK_MAX_REQUESTS', '60')),
+        'window_seconds': int(os.getenv('QUICK_CHECK_WINDOW_SECONDS', '3600')),
+    }
+    rate_limiter = APIRateLimiter()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fact_checker = FactCheckingService()
+        self.scorer = ScoringService()
+
+    def _check_rate_limit(self, request):
+        allowed, retry_after = self.rate_limiter.check_rate_limit(
+            request,
+            endpoint=request.path,
+            max_requests=self.RATE_LIMIT_CONFIG['max_requests'],
+            window_seconds=self.RATE_LIMIT_CONFIG['window_seconds']
+        )
+        return allowed, retry_after
+
+    def post(self, request):
+        start_time = time.time()
+
+        allowed, retry_after = self._check_rate_limit(request)
+        if not allowed:
+            return Response(
+                {"error": "Rate limit exceeded. Please try again later.", "retry_after": retry_after},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={"Retry-After": str(retry_after)}
+            )
+
+        try:
+            serializer = QuickCheckSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            text = serializer.validated_data['text']
+            language = serializer.validated_data.get('language', 'en')
+
+            verification_result = self.fact_checker.verify_claim(text, language)
+            factly_result = self.scorer.calculate_factly_score(
+                verification_result=verification_result,
+                text_content=text
+            )
+
+            brief_evidence = []
+            if verification_result.claim_reviews:
+                for r in verification_result.claim_reviews[:3]:
+                    brief_evidence.append(
+                        f"{r.publisher.name}: {r.verdict}"
+                    )
+            if verification_result.related_news:
+                for n in verification_result.related_news[:2]:
+                    brief_evidence.append(
+                        f"Related: {n.title[:80]} ({n.source})"
+                    )
+
+            processing_time = time.time() - start_time
+
+            return Response({
+                "factly_score": factly_result.factly_score,
+                "classification": factly_result.classification,
+                "confidence_level": factly_result.confidence_level,
+                "brief_evidence": brief_evidence,
+                "sources_consulted": (
+                    len(verification_result.claim_reviews) +
+                    len(verification_result.related_news)
+                ),
+                "processing_time": round(processing_time, 3),
+                "timestamp": datetime.now().isoformat()
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.exception("Quick check verification failed")
+            return Response(
+                {"error": get_generic_error_message('verification')},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TrendingTopicsView(APIView):

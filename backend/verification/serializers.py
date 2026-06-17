@@ -38,6 +38,21 @@ class FactlyScoreResultSerializer(serializers.Serializer):
     metadata = serializers.DictField()
 
 
+class QuickCheckSerializer(serializers.Serializer):
+    """Serializer for quick-check request data."""
+    text = serializers.CharField(required=True, min_length=3, max_length=5000)
+    language = serializers.CharField(required=False, default='en', max_length=10)
+
+class QuickCheckResponseSerializer(serializers.Serializer):
+    """Lightweight serializer for quick-check response."""
+    factly_score = serializers.IntegerField()
+    classification = serializers.CharField()
+    confidence_level = serializers.CharField()
+    brief_evidence = serializers.ListField(child=serializers.CharField())
+    sources_consulted = serializers.IntegerField()
+    processing_time = serializers.FloatField()
+    timestamp = serializers.DateTimeField(required=False, allow_null=True)
+
 class VerificationResponseSerializer(serializers.Serializer):
     """Serializer for complete verification response."""
     original_text = serializers.CharField()
