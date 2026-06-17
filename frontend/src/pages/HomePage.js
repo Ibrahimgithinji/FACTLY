@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import Sidebar from '../components/Sidebar';
@@ -8,6 +8,21 @@ import { ArticleCardSkeleton, SidebarSkeleton } from '../components/Skeleton';
 import SEOMeta from '../components/SEOMeta';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './HomePage.css';
+
+const HOMEPAGE_POLL_MS = 5 * 60 * 1000;
+
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return null;
+  const diff = Date.now() - new Date(dateString).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateString).toLocaleDateString();
+};
 
 function SectionGrid({ section }) {
   if (!section || !section.articles || section.articles.length === 0) return null;
@@ -94,30 +109,55 @@ export default function HomePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const pollRef = useRef(null);
+  const mountedRef = useRef(false);
 
   const handleTopicClick = (topic) => {
     window.location.href = `/verify?topic=${encodeURIComponent(topic)}`;
   };
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [homeRes, catRes] = await Promise.all([
-          fetch(CONTENT_ENDPOINTS.HOMEPAGE),
-          fetch(CONTENT_ENDPOINTS.CATEGORIES),
-        ]);
-        const homeData = await homeRes.json();
-        const catData = await catRes.json();
-        setData(homeData);
-        setCategories(catData);
-      } catch (err) {
-        console.error('Failed to load homepage:', err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchHomeData = useCallback(async () => {
+    try {
+      const [homeRes, catRes] = await Promise.all([
+        fetch(CONTENT_ENDPOINTS.HOMEPAGE),
+        fetch(CONTENT_ENDPOINTS.CATEGORIES),
+      ]);
+      if (!mountedRef.current) return;
+      const homeData = await homeRes.json();
+      const catData = await catRes.json();
+      setData(homeData);
+      setCategories(catData);
+      setLastUpdated(new Date().toISOString());
+    } catch (err) {
+      if (!mountedRef.current) return;
+      console.error('Failed to load homepage:', err);
+    } finally {
+      if (mountedRef.current) setLoading(false);
     }
-    fetchData();
   }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    fetchHomeData();
+
+    pollRef.current = setInterval(fetchHomeData, HOMEPAGE_POLL_MS);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchHomeData();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    const handleOnline = () => fetchHomeData();
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      mountedRef.current = false;
+      clearInterval(pollRef.current);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [fetchHomeData]);
 
   const sectionKeys = data?.sections ? Object.keys(data.sections) : [];
   const leadArticle = data?.featured?.[0] || data?.latest?.[0];
@@ -159,6 +199,18 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      <div className="home-freshness">
+        {lastUpdated && (
+          <span>
+            <span className="freshness-dot" />
+            Updated {formatRelativeTime(lastUpdated)}
+          </span>
+        )}
+        <button className="refresh-button" onClick={fetchHomeData}>
+          Refresh
+        </button>
+      </div>
 
       <section className="editorial-lead" aria-label="Top stories">
         <div className="editorial-lead__main">

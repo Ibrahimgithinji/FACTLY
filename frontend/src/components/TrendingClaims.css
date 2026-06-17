@@ -76,3 +76,27 @@
   font-size: 0.72rem;
   color: var(--text-tertiary);
 }
+
+.trending-claims__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claims-timestamp {
+  font-size: 0.72rem;
+  color: var(--text-tertiary, #888);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.claim-briefing .trending-claims__actions,
+.claim-briefing .claims-timestamp,
+.claim-briefing .refresh-button {
+  display: none;
+}
+
+.claim-briefing {
+  position: relative;
+}
