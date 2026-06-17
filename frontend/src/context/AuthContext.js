@@ -52,6 +52,10 @@ export const AuthProvider = ({ children }) => {
     return false;
   }, []);
 
+  useEffect(() => {
+    fetchUser().finally(() => setIsLoading(false));
+  }, [fetchUser]);
+
   const login = async (email, password) => {
     try {
       const response = await fetch(API_ENDPOINTS.LOGIN, {
