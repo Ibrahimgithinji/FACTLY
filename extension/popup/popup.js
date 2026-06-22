@@ -1,4 +1,13 @@
-const API_BASE = 'http://localhost:8000/api/verification';
+const STORAGE_KEY = 'factlySettings';
+
+async function getApiBase() {
+  const result = await chrome.storage.local.get(STORAGE_KEY);
+  return (result[STORAGE_KEY] || {}).apiBase || FACTLY_CONFIG.API_BASE;
+}
+
+function getFrontendUrl() {
+  return FACTLY_CONFIG.FRONTEND_URL;
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -65,7 +74,7 @@ $('error-retry-btn').addEventListener('click', () => showView('view-input'));
 
 $('full-report-btn').addEventListener('click', () => {
   const params = new URLSearchParams({ text: $('claim-input').value || currentResult?.query || '' });
-  chrome.tabs.create({ url: `http://localhost:3000/verify?${params}` });
+  chrome.tabs.create({ url: `${getFrontendUrl()}/verify?${params}` });
 });
 
 $('share-btn').addEventListener('click', async () => {
@@ -86,7 +95,8 @@ async function verifyClaim() {
   showView('view-loading');
 
   try {
-    const response = await fetch(`${API_BASE}/quick-check/`, {
+    const apiBase = await getApiBase();
+    const response = await fetch(`${apiBase}/quick-check/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text })
@@ -105,7 +115,7 @@ async function verifyClaim() {
   } catch (err) {
     $('error-title').textContent = 'Verification Failed';
     $('error-msg').textContent = err.message.includes('Failed to fetch')
-      ? 'Cannot connect to Factly API. Make sure the backend is running on port 8000.'
+      ? 'Cannot connect to Factly API. Make sure the backend server is running.'
       : err.message;
     showView('view-error');
   }

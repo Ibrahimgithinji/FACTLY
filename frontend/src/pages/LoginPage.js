@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../utils/constants';
 import './Auth.css';
 
 const LoginPage = () => {
@@ -24,7 +25,7 @@ const LoginPage = () => {
   // Listen for postMessage from GitHub OAuth popup
   useEffect(() => {
     const handleMessage = (event) => {
-      if (event.origin !== 'http://localhost:8000' && event.origin !== window.location.origin) return;
+      if (event.origin !== API_BASE_URL && event.origin !== window.location.origin) return;
       const data = event.data;
       if (data && data.user) {
         navigate(from, { replace: true });

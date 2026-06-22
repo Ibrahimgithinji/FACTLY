@@ -1,6 +1,8 @@
+importScripts('../config.js');
+
 const STORAGE_KEY = 'factlySettings';
 const HISTORY_KEY = 'factlyHistory';
-const API_BASE = 'http://localhost:8000/api/verification';
+const API_BASE = FACTLY_CONFIG.API_BASE;
 
 const NEWS_DOMAINS = [
   'bbc.com', 'bbc.co.uk', 'cnn.com', 'reuters.com', 'ap.org',
