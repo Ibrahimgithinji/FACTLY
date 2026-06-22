@@ -31,9 +31,31 @@ class LoginRateThrottle(AnonRateThrottle):
     scope = 'login'
 
 
+class SignupRateThrottle(AnonRateThrottle):
+    rate = '3/minute'
+    scope = 'signup'
+
+
 class PasswordResetRateThrottle(AnonRateThrottle):
     rate = '5/minute'
     scope = 'password_reset'
+
+
+class RefreshRateThrottle(AnonRateThrottle):
+    rate = '20/minute'
+    scope = 'token_refresh'
+
+
+class VerifyTokenRateThrottle(AnonRateThrottle):
+    rate = '10/minute'
+    scope = 'verify_token'
+
+
+class OAuthRateThrottle(AnonRateThrottle):
+    rate = '10/minute'
+    scope = 'oauth'
+
+
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from .models import PasswordResetToken
@@ -239,7 +261,7 @@ class LoginView(APIView):
 class SignupView(APIView):
     """User registration endpoint that returns JWT tokens."""
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [SignupRateThrottle]
     
     def post(self, request):
         _ensure_auth_schema_ready()
@@ -311,6 +333,7 @@ class SignupView(APIView):
 class RefreshTokenView(APIView):
     """Token refresh endpoint for getting new access tokens."""
     permission_classes = [AllowAny]
+    throttle_classes = [RefreshRateThrottle]
     
     def post(self, request):
         refresh_token = request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE) or request.data.get('refresh')
@@ -337,6 +360,7 @@ class RefreshTokenView(APIView):
 class LogoutView(APIView):
     """Logout endpoint that clears JWT cookies."""
     permission_classes = [AllowAny]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     
     def post(self, request):
         response = Response({'message': 'Logged out successfully'})
@@ -477,6 +501,7 @@ FACTLY Team
 class VerifyResetTokenView(APIView):
     """Verify if a password reset token is valid."""
     permission_classes = [AllowAny]
+    throttle_classes = [VerifyTokenRateThrottle]
     
     def post(self, request):
         token = request.data.get('token')
@@ -587,7 +612,7 @@ class ResetPasswordView(APIView):
 class SocialLoginView(APIView):
     """Social login endpoint that accepts OAuth tokens and returns JWT tokens."""
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [OAuthRateThrottle]
 
     def post(self, request):
         _ensure_auth_schema_ready()

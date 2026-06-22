@@ -5,8 +5,9 @@ import requests
 from urllib.parse import urlencode
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render
-from django.views import View
+from rest_framework.permissions import AllowAny
+from rest_framework.throttling import AnonRateThrottle
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .cookie_auth import set_jwt_cookies, unset_jwt_cookies
@@ -23,8 +24,15 @@ GITHUB_USER_URL = 'https://api.github.com/user'
 GITHUB_EMAIL_URL = 'https://api.github.com/user/emails'
 
 
-class GitHubLoginInitView(View):
+class OAuthInitRateThrottle(AnonRateThrottle):
+    rate = '10/minute'
+    scope = 'oauth_init'
+
+
+class GitHubLoginInitView(APIView):
     """Initiates GitHub OAuth by redirecting to GitHub."""
+    permission_classes = [AllowAny]
+    throttle_classes = [OAuthInitRateThrottle]
 
     def get(self, request):
         state = secrets.token_urlsafe(32)
@@ -39,8 +47,10 @@ class GitHubLoginInitView(View):
         return HttpResponseRedirect(f'{GITHUB_AUTHORIZE_URL}?{urlencode(params)}')
 
 
-class GitHubCallbackView(View):
+class GitHubCallbackView(APIView):
     """Handles GitHub OAuth callback, creates/finds user, returns JWT to frontend."""
+    permission_classes = [AllowAny]
+    throttle_classes = [OAuthInitRateThrottle]
 
     def get(self, request):
         code = request.GET.get('code')

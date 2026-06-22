@@ -386,7 +386,12 @@ REST_FRAMEWORK = {
         'anon': '60/minute',
         'user': '120/minute',
         'login': '10/minute',
+        'signup': '3/minute',
         'password_reset': '5/minute',
+        'token_refresh': '20/minute',
+        'verify_token': '10/minute',
+        'oauth': '10/minute',
+        'oauth_init': '10/minute',
     },
 }
 
