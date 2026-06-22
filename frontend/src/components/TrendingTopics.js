@@ -3,7 +3,6 @@ import { API_ENDPOINTS } from '../utils/api';
 import './TrendingTopics.css';
 
 const POLL_INTERVAL_MS = 3 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 10000;
 
 const formatRelativeTime = (dateString) => {
   if (!dateString) return null;

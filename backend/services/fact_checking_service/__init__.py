@@ -16,7 +16,6 @@ from .cache_manager import CacheManager
 from .rate_limiter import RateLimiter
 from .evidence_search_service import EvidenceSearchService, EvidenceItem, EvidenceCollection
 from .cross_source_analyzer import CrossSourceAnalyzer, CrossSourceAnalysis, ConsensusLevel, EvidenceStrength
-from .verification_orchestrator import VerificationOrchestrator, CompleteVerificationResult, VerificationSummary
 
 # Import from existing modules
 from .fact_checking_service import FactCheckingService

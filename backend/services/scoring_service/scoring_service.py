@@ -13,7 +13,7 @@ from datetime import datetime
 import time
 import re
 
-from ..fact_checking_service.unified_schema import VerificationResult, ClaimReview
+from services.fact_checking_service.unified_schema import VerificationResult, ClaimReview
 from ..nlp_service.text_preprocessing import TextPreprocessor
 
 logger = logging.getLogger(__name__)
@@ -224,8 +224,9 @@ class ScoringService:
                 total_weighted_score += verdict_score * weight
                 total_weight += weight
                 
+                publisher_name = review.publisher.name if review.publisher else 'Unknown'
                 review_details.append(
-                    f"{review.publisher.name}: {review.verdict} (confidence: {confidence:.2f})"
+                    f"{publisher_name}: {review.verdict} (confidence: {confidence:.2f})"
                 )
 
             if total_weight > 0:
@@ -393,10 +394,13 @@ class ScoringService:
         if verdict_lower in self.VERDICT_SCORES:
             return self.VERDICT_SCORES[verdict_lower]
         
-        # Partial match
-        for key, score in self.VERDICT_SCORES.items():
-            if key in verdict_lower or verdict_lower in key:
-                return score
+        # Partial match - prefer longest matching key to avoid 'true'
+        # matching inside 'mostly true' or 'half true'
+        matched = [k for k in self.VERDICT_SCORES if k in verdict_lower or verdict_lower in k]
+        if matched:
+            # Return the score for the longest matching key (most specific)
+            best_key = max(matched, key=len)
+            return self.VERDICT_SCORES[best_key]
         
         return 0.5  # Default for unknown verdicts
 
@@ -470,8 +474,9 @@ class ScoringService:
 
     def _classify_score(self, score: int) -> str:
         """Classify the Factly Score™ into categories."""
+        clamped_score = max(0, min(100, score))
         for category, (min_score, max_score) in self.CLASSIFICATION_THRESHOLDS.items():
-            if min_score <= score <= max_score:
+            if min_score <= clamped_score <= max_score:
                 return category
         return "Uncertain"
 
@@ -558,7 +563,7 @@ class ScoringService:
             'overall_confidence': verification_result.overall_confidence,
             'top_fact_check_sources': [
                 {
-                    'publisher': r.publisher.name if hasattr(r, 'publisher') else 'Unknown',
+                    'publisher': r.publisher.name if hasattr(r, 'publisher') and r.publisher else 'Unknown',
                     'verdict': r.verdict,
                     'url': r.url if hasattr(r, 'url') else None
                 }

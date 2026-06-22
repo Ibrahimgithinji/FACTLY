@@ -16,7 +16,7 @@ from django.http import JsonResponse
 
 from .serializers import VerificationRequestSerializer, VerificationResponseSerializer
 from services.nlp_service import TextPreprocessor, URLExtractionService
-from services.fact_checking_service import VerificationOrchestrator
+from services.fact_checking_service.verification_orchestrator import VerificationOrchestrator
 
 logger = logging.getLogger(__name__)
 
