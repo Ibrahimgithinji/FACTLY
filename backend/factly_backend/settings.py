@@ -87,6 +87,7 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -486,13 +487,13 @@ SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() in (
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() in ('1', 'true', 'yes')
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
-# Additional security headers
-SECURE_BROWSER_XSS_FILTER = True
+# Content Security Policy
+# Uses the Django 5.0+ setting name (SECURE_ prefix was deprecated).
 _csp_connect_src = ("'self'",)
 if DEBUG:
-    _csp_connect_src = ("'self'", "http://localhost:8000")
+    _csp_connect_src = ("'self'", "http://localhost:8000", "http://127.0.0.1:8000")
 
-SECURE_CONTENT_SECURITY_POLICY = {
+CONTENT_SECURITY_POLICY = {
     "default-src": ("'self'",),
     "script-src": ("'self'",),
     "style-src": ("'self'", "'unsafe-inline'"),
@@ -500,6 +501,9 @@ SECURE_CONTENT_SECURITY_POLICY = {
     "font-src": ("'self'",),
     "connect-src": _csp_connect_src,
     "frame-ancestors": ("'none'",),
+    "form-action": ("'self'",),
+    "worker-src": ("'self'", "blob:"),
+    "base-uri": ("'self'",),
 }
 
 # Email configuration for password reset and notifications
