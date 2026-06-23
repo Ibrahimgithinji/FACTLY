@@ -68,6 +68,8 @@ const apiRequest = async (url, method, data = null, options = {}) => {
       });
       if (refreshResponse.ok) {
         response = await withRetry(() => fetch(url, fetchParams), method);
+      } else {
+        return { success: false, error: 'Session expired. Please log in again.', authError: true };
       }
     }
 

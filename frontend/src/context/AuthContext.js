@@ -29,14 +29,21 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.status === 401) {
-        await fetch(API_ENDPOINTS.REFRESH, {
+        const refreshResponse = await fetch(API_ENDPOINTS.REFRESH, {
           ...fetchOptions,
           method: 'POST',
         });
-        response = await fetch(API_ENDPOINTS.USER_PROFILE, {
-          ...fetchOptions,
-          method: 'GET',
-        });
+
+        if (refreshResponse.ok) {
+          response = await fetch(API_ENDPOINTS.USER_PROFILE, {
+            ...fetchOptions,
+            method: 'GET',
+          });
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          return false;
+        }
       }
 
       if (response.ok) {
@@ -45,11 +52,14 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         return true;
       }
+
+      setUser(null);
+      setIsAuthenticated(false);
+      return false;
     } catch (e) {
+      console.warn('fetchUser error:', e);
+      return false;
     }
-    setUser(null);
-    setIsAuthenticated(false);
-    return false;
   }, []);
 
   useEffect(() => {

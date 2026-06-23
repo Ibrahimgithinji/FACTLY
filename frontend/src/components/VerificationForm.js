@@ -89,6 +89,10 @@ const VerificationForm = ({ initialValue = '' }) => {
       });
       
       if (!result.success) {
+        if (result.authError) {
+          setError('Session expired. Please log in again.');
+          return;
+        }
         throw new Error(result.error || 'Verification failed');
       }
 

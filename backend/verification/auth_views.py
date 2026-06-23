@@ -341,7 +341,7 @@ class RefreshTokenView(APIView):
         if not refresh_token:
             return Response(
                 {'error': 'Refresh token required'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_401_UNAUTHORIZED
             )
         
         try:
