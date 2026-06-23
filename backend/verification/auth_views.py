@@ -142,6 +142,12 @@ def _has_real_smtp_credentials():
     if not uses_smtp_credentials:
         return True
 
+    # FallbackEmailBackend and DevelopmentEmailBackend handle missing/invalid
+    # credentials internally by falling back to file-based or console output.
+    # No need to block the request — the email will be saved locally.
+    if 'developmentemailbackend' in backend or 'fallbackemailbackend' in backend:
+        return True
+
     if 'resend' in backend:
         resend_key = getattr(settings, 'RESEND_API_KEY', '') or ''
         if not resend_key:
