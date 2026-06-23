@@ -189,12 +189,13 @@ async function loadHistory() {
 
       const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : '';
       div.innerHTML = `
-        <div class="history-score ${scoreClass}">${item.score}</div>
+        <div class="history-score ${scoreClass}">${escapeHtml(String(item.score))}</div>
         <div class="history-text">${escapeHtml(item.text || 'Unknown')}</div>
-        <div class="history-time">${time}</div>
+        <div class="history-time">${escapeHtml(time)}</div>
       `;
+      const rawText = item.fullText || item.text || '';
       div.addEventListener('click', () => {
-        $('claim-input').value = item.fullText || item.text || '';
+        $('claim-input').value = rawText;
         $('claim-input').dispatchEvent(new Event('input'));
         verifyClaim();
       });
@@ -227,7 +228,7 @@ function showStatus(msg, type) {
 
 function escapeHtml(str) {
   const div = document.createElement('div');
-  div.textContent = str;
+  div.textContent = str == null ? '' : String(str);
   return div.innerHTML;
 }
 

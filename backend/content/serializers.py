@@ -59,6 +59,10 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['article', 'name', 'email', 'content']
+        extra_kwargs = {
+            'name': {'max_length': 100},
+            'content': {'max_length': 5000},
+        }
 
 
 class GuestArticleSerializer(serializers.Serializer):

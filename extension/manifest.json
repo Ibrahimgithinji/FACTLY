@@ -9,8 +9,12 @@
     "storage",
     "scripting"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
   "host_permissions": [
     "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
     "https://*.factly.app/*"
   ],
   "background": {

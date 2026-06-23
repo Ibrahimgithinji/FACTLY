@@ -2,11 +2,13 @@ import logging
 from django.http import Http404
 from django.db import DatabaseError
 from django.db.models import Count
+from django.utils.html import strip_tags
 from rest_framework import generics, permissions, filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
 from .models import Category, Tag, Article, Comment
 from .serializers import (
@@ -165,6 +167,7 @@ class RelatedArticlesView(generics.ListAPIView):
 
 class CommentListView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -178,7 +181,15 @@ class CommentListView(generics.ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
-        serializer.save()
+        sanitized = {
+            'name': strip_tags(serializer.validated_data.get('name', ''))[:100],
+            'email': serializer.validated_data.get('email', ''),
+            'content': strip_tags(serializer.validated_data.get('content', ''))[:5000],
+        }
+        if self.request.user.is_authenticated:
+            sanitized['name'] = self.request.user.get_full_name() or self.request.user.username
+            sanitized['email'] = self.request.user.email
+        serializer.save(**sanitized)
 
 
 @api_view(['GET'])
