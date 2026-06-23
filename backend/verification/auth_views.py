@@ -485,6 +485,12 @@ FACTLY Team
                         status=status.HTTP_503_SERVICE_UNAVAILABLE
                     )
                 logger.info(f"Password reset email sent successfully to: {email}")
+                # In development mode, log the reset link so developers can test
+                # without configuring real SMTP credentials.
+                if settings.DEBUG:
+                    logger.info("=" * 60)
+                    logger.info("RESET LINK (development mode): %s", reset_link)
+                    logger.info("=" * 60)
             except Exception as email_error:
                 logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
                 return Response(
