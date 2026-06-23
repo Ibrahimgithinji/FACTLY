@@ -33,6 +33,9 @@ urlpatterns = [
     path('api/', include('verification.urls')),
     path('api/content/', include('content.urls')),
     
+    # Trend Collector
+    path('api/', include('services.trend_collector.urls')),
+
     # Social Auth (django-allauth)
     path('accounts/', include('allauth.urls')),
 

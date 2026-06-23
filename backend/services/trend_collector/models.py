@@ -5,8 +5,6 @@ Defines PostgreSQL schema for storing trends, claims, and misinformation risk da
 """
 
 from django.db import models
-from django.contrib.postgres.indexes import GinIndex, BrinIndex
-from django.contrib.postgres.fields import ArrayField, JSONField
 from django.utils import timezone
 
 
@@ -73,11 +71,11 @@ class Trend(models.Model):
     
     # Core fields
     topic = models.CharField(max_length=500, db_index=True)
-    keywords = ArrayField(models.CharField(max_length=100), default=list)
+    keywords = models.JSONField(default=list)
     summary = models.TextField(blank=True)
     
     # Source information
-    source_platforms = ArrayField(models.CharField(max_length=20), default=list)
+    source_platforms = models.JSONField(default=list)
     source_count = models.IntegerField(default=1)
     
     # Engagement metrics
@@ -90,7 +88,7 @@ class Trend(models.Model):
     
     # Region and time
     primary_region = models.CharField(max_length=20, default='global')
-    detected_regions = ArrayField(models.CharField(max_length=20), default=list)
+    detected_regions = models.JSONField(default=list)
     first_detected = models.DateTimeField(default=timezone.now)
     last_updated = models.DateTimeField(default=timezone.now)
     
@@ -110,7 +108,7 @@ class Trend(models.Model):
     verified_at = models.DateTimeField(null=True, blank=True)
     
     # Metadata
-    metadata = JSONField(default=dict)
+    metadata = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     priority_score = models.FloatField(default=0.0, db_index=True)  # virality × risk
     
@@ -121,8 +119,6 @@ class Trend(models.Model):
         db_table = 'trends'
         ordering = ['-priority_score', '-engagement_score']
         indexes = [
-            GinIndex(fields=['keywords'], name='trend_keywords_gin'),
-            BrinIndex(fields=['created_at'], name='trend_created_brin'),
             models.Index(fields=['risk_level', '-priority_score']),
             models.Index(fields=['verification_status', '-misinformation_risk_score']),
         ]
@@ -228,7 +224,7 @@ class SourceCredibility(models.Model):
     factual_reporting = models.CharField(max_length=50, blank=True)
     
     # Historical patterns
-    historical_patterns = JSONField(default=dict)
+    historical_patterns = models.JSONField(default=dict)
     
     last_analyzed = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -308,10 +304,10 @@ class MisinformationAlert(models.Model):
     alert_message = models.TextField()
     
     # Detection triggers
-    triggers = ArrayField(models.CharField(max_length=100), default=list)
+    triggers = models.JSONField(default=list)
     
     # Notification
-    notified_users = ArrayField(models.EmailField(), default=list)
+    notified_users = models.JSONField(default=list)
     sent_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

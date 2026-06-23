@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'verification',
     'content',
+    'services.trend_collector',
 ]
 
 SITE_ID = 1
@@ -290,11 +291,8 @@ CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {
 
 # Task Routes (direct tasks to specific queues)
 CELERY_TASK_ROUTES = {
-    'services.tasks.verification.*': {'queue': 'verification'},
-    'services.tasks.ingestion.*': {'queue': 'ingestion'},
-    'services.tasks.analysis.*': {'queue': 'analysis'},
-    'services.tasks.high_priority.*': {'queue': 'high_priority'},
-    'services.tasks.low_priority.*': {'queue': 'low_priority'},
+    'services.tasks.refresh_tasks.*': {'queue': 'verification'},
+    'services.tasks.update_trending.*': {'queue': 'ingestion'},
 }
 
 # Default Queue

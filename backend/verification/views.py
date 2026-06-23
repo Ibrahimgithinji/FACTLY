@@ -6,6 +6,7 @@ import requests
 import redis
 import feedparser
 from datetime import datetime
+from django.conf import settings
 from django.db.models import Count, Avg
 from django.apps import apps
 from rest_framework import status
@@ -59,7 +60,7 @@ def get_redis_client(timeout=2):
         db = int(os.getenv('REDIS_DB', 0))
         password = os.getenv('REDIS_PASSWORD', None)
 
-        if not DEBUG and not password:
+        if not settings.DEBUG and not password:
             logger.warning(
                 "REDIS_PASSWORD not set — Redis connection without authentication "
                 "is insecure in production. Set REDIS_PASSWORD in your environment."
