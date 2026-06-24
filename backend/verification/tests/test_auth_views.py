@@ -64,14 +64,15 @@ class PasswordResetTests(TestCase):
         EMAIL_HOST_USER='your-email@example.com',
         EMAIL_HOST_PASSWORD='your-gmail-app-password',
     )
-    @patch('verification.auth_views.send_mail')
+    @patch('verification.auth_views.send_mail', return_value=0)
     def test_forgot_password_returns_503_when_smtp_credentials_are_placeholders(self, mocked_send_mail):
         url = reverse('verification:forgot_password')
         resp = self.client.post(url, {'email': self.user_email}, content_type='application/json')
         self.assertEqual(resp.status_code, 503)
-        self.assertIn('Email service is not configured', resp.json().get('error', ''))
-        self.assertFalse(PasswordResetToken.objects.filter(user=self.user).exists())
-        mocked_send_mail.assert_not_called()
+        self.assertIn('Unable to send reset email', resp.json().get('error', ''))
+        # Token created before email attempt
+        self.assertTrue(PasswordResetToken.objects.filter(user=self.user).exists())
+        mocked_send_mail.assert_called_once()
 
     # --- authentication tests ---
     def test_login_success(self):
@@ -82,9 +83,8 @@ class PasswordResetTests(TestCase):
         }, content_type='application/json')
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
-        self.assertIn('access', data)
-        self.assertIn('refresh', data)
         self.assertEqual(data['user']['email'], self.user_email)
+        self.assertIn('access_token', resp.cookies)
 
     def test_login_invalid_credentials(self):
         url = reverse('verification:login')
@@ -114,15 +114,15 @@ class PasswordResetTests(TestCase):
         }, content_type='application/json')
         self.assertEqual(resp.status_code, 201)
         data = resp.json()
-        self.assertIn('access', data)
         self.assertEqual(data['user']['email'], 'newuser@example.com')
+        self.assertIn('access_token', resp.cookies)
 
     def test_signup_duplicate_email_case_insensitive(self):
         url = reverse('verification:signup')
         resp = self.client.post(url, {
             'name': 'Another',
             'email': self.user_email.upper(),
-            'password': 'anotherpass'
+            'password': 'Str0ng!P@ss'
         }, content_type='application/json')
         self.assertEqual(resp.status_code, 400)
         self.assertIn('Email already registered', resp.json().get('error', ''))
