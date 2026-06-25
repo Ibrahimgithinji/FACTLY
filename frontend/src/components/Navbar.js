@@ -87,6 +87,7 @@ const Navbar = () => {
         <div className="navbar__topbar">
           <div className="navbar__topbar-inner">
             <span>{getTodayLabel()}</span>
+            <Link to="/agent" className="navbar__topbar-link">AI Agent</Link>
             <Link to="/verify" className="navbar__topbar-link">Verify a claim</Link>
             <Link to="/write-for-us" className="navbar__topbar-link">Submit a tip</Link>
             <Link to="/about" className="navbar__topbar-link">Community</Link>

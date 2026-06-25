@@ -39,6 +39,7 @@ const StartupsPage = lazy(() => import('./pages/StartupsPage'));
 const SearchResultsPage = lazy(() => import('./pages/SearchResultsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AgentPage = lazy(() => import('./pages/AgentPage'));
 
 const PageLoader = () => (
   <div className="loading-container" role="status" aria-live="polite">
@@ -87,6 +88,7 @@ function App() {
                     <Route path="/startups" element={<StartupsPage />} />
                     <Route path="/search" element={<SearchResultsPage />} />
                     <Route path="/dashboard" element={<AdminDashboard />} />
+                    <Route path="/agent" element={<AgentPage />} />
                     <Route
                       path="/"
                       element={

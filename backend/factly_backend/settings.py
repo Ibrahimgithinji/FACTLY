@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'verification',
     'content',
     'services.trend_collector',
+    'agent',
 ]
 
 SITE_ID = 1

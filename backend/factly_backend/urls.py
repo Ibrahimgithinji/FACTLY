@@ -36,6 +36,9 @@ urlpatterns = [
     # Trend Collector
     path('api/', include('services.trend_collector.urls')),
 
+    # AI Agent
+    path('api/', include('agent.urls')),
+
     # Social Auth (django-allauth)
     path('accounts/', include('allauth.urls')),
 
