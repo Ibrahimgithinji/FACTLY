@@ -7,7 +7,6 @@ to keep FACTLY updated with global events.
 
 import os
 from celery import Celery
-from celery.signals import setup_logging
 
 # Set the default Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'factly_backend.settings')
@@ -29,43 +28,55 @@ def debug_task(self):
 
 
 # =============================================================================
+# Explicit task imports — required because services.tasks is not in
+# INSTALLED_APPS so autodiscover_tasks() won't find them.
+# =============================================================================
+import services.tasks.refresh_tasks  # noqa: E402,F401
+import services.tasks.update_trending  # noqa: E402,F401
+
+
+# =============================================================================
 # Scheduled Tasks (Celery Beat)
+#
+# Task names must match what Celery registers:
+#   @shared_task without name=  ->  module_path.function_name
+#   @shared_task with name=     ->  the explicit name
 # =============================================================================
 
 app.conf.beat_schedule = {
     # Refresh real-time news cache every 5 minutes
     'refresh-realtime-news': {
-        'task': 'factly_backend.services.tasks.refresh_realtime_data',
+        'task': 'services.tasks.refresh_tasks.refresh_realtime_data',
         'schedule': 300.0,  # 5 minutes
         'options': {'queue': 'high_priority'}
     },
     # Refresh trending topics every 15 minutes
     'update-trending-topics': {
-        'task': 'factly_backend.services.tasks.update_trending_topics',
+        'task': 'services.tasks.refresh_tasks.update_trending_topics',
         'schedule': 900.0,  # 15 minutes
         'options': {'queue': 'ingestion'}
     },
     # Update trending stories every 10 minutes (NewsAPI + NewsData.io)
     'update-trending-stories': {
-        'task': 'factly_backend.services.tasks.update_trending.update_trending_stories',
+        'task': 'services.tasks.update_trending.update_trending_stories',
         'schedule': 600.0,  # 10 minutes
         'options': {'queue': 'ingestion'}
     },
     # Clear old cache entries every hour
     'cleanup-old-cache': {
-        'task': 'factly_backend.services.tasks.cleanup_cache',
+        'task': 'services.tasks.refresh_tasks.cleanup_cache',
         'schedule': 3600.0,  # 1 hour
         'options': {'queue': 'low_priority'}
     },
     # Update global events digest every 30 minutes
     'update-global-events': {
-        'task': 'factly_backend.services.tasks.update_global_events',
+        'task': 'services.tasks.refresh_tasks.update_global_events',
         'schedule': 1800.0,  # 30 minutes
         'options': {'queue': 'ingestion'}
     },
     # Refresh fact-check database daily
     'daily-fact-check-refresh': {
-        'task': 'factly_backend.services.tasks.refresh_fact_check_cache',
+        'task': 'services.tasks.refresh_tasks.refresh_fact_check_cache',
         'schedule': 86400.0,  # 24 hours
         'options': {'queue': 'low_priority'}
     },

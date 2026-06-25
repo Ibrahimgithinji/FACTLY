@@ -236,7 +236,7 @@ CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
 
 # Serialization
-CELERY_ACCEPT_CONTENT = ['json', 'msgpack']
+CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
@@ -291,8 +291,10 @@ CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {
 }
 
 # Task Routes (direct tasks to specific queues)
+# Beat schedule uses explicit options.queue; these routes apply as
+# fallback when tasks are called programmatically (e.g. task.delay()).
 CELERY_TASK_ROUTES = {
-    'services.tasks.refresh_tasks.*': {'queue': 'verification'},
+    'services.tasks.refresh_tasks.*': {'queue': 'high_priority'},
     'services.tasks.update_trending.*': {'queue': 'ingestion'},
 }
 

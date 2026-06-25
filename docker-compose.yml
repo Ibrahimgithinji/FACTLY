@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: factly-backend
+    command: gunicorn factly_backend.wsgi:application --bind 0.0.0.0:8000 --workers 4
     env_file:
       - backend/.env
     environment:
@@ -14,16 +15,38 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     depends_on:
-      redis:
-        condition: service_started
+      - redis
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   celery_worker:
     build:
       context: .
       dockerfile: Dockerfile
     image: factly-worker
-    command: celery -A factly_backend worker -l info
+    command: celery -A factly_backend worker -l info -Q high_priority,ingestion,low_priority,default
+    env_file:
+      - backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+      - backend
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: factly-beat
+    command: celery -A factly_backend beat -l info --pidfile /tmp/celerybeat.pid
     env_file:
       - backend/.env
     environment:
@@ -42,6 +65,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   nginx:
     image: nginx:1.27-alpine
