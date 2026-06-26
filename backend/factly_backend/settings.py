@@ -151,17 +151,22 @@ def get_sqlite_db_path():
         """
         Verify SQLite can open and acquire a write lock for the target DB file.
         """
-        if not _parent_dir_is_writable(db_path):
-            return False
-
         conn = None
         try:
-            conn = sqlite3.connect(str(db_path), timeout=5)
+            resolved_path = db_path.expanduser().resolve()
+            # Existing DB files may be writable even when the surrounding
+            # directory blocks creating separate probe files, as can happen
+            # under managed Windows/OneDrive permissions. Prefer SQLite's
+            # actual write-lock check over the auxiliary probe in that case.
+            if not resolved_path.exists() and not _parent_dir_is_writable(resolved_path):
+                return False
+
+            conn = sqlite3.connect(str(resolved_path), timeout=5)
             conn.execute("PRAGMA busy_timeout = 5000;")
             conn.execute("BEGIN IMMEDIATE;")
             conn.execute("ROLLBACK;")
             return True
-        except sqlite3.Error:
+        except (OSError, sqlite3.Error):
             return False
         finally:
             if conn is not None:

@@ -53,9 +53,21 @@ echo ✓ Backend started (new window should appear)
 echo.
 
 REM ==============================================================================
+REM STEP 3: Start Daily RSS Updater
+REM ==============================================================================
+echo [3/5] Starting daily RSS updater...
+
+start "Factly Daily RSS Updater" cmd /k ^
+    "cd /d C:\Users\DELL\OneDrive\Desktop\Factly\backend && ^
+    echo Starting daily content updater... && ^
+    venv\Scripts\python.exe manage.py rss_scheduler --interval 1440"
+
+echo ? Daily updater started (new window should appear)
+echo.
+REM ==============================================================================
 REM STEP 3: Wait for Backend to Initialize
 REM ==============================================================================
-echo [3/4] Waiting for backend to fully initialize (8 seconds)...
+echo [4/5] Waiting for backend to fully initialize (8 seconds)...
 timeout /t 8 /nobreak
 
 echo.
@@ -63,7 +75,7 @@ echo.
 REM ==============================================================================
 REM STEP 4: Start Frontend Server
 REM ==============================================================================
-echo [4/4] Starting React frontend server on port 3000...
+echo [5/5] Starting React frontend server on port 3000...
 
 start "Factly Frontend Server" cmd /k ^
     "cd /d C:\Users\DELL\OneDrive\Desktop\Factly\frontend && ^
