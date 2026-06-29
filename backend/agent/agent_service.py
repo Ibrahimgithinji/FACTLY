@@ -11,7 +11,7 @@ proactively fetches, verifies, and presents information.
 """
 
 import logging
-import hashlib
+import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
@@ -53,8 +53,8 @@ class FactlyAgent:
     @property
     def scoring_service(self):
         if self._scoring_service is None:
-            from verification.scoring_service import FactCheckScoringService
-            self._scoring_service = FactCheckScoringService()
+            from services.scoring_service import ScoringService
+            self._scoring_service = ScoringService()
         return self._scoring_service
 
     # ------------------------------------------------------------------
@@ -157,6 +157,23 @@ class FactlyAgent:
     # Internal: News Fetching
     # ------------------------------------------------------------------
 
+    def _item_to_dict(self, item) -> Dict[str, Any]:
+        """Convert a RealTimeNewsItem dataclass (or dict) to a plain dict."""
+        if hasattr(item, '__dataclass_fields__'):
+            return {
+                "title": item.title,
+                "content": item.content,
+                "url": item.url,
+                "published_date": item.published_date,
+                "source": item.source,
+                "source_name": item.source,
+                "freshness_score": item.freshness_score,
+                "relevance_score": item.relevance_score,
+                "credibility_score": item.credibility_score,
+                "metadata": item.metadata,
+            }
+        return dict(item)
+
     def _fetch_news_for_query(self, query: str) -> List[Dict[str, Any]]:
         """Search news from all available sources."""
         items = []
@@ -164,7 +181,7 @@ class FactlyAgent:
             results = self.realtime_news.get_real_time_news(
                 query, max_results=15, max_age_hours=72
             )
-            items.extend(results)
+            items.extend(self._item_to_dict(r) for r in results)
         except Exception as e:
             logger.warning(f"Agent news fetch failed: {e}")
 
@@ -181,7 +198,7 @@ class FactlyAgent:
                 results = self.realtime_news.get_real_time_news(
                     q, max_results=10, max_age_hours=max_age_hours
                 )
-                items.extend(results)
+                items.extend(self._item_to_dict(r) for r in results)
             except Exception:
                 pass
 
@@ -204,50 +221,198 @@ class FactlyAgent:
             items = []
             for name, url in rss_feeds.items():
                 try:
-                    results = self.realtime_news._fetch_single_rss(
-                        url, query=query, max_results=5
+                    items.extend(
+                        self._fetch_rss_no_filter(url, max_results=5)
                     )
-                    items.extend(results)
                 except Exception:
                     continue
             return items
         except Exception:
             return []
 
+    def _fetch_rss_no_filter(self, feed_url: str, max_results: int) -> List[Dict[str, Any]]:
+        """Fetch RSS entries without requiring an exact query match."""
+        import feedparser
+        results = []
+        try:
+            feed = feedparser.parse(feed_url)
+            for entry in feed.entries[:max_results]:
+                published_date = self._parse_rss_date(entry)
+                hours_old = (datetime.now() - published_date).total_seconds() / 3600
+                freshness_score = max(0, 1 - (hours_old / 24))
+                results.append({
+                    "title": entry.title,
+                    "content": getattr(entry, 'description', ''),
+                    "url": entry.link,
+                    "published_date": published_date,
+                    "source": feed.feed.title if hasattr(feed.feed, 'title') else 'RSS',
+                    "source_name": feed.feed.title if hasattr(feed.feed, 'title') else 'RSS',
+                    "freshness_score": freshness_score,
+                    "relevance_score": 0.7,
+                    "credibility_score": 0.8,
+                    "metadata": {"source_type": "rss_fallback"},
+                })
+        except Exception as e:
+            logger.error(f"RSS feed error: {e}")
+        return results
+
+    def _parse_rss_date(self, entry) -> datetime:
+        """Parse RSS date formats."""
+        date_str = getattr(entry, 'published_parsed', None)
+        if date_str:
+            try:
+                return datetime(*date_str[:6])
+            except Exception:
+                pass
+        return datetime.now() - timedelta(hours=2)
+
     # ------------------------------------------------------------------
     # Internal: Scoring / Fact-Checking
     # ------------------------------------------------------------------
 
-    def _score_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+    def _score_item(self, item) -> Dict[str, Any]:
         """Run the scoring engine on a news item."""
-        title = item.get("title", "") or ""
-        content = item.get("content", "") or item.get("summary", "") or ""
+        # Handle both dict items and RealTimeNewsItem dataclass objects
+        if hasattr(item, '__dataclass_fields__'):
+            title = item.title or ""
+            content = item.content or ""
+            source = item.source or ""
+            published_date = getattr(item, 'published_date', datetime.now())
+            item_url = getattr(item, 'url', '')
+            relevance_score = getattr(item, 'relevance_score', 0.5)
+        else:
+            title = item.get("title", "") or ""
+            content = item.get("content", "") or item.get("summary", "") or ""
+            source = item.get("source_name") or item.get("source", "") or ""
+            published_date = item.get("published_date", datetime.now())
+            item_url = item.get("url", '')
+            relevance_score = item.get("relevance_score", 0.5)
+
         text = f"{title}. {content}"
 
         try:
-            result = self.scoring_service.calculate_score(
-                claim_text=text,
-                publisher=item.get("source_name") or item.get("source", ""),
-                author=item.get("author", ""),
+            from services.fact_checking_service.unified_schema import (
+                VerificationResult, RelatedNews
             )
+
+            related_news = [RelatedNews(
+                title=title[:500],
+                url=item_url,
+                source=source[:200],
+                publish_date=published_date if isinstance(published_date, datetime) else datetime.now(),
+                relevance_score=relevance_score,
+                sentiment=None,
+            )]
+
+            verification_result = VerificationResult(
+                claim=title[:1000],
+                claim_reviews=[],
+                related_news=related_news,
+                source_reliability=None,
+                overall_confidence=0.5,
+                api_sources=["agent"],
+                metadata={}
+            )
+
+            result = self.scoring_service.calculate_factly_score(
+                verification_result=verification_result,
+                text_content=text
+            )
+
+            # Extract component scores
+            bias_score = 50
+            sensationalism_score = 50
+            for comp in getattr(result, 'components', []):
+                name = getattr(comp, 'name', '')
+                if 'bias' in name.lower():
+                    bias_score = int((1.0 - getattr(comp, 'score', 0.5)) * 100)
+                elif 'sensationalism' in name.lower() or 'content' in name.lower():
+                    sensationalism_score = int((1.0 - getattr(comp, 'score', 0.5)) * 100)
+
             return {
-                "credibility_score": result.get("credibility_score", 50),
-                "verdict": result.get("verdict", "unverifiable"),
-                "bias_score": result.get("bias_score", 50),
-                "sensationalism_score": result.get("sensationalism_score", 50),
-                "importance_score": result.get("overall_score", 50),
-                "confidence": result.get("confidence", "low"),
+                "credibility_score": getattr(result, 'factly_score', 50),
+                "verdict": self._score_to_verdict(getattr(result, 'factly_score', 50)),
+                "bias_score": bias_score,
+                "sensationalism_score": sensationalism_score,
+                "importance_score": getattr(result, 'factly_score', 50),
+                "confidence": getattr(result, 'confidence_level', 'low').lower(),
             }
         except Exception as e:
-            logger.warning(f"Scoring failed for item '{title[:50]}': {e}")
-            return {
-                "credibility_score": 50,
-                "verdict": "unverifiable",
-                "bias_score": 50,
-                "sensationalism_score": 50,
-                "importance_score": 50,
-                "confidence": "low",
-            }
+            logger.warning(f"Scoring service failed for '{title[:50]}': {e}")
+            return self._fallback_score(text, source)
+
+    def _score_to_verdict(self, score: int) -> str:
+        """Map a numeric score to a verdict string."""
+        if score >= 70:
+            return "true"
+        elif score >= 50:
+            return "mostly_true"
+        elif score >= 35:
+            return "unverifiable"
+        elif score >= 20:
+            return "misleading"
+        return "false"
+
+    def _fallback_score(self, text: str, source: str) -> Dict[str, Any]:
+        """Simple fallback scoring when the scoring service is unavailable."""
+        text_lower = text.lower()
+
+        # Bias indicators
+        bias_patterns = [
+            r'\b(conspiracy|hoax|fake news|propaganda)\b',
+            r'\b(deep state|illuminati|new world order)\b',
+            r'\b(crisis actor|false flag|inside job)\b',
+        ]
+        bias_count = sum(len(re.findall(p, text_lower)) for p in bias_patterns)
+
+        # Sensationalism indicators
+        sensational_words = [
+            'shocking', 'outrageous', 'unbelievable', 'scandalous',
+            'devastating', 'catastrophic', 'terrifying', 'mind-blowing',
+            'you won\'t believe', 'this changes everything',
+        ]
+        sens_count = sum(1 for w in sensational_words if w in text_lower)
+        sens_count += text.count('!') // 3
+
+        bias_score = min(100, bias_count * 25)
+        sensationalism_score = min(100, sens_count * 20)
+
+        # Base credibility on source and text quality
+        credible_sources = ['reuters', 'ap', 'bbc', 'guardian', 'nytimes',
+                           'washington post', 'npr', 'bloomberg', 'wsj']
+        source_lower = source.lower()
+        source_bonus = 20 if any(s in source_lower for s in credible_sources) else 0
+        if source_lower in ('twitter/x', 'twitter', 'facebook', 'reddit'):
+            source_bonus = -20
+
+        credibility_score = max(0, min(100, 60 + source_bonus - bias_score // 2 - sensationalism_score // 2))
+
+        if credibility_score >= 70:
+            verdict = "true"
+        elif credibility_score >= 50:
+            verdict = "mostly_true"
+        elif credibility_score >= 35:
+            verdict = "unverifiable"
+        elif credibility_score >= 20:
+            verdict = "misleading"
+        else:
+            verdict = "false"
+
+        if credibility_score >= 70 and bias_score < 30:
+            confidence = "high"
+        elif credibility_score >= 40:
+            confidence = "medium"
+        else:
+            confidence = "low"
+
+        return {
+            "credibility_score": credibility_score,
+            "verdict": verdict,
+            "bias_score": bias_score,
+            "sensationalism_score": sensationalism_score,
+            "importance_score": credibility_score,
+            "confidence": confidence,
+        }
 
     def _extract_fact_checks(
         self, scored_items: List[Dict[str, Any]]

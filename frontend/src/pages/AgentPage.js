@@ -109,7 +109,7 @@ function AgentPage() {
                       <strong>Fact Check Summary</strong>
                       {msg.fact_checks.map((fc, j) => (
                         <div key={j} className="fact-check-item">
-                          <span className="fact-check-label" style={{ background: fc.verdict === "true" || fc.verdict === "mostly_true" ? "#22c55e20" : "#ef444420", color: fc.verdict === "true" || fc.verdict === "mostly_true" ? "#22c55e" : "#ef44444" }}>
+                          <span className="fact-check-label" style={{ background: fc.verdict === "true" || fc.verdict === "mostly_true" ? "#22c55e20" : "#ef444420", color: fc.verdict === "true" || fc.verdict === "mostly_true" ? "#22c55e" : "#ef4444" }}>
                             {fc.label}
                           </span>
                           <span className="fact-check-claim">{fc.claim}</span>
