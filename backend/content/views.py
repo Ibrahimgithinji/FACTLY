@@ -1,4 +1,5 @@
 import logging
+import bleach
 from django.http import Http404
 from django.db import DatabaseError
 from django.db.models import Count
@@ -248,7 +249,7 @@ def newsletter_subscribe(request):
     logger = logging.getLogger(__name__)
 
     email = request.data.get('email', '').strip()
-    name = request.data.get('name', '').strip()
+    name = bleach.clean(request.data.get('name', '').strip(), tags=[], strip=True)
     if not email:
         return Response({'error': 'Email is required'}, status=400)
     sub, created = NewsletterSubscriber.objects.get_or_create(
@@ -287,13 +288,23 @@ def guest_submit(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=400)
 
+    ALLOWED_TAGS = ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'blockquote', 'pre', 'code']
+
     article = Article(
-        title=serializer.validated_data['title'],
-        content=serializer.validated_data['content'],
-        excerpt=serializer.validated_data.get('excerpt', '')[:300],
+        title=bleach.clean(serializer.validated_data['title'], tags=[], strip=True),
+        content=bleach.clean(
+            serializer.validated_data['content'],
+            tags=ALLOWED_TAGS,
+            attributes={'a': ['href', 'title', 'rel']},
+            strip=True,
+        ),
+        excerpt=bleach.clean(
+            serializer.validated_data.get('excerpt', '')[:300],
+            tags=[], strip=True,
+        ),
         status='draft',
         is_imported=True,
-        source_name=f'Guest: {serializer.validated_data["author_name"]}',
+        source_name=f'Guest: {bleach.clean(serializer.validated_data["author_name"], tags=[], strip=True)}',
     )
     cat_slug = serializer.validated_data.get('category_slug', '')
     if cat_slug:

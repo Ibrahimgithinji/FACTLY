@@ -1,11 +1,13 @@
 import logging
 import json
+import bleach
 from django.conf import settings
 from django.core.management import call_command
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from verification.rbac import IsAdminOnly
 from .models import PushSubscription, Article
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,7 @@ class PushSubscribeView(APIView):
                 'user': user,
                 'p256dh_key': p256dh_key,
                 'auth_key': auth_key,
-                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:200],
+                'user_agent': bleach.clean(request.META.get('HTTP_USER_AGENT', ''), tags=[], strip=True)[:200],
             }
         )
 
@@ -59,11 +61,9 @@ class PushUnsubscribeView(APIView):
 
 
 class PushNotifyAllView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOnly]
 
     def post(self, request):
-        if not request.user.is_staff:
-            return Response({'error': 'Staff only'}, status=403)
 
         title = request.data.get('title', 'Factly')
         body = request.data.get('body', '')

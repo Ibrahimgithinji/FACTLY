@@ -1,5 +1,6 @@
 import logging
 import re
+import bleach
 import feedparser
 from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
@@ -37,17 +38,28 @@ def extract_first_image(html):
     return ''
 
 
+ALLOWED_RSS_TAGS = [
+    'p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li',
+    'a', 'blockquote', 'pre', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'img', 'figure', 'figcaption', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'hr', 'sub', 'sup', 'span', 'div',
+]
+ALLOWED_RSS_ATTRIBUTES = {
+    'a': ['href', 'title', 'rel'],
+    'img': ['src', 'alt', 'title', 'width', 'height'],
+    '*': ['class'],
+}
+ALLOWED_RSS_STYLES = []
+
+
 def clean_html(html):
-    html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
-    html = re.sub(r'<iframe[^>]*>.*?</iframe>', '', html, flags=re.DOTALL | re.IGNORECASE)
-    html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
-    html = re.sub(r'<svg[^>]*>.*?</svg>', '', html, flags=re.DOTALL | re.IGNORECASE)
-    html = re.sub(r' on\w+="[^"]*"', '', html, flags=re.IGNORECASE)
-    html = re.sub(r' class="[^"]*"', '', html)
-    html = re.sub(r' style="[^"]*"', '', html)
-    html = re.sub(r'<a[^>]*>', '<p>', html)
-    html = re.sub(r'</a>', '</p>', html)
-    return html.strip()
+    return bleach.clean(
+        html,
+        tags=ALLOWED_RSS_TAGS,
+        attributes=ALLOWED_RSS_ATTRIBUTES,
+        styles=ALLOWED_RSS_STYLES,
+        strip=True,
+    ).strip()
 
 
 def strip_html(text):

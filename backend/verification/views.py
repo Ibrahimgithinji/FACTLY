@@ -16,6 +16,7 @@ from rest_framework.permissions import AllowAny
 
 from .serializers import VerificationRequestSerializer, VerificationResponseSerializer, QuickCheckSerializer
 from .services import ClaimService, EnhancedVerificationService
+from .rbac import IsAdminOnly, CanManageTrends, CanViewAnalytics
 from services.fact_checking_service.api_rate_limiter import APIRateLimiter
 
 # Try to get Trend model from trend_collector app
@@ -596,9 +597,9 @@ class RefreshDataView(APIView):
     API view for triggering manual data refresh.
 
     Allows manual triggering of background data refresh tasks.
-    NOTE: This endpoint is rate-limited to prevent abuse/DoS attacks.
+    Restricted to staff administrators only.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOnly]
     rate_limiter = APIRateLimiter()
 
     # Rate limiting config for refresh endpoint (stricter than verification)
@@ -848,10 +849,11 @@ class TrendsAPIView(APIView):
 class TrendsCollectAPIView(APIView):
     """
     API view for triggering trend collection/refresh.
-    
+
     Allows manual triggering of trend collection tasks.
+    Restricted to staff and TrendManager group members.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [CanManageTrends]
     
     def post(self, request):
         """
@@ -888,10 +890,11 @@ class TrendsCollectAPIView(APIView):
 class AnalyticsAPIView(APIView):
     """
     API view for fetching analytics data.
-    
+
     Provides statistics and metrics about fact-checking activities.
+    Restricted to authenticated staff, analysts, and fact-checkers.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [CanViewAnalytics]
     
     def get(self, request):
         """
@@ -985,7 +988,7 @@ class AnalyticsAPIView(APIView):
 
 
 class TrendingClaimsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [CanViewAnalytics]
 
     def get(self, request):
         try:

@@ -1,5 +1,6 @@
 import logging
 import json
+import bleach
 import time
 from datetime import datetime
 
@@ -26,10 +27,12 @@ class ClaimService:
         self.enhanced_orchestrator = EnhancedVerificationOrchestrator()
 
     def verify_claim(self, text, url, language):
+        text = bleach.clean(text or '', tags=[], strip=True)
+        url = bleach.clean(url or '', tags=[], strip=True)
         extracted_content = None
         if url:
             extracted_content = self._extract_content(url)
-            text = extracted_content.content or text
+            text = bleach.clean(extracted_content.content or text, tags=[], strip=True)
 
         if not text:
             raise ValueError("No text content available for verification")
@@ -162,7 +165,7 @@ class ClaimService:
             from .models import VerificationLog
             VerificationLog.objects.create(
                 user=user if user.is_authenticated else None,
-                claim=text[:500],
+                claim=bleach.clean(text[:500], tags=[], strip=True),
                 overall_confidence=verification_result.overall_confidence,
                 factly_score=factly_score.factly_score,
                 classification=factly_score.classification,
@@ -177,13 +180,15 @@ class EnhancedVerificationService:
         self.orchestrator = EnhancedVerificationOrchestrator()
 
     def verify(self, text, url, language):
+        text = bleach.clean(text or '', tags=[], strip=True)
+        url = bleach.clean(url or '', tags=[], strip=True)
         from services.nlp_service import URLExtractionService
 
         if url:
             extractor = URLExtractionService()
             try:
                 extracted = extractor.extract_content(url)
-                text = extracted.content or text
+                text = bleach.clean(extracted.content or text, tags=[], strip=True)
                 logger.info(f"Extracted content from URL: {len(text)} characters")
             except Exception as e:
                 logger.exception("URL extraction failed")

@@ -1,4 +1,5 @@
 import logging
+import bleach
 from datetime import timedelta
 from django.db.models import Count
 from django.utils import timezone
@@ -15,7 +16,7 @@ class LogPageView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        path = request.data.get('path', '')
+        path = bleach.clean(request.data.get('path', ''), tags=[], strip=True)
         article_id = request.data.get('article_id')
 
         if not path:
@@ -25,7 +26,9 @@ class LogPageView(APIView):
             article_id=article_id if article_id else None,
             path=path[:500],
             ip_address=request.META.get('REMOTE_ADDR'),
-            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            user_agent=bleach.clean(
+                request.META.get('HTTP_USER_AGENT', ''), tags=[], strip=True
+            )[:500],
         )
         return Response({'message': 'logged'})
 

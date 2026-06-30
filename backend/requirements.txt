@@ -23,6 +23,9 @@ lxml>=4.9.0
 feedparser>=6.0.0
 duckduckgo_search>=8.0.0
 
+# --- Security ---
+bleach>=6.0.0
+
 # --- NLP & ML ---
 nltk>=3.7
 transformers>=4.21.0
