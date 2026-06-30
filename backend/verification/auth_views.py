@@ -378,10 +378,15 @@ class ForgotPasswordView(APIView):
     """Send password reset email to user."""
     permission_classes = [AllowAny]
     throttle_classes = [PasswordResetRateThrottle]
-    
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .auth_service import AuthService
+        self.auth_service = AuthService()
+
     def post(self, request):
         email = (request.data.get('email') or '').strip().lower()
-        
+
         if not email:
             return Response(
                 {'error': 'Email is required'},
@@ -396,118 +401,23 @@ class ForgotPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if not _has_real_smtp_credentials():
-            logger.error(
-                "Password reset email service is not configured with real SMTP credentials."
-            )
-            return Response(
-                {
-                    'error': (
-                        'Email service is not configured. '
-                        'Set valid EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in backend/.env.'
-                    )
-                },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
-        
-        # Fetch at most two rows so we can detect duplicates without an extra count query.
-        matching_users = list(
-            User.objects.filter(email__iexact=email).order_by('-date_joined')[:2]
-        )
-
-        if not matching_users:
-            # For security, don't reveal if email exists
-            logger.warning(f"Password reset attempt for non-existent email: {email}")
-            return Response(
-                {'message': 'If an account exists with this email, a password reset link has been sent.'},
-                status=status.HTTP_200_OK
-            )
-
-        user = matching_users[0]
-        if len(matching_users) > 1:
-            logger.warning(
-                "Multiple user accounts found for password reset email %s; using most recently created account id=%s.",
-                email,
-                user.id
-            )
-        
         try:
-            # Delete existing reset token if any
-            PasswordResetToken.objects.filter(user=user).delete()
-            
-            # Generate new reset token
-            token = str(uuid.uuid4())
-            timeout_hours = getattr(settings, 'PASSWORD_RESET_TIMEOUT_HOURS', 24)
-            expires_at = timezone.now() + timezone.timedelta(hours=timeout_hours)
-            
-            reset_token = PasswordResetToken.objects.create(
-                user=user,
-                token=token,
-                expires_at=expires_at,
-            )
-            
-            # Send email with reset link
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
-            reset_link = f"{frontend_url}/reset-password/{token}"
-            
-            subject = 'Password Reset Request - FACTLY'
-            message = f"""
-Hello {user.first_name or user.username},
-
-You have requested to reset your password. Click the link below to set a new password:
-
-{reset_link}
-
-This link will expire in {timeout_hours} hours.
-
-If you did not request this, please ignore this email.
-
-Best regards,
-FACTLY Team
-            """
-            
-            try:
-                sent_count = send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
-                )
-                if sent_count != 1:
-                    logger.error(
-                        "Password reset email was not delivered for %s. send_mail returned %s.",
-                        user.email,
-                        sent_count
-                    )
-                    return Response(
-                        {'error': 'Unable to send reset email right now. Please try again later.'},
-                        status=status.HTTP_503_SERVICE_UNAVAILABLE
-                    )
-                logger.info(f"Password reset email sent successfully to: {email}")
-                # In development mode, log the reset link so developers can test
-                # without configuring real SMTP credentials.
-                if settings.DEBUG:
-                    logger.info("=" * 60)
-                    logger.info("RESET LINK (development mode): %s", reset_link)
-                    logger.info("=" * 60)
-            except Exception as email_error:
-                logger.error(f"Error sending password reset email: {email_error}", exc_info=True)
-                return Response(
-                    {'error': 'Unable to send reset email right now. Please try again later.'},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE
-                )
-            
-            return Response(
-                {'message': 'If an account exists with this email, a password reset link has been sent.'},
-                status=status.HTTP_200_OK
-            )
+            self.auth_service.send_password_reset_email(email)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except RuntimeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             logger.error(f"Error processing password reset request: {e}")
             return Response(
                 {'error': 'Unable to process password reset request. Please try again later.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+        return Response(
+            {'message': 'If an account exists with this email, a password reset link has been sent.'},
+            status=status.HTTP_200_OK
+        )
 
 
 class VerifyResetTokenView(APIView):
