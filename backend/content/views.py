@@ -53,7 +53,9 @@ class ArticleListView(generics.ListAPIView):
     ordering = ['-published_at']
 
     def get_queryset(self):
-        queryset = Article.objects.filter(
+        queryset = Article.objects.select_related(
+            'category', 'author'
+        ).prefetch_related('tags').filter(
             status='published', published_at__lte=timezone.now()
         )
         category = self.request.query_params.get('category', None)
@@ -114,7 +116,9 @@ class ArticleListView(generics.ListAPIView):
 
 
 class ArticleDetailView(generics.RetrieveAPIView):
-    queryset = Article.objects.filter(status='published')
+    queryset = Article.objects.select_related(
+        'category', 'author'
+    ).prefetch_related('tags').filter(status='published')
     serializer_class = ArticleDetailSerializer
     permission_classes = [AllowAny]
     lookup_field = 'slug'
@@ -140,8 +144,12 @@ class RelatedArticlesView(generics.ListAPIView):
     def get_queryset(self):
         slug = self.kwargs.get('slug')
         try:
-            article = Article.objects.get(slug=slug, status='published')
-            return Article.objects.filter(
+            article = Article.objects.select_related('category').get(
+                slug=slug, status='published'
+            )
+            return Article.objects.select_related(
+                'category', 'author'
+            ).prefetch_related('tags').filter(
                 status='published', category=article.category
             ).exclude(id=article.id)[:4]
         except Article.DoesNotExist:
@@ -166,9 +174,16 @@ class RelatedArticlesView(generics.ListAPIView):
         return Response(related)
 
 
+class CommentPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class CommentListView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
+    pagination_class = CommentPagination
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -196,28 +211,32 @@ class CommentListView(generics.ListCreateAPIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def homepage_data(request):
+    from django.db.models import Prefetch
+
+    base_qs = Article.objects.select_related(
+        'category', 'author'
+    ).prefetch_related('tags').filter(
+        status='published', published_at__lte=timezone.now()
+    )
+
     try:
-        featured = Article.objects.filter(
-            status='published', is_featured=True,
-            published_at__lte=timezone.now()
-        )[:5]
-        trending = Article.objects.filter(
-            status='published', is_trending=True,
-            published_at__lte=timezone.now()
-        )[:8]
-        latest = Article.objects.filter(
-            status='published', published_at__lte=timezone.now()
-        )[:10]
-        categories = Category.objects.annotate(
+        featured = list(base_qs.filter(is_featured=True)[:5])
+        trending = list(base_qs.filter(is_trending=True)[:8])
+        latest = list(base_qs[:10])
+        categories = list(Category.objects.annotate(
             article_count=Count('articles')
-        ).filter(article_count__gt=0).order_by('order', 'name')
+        ).filter(article_count__gt=0).order_by('order', 'name'))
 
         sections = {}
         for cat in categories:
-            cat_articles = Article.objects.filter(
-                status='published', category=cat,
-                published_at__lte=timezone.now()
-            )[:5]
+            cat_articles = [
+                a for a in latest + featured + trending
+                if a.category_id == cat.id
+            ][:5]
+            if not cat_articles:
+                cat_articles = list(
+                    base_qs.filter(category=cat)[:5]
+                )
             if cat_articles:
                 sections[cat.slug] = {
                     'category': CategorySerializer(cat).data,
@@ -358,15 +377,19 @@ def author_detail(request, author_id):
     except AuthorProfile.DoesNotExist:
         return Response({'error': 'Author not found'}, status=404)
 
-    articles = Article.objects.filter(
+    articles = Article.objects.select_related(
+        'category', 'author'
+    ).prefetch_related('tags').filter(
         author=author, status='published',
         published_at__lte=timezone.now()
     ).order_by('-published_at')
 
+    article_count = articles.count()
+
     return Response({
         'author': AuthorProfileSerializer(author).data,
         'articles': ArticleListSerializer(articles, many=True).data,
-        'article_count': articles.count(),
+        'article_count': article_count,
     })
 
 
@@ -396,7 +419,9 @@ def search_articles(request):
             excerpt__icontains=query
         )
 
-        articles = articles.distinct()
+        articles = articles.select_related(
+            'category', 'author'
+        ).prefetch_related('tags').distinct()
 
         if category:
             articles = articles.filter(category__slug=category)
@@ -405,12 +430,19 @@ def search_articles(request):
         if date_to:
             articles = articles.filter(published_at__lte=date_to)
 
-        articles = articles.order_by('-published_at')[:20]
-        results = ArticleListSerializer(articles, many=True).data
+        articles = articles.order_by('-published_at')
+
+        limit = min(int(request.query_params.get('limit', 20)), 100)
+        offset = max(int(request.query_params.get('offset', 0)), 0)
+        total = articles.count()
+        page = articles[offset:offset + limit]
+        results = ArticleListSerializer(page, many=True).data
         if results:
             return Response({
                 'query': query,
-                'count': articles.count(),
+                'count': total,
+                'limit': limit,
+                'offset': offset,
                 'results': results,
                 'data_source': 'database',
             })
@@ -444,7 +476,7 @@ def search_suggestions(request):
         return Response({'suggestions': []})
 
     try:
-        articles = Article.objects.filter(
+        articles = Article.objects.select_related('category').filter(
             status='published', published_at__lte=timezone.now(),
             title__icontains=query,
         ).order_by('-published_at')[:6]

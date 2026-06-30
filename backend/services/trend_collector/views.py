@@ -289,7 +289,9 @@ class TrendDetailAPIView(APIView):
     def get(self, request, trend_id):
         """Get trend details."""
         try:
-            trend = Trend.objects.get(id=trend_id, is_active=True)
+            trend = Trend.objects.prefetch_related(
+                'claims', 'predictions'
+            ).get(id=trend_id, is_active=True)
             
             # Get associated claims
             claims = trend.claims.all()
@@ -428,13 +430,20 @@ class MisinformationRiskAPIView(APIView):
                 )
         
         # Get highest risk trends
-        high_risk = Trend.objects.filter(
+        queryset = Trend.objects.filter(
             is_active=True,
             misinformation_risk_score__gte=50
-        ).order_by('-misinformation_risk_score')[:limit]
-        
+        ).order_by('-misinformation_risk_score')
+
+        total = queryset.count()
+        offset = max(int(request.query_params.get('offset', 0)), 0)
+        limit = min(limit, 100)
+        high_risk = queryset[offset:offset + limit]
+
         return Response({
-            'count': high_risk.count(),
+            'count': total,
+            'limit': limit,
+            'offset': offset,
             'results': [
                 {
                     'trend_id': t.id,
@@ -486,13 +495,20 @@ class PredictionAPIView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
-        # Get top predictions
-        top_predictions = TrendPrediction.objects.order_by(
+        # Get top predictions with pagination
+        queryset = TrendPrediction.objects.select_related('trend').order_by(
             '-confidence_score', '-predicted_engagement_48h'
-        )[:20]
-        
+        )
+
+        total = queryset.count()
+        limit = min(int(request.query_params.get('limit', 20)), 100)
+        offset = max(int(request.query_params.get('offset', 0)), 0)
+        top_predictions = queryset[offset:offset + limit]
+
         return Response({
-            'count': top_predictions.count(),
+            'count': total,
+            'limit': limit,
+            'offset': offset,
             'results': [
                 {
                     'trend_id': p.trend_id,
@@ -552,15 +568,22 @@ class AlertsAPIView(APIView):
         
         priority = request.query_params.get('priority')
         
-        queryset = MisinformationAlert.objects.filter(status='active')
+        queryset = MisinformationAlert.objects.select_related('trend').filter(
+            status='active'
+        )
         
         if priority:
             queryset = queryset.filter(priority=priority)
         
-        alerts = queryset[:50]
+        total = queryset.count()
+        limit = min(int(request.query_params.get('limit', 50)), 100)
+        offset = max(int(request.query_params.get('offset', 0)), 0)
+        alerts = queryset[offset:offset + limit]
         
         return Response({
-            'count': alerts.count(),
+            'count': total,
+            'limit': limit,
+            'offset': offset,
             'results': [
                 {
                     'id': a.id,
