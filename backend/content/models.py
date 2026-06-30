@@ -62,12 +62,23 @@ class AuthorProfile(models.Model):
         return self.display_name
 
 
-class Article(models.Model):
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('published', 'Published'),
-    ]
+class ArticleStatus(models.TextChoices):
+    DRAFT = 'draft', 'Draft'
+    PUBLISHED = 'published', 'Published'
 
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+    def all_with_deleted(self):
+        return super().get_queryset()
+
+    def deleted_only(self):
+        return super().get_queryset().filter(deleted_at__isnull=False)
+
+
+class Article(models.Model):
     title = models.CharField(max_length=300)
     slug = models.SlugField(max_length=350, unique=True, blank=True)
     excerpt = models.TextField(blank=True)
@@ -82,7 +93,11 @@ class Article(models.Model):
         AuthorProfile, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='articles'
     )
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(
+        max_length=10,
+        choices=ArticleStatus.choices,
+        default=ArticleStatus.DRAFT,
+    )
     source_url = models.URLField(blank=True, null=True, default=None, help_text='Original URL if imported from RSS')
     source_name = models.CharField(max_length=200, blank=True, help_text='Source attribution name')
     is_imported = models.BooleanField(default=False, help_text='Auto-imported from RSS feed')
@@ -92,6 +107,9 @@ class Article(models.Model):
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    objects = SoftDeleteManager()
 
     class Meta:
         ordering = ['-published_at', '-created_at']
@@ -102,9 +120,17 @@ class Article(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
-        if self.status == 'published' and not self.published_at:
+        if self.status == ArticleStatus.PUBLISHED and not self.published_at:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
+
+    def soft_delete(self):
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['deleted_at'])
+
+    def restore(self):
+        self.deleted_at = None
+        self.save(update_fields=['deleted_at'])
 
 
 class PageView(models.Model):
