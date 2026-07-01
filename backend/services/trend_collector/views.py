@@ -12,6 +12,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
+import bleach
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
+
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,9 +23,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
 
+from verification.rbac import CanVerifyClaim, IsStaffOrFactChecker
+
 from .models import (
-    Trend, Claim, TrendPrediction, 
-    TrendSource, MisinformationAlert
+    Trend, Claim, TrendPrediction,
+    TrendSource, MisinformationAlert,
+    ClaimCategory, Verdict,
 )
 from .trend_aggregator import TrendAggregatorService, collect_trends_task
 from .analysis_engine import (
@@ -395,6 +402,108 @@ class ClaimListAPIView(APIView):
                 for c in claims
             ]
         })
+
+
+def validate_source_url(value):
+    """Validate that source_url is a proper, safe URL."""
+    if not value or not value.strip():
+        raise ValidationError("source_url is required.")
+    validator = URLValidator()
+    cleaned = bleach.clean(value.strip(), tags=[], strip=True)
+    if cleaned.lower().startswith('javascript:'):
+        raise ValidationError("source_url must not contain JavaScript code.")
+    try:
+        validator(cleaned)
+    except ValidationError:
+        raise ValidationError("source_url must be a valid URL.")
+    return cleaned
+
+
+class ClaimSubmitView(APIView):
+    """
+    POST /api/claims/submit/
+
+    Submit a new claim for fact-checking.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        claim_text = bleach.clean(
+            request.data.get('claim_text', ''), tags=[], strip=True
+        )
+        source_url = request.data.get('source_url', '')
+
+        if not claim_text:
+            return Response(
+                {'error': 'claim_text is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            source_url = validate_source_url(source_url)
+        except ValidationError as e:
+            return Response(
+                {'error': str(e) if e.message else 'Invalid source_url.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        claim = Claim.objects.create(
+            claim_text=claim_text,
+            source_url=source_url,
+            category=request.data.get('category', ClaimCategory.UNVERIFIED),
+            verdict=Verdict.UNVERIFIED,
+        )
+
+        return Response(
+            {
+                'id': claim.id,
+                'claim_text': claim.claim_text,
+                'source_url': claim.source_url,
+                'category': claim.category,
+                'verdict': claim.verdict,
+                'created_at': claim.created_at.isoformat() if claim.created_at else None,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ClaimVerdictView(APIView):
+    """
+    PATCH /api/claims/<id>/verdict/
+
+    Update a claim's verdict. Restricted to Admins and Fact-Checkers only.
+    """
+    permission_classes = [IsAuthenticated, IsStaffOrFactChecker]
+
+    def patch(self, request, claim_id):
+        try:
+            claim = Claim.objects.get(id=claim_id)
+        except Claim.DoesNotExist:
+            return Response(
+                {'error': 'Claim not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        verdict = request.data.get('verdict', '').strip().lower()
+        valid_verdicts = {v.value for v in Verdict}
+        if verdict not in valid_verdicts:
+            return Response(
+                {
+                    'error': f'Invalid verdict. Must be one of: {", ".join(sorted(valid_verdicts))}'
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        claim.verdict = verdict
+        claim.save(update_fields=['verdict'])
+
+        return Response(
+            {
+                'id': claim.id,
+                'claim_text': claim.claim_text,
+                'verdict': claim.verdict,
+            }
+        )
 
 
 class MisinformationRiskAPIView(APIView):

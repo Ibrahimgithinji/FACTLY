@@ -55,6 +55,14 @@ class ClaimCategory(models.TextChoices):
     FACTUAL = 'factual', 'Factual'
 
 
+class Verdict(models.TextChoices):
+    TRUE = 'true', 'True'
+    FALSE = 'false', 'False'
+    MISLEADING = 'misleading', 'Misleading'
+    UNVERIFIED = 'unverified', 'Unverified'
+    NOT_VERIFIABLE = 'not_verifiable', 'Not Verifiable'
+
+
 class Sentiment(models.TextChoices):
     POSITIVE = 'positive', 'Positive'
     NEGATIVE = 'negative', 'Negative'
@@ -192,10 +200,16 @@ class Claim(models.Model):
     """Extracted factual claims from trends."""
 
     claim_text = models.TextField()
+    source_url = models.URLField(max_length=2000, blank=True, default='')
+    verdict = models.CharField(
+        max_length=20, choices=Verdict.choices, default=Verdict.UNVERIFIED,
+    )
     category = models.CharField(
         max_length=30, choices=ClaimCategory.choices, default=ClaimCategory.UNVERIFIED,
     )
-    extracted_from = models.ForeignKey(Trend, on_delete=models.CASCADE, related_name='claims')
+    extracted_from = models.ForeignKey(
+        Trend, on_delete=models.CASCADE, related_name='claims', null=True, blank=True,
+    )
 
     sentiment = models.CharField(
         max_length=20, choices=Sentiment.choices, blank=True,

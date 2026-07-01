@@ -24,6 +24,8 @@ urlpatterns = [
     
     # Claims
     path('claims/', views.ClaimListAPIView.as_view(), name='claim_list'),
+    path('claims/submit/', views.ClaimSubmitView.as_view(), name='claim_submit'),
+    path('claims/<int:claim_id>/verdict/', views.ClaimVerdictView.as_view(), name='claim_verdict'),
     
     # Risk assessment
     path('misinformation-risk/', views.MisinformationRiskAPIView.as_view(), name='misinformation_risk'),
