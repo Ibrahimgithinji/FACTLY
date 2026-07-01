@@ -1,22 +1,33 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useResults } from '../context/ResultsContext';
 import { API_ENDPOINTS } from '../utils/api';
 import { apiPost } from '../utils/apiClient';
+import { FactlyScoreBadge, FactlyScoreBar } from './FactlyScoreBadge';
+import SourceBiasIndicator from './SourceBiasIndicator';
 import './VerificationForm.css';
+
+const STEPS = [
+  { id: 'input', label: 'Submit Claim', icon: '1' },
+  { id: 'analyzing', label: 'Analyzing', icon: '2' },
+  { id: 'sources', label: 'Cross-Checking', icon: '3' },
+  { id: 'scoring', label: 'Scoring', icon: '4' },
+  { id: 'done', label: 'Results', icon: '5' },
+];
+
+const MAX_CHARS = 5000;
 
 const VerificationForm = ({ initialValue = '' }) => {
   const [input, setInput] = useState(initialValue);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [charCount, setCharCount] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
   const { updateResults } = useResults();
-  
-  // Ref for abort controller
   const abortControllerRef = useRef(null);
-
-  const MAX_CHARS = 5000;
 
   useEffect(() => {
     setInput(initialValue);
@@ -34,78 +45,59 @@ const VerificationForm = ({ initialValue = '' }) => {
   }, [error]);
 
   const validateInput = useCallback((value) => {
-    if (!value.trim()) {
-      return 'Please enter some text to verify';
-    }
-    if (value.trim().length < 3) {
-      return 'Please enter at least 3 characters for accurate verification';
-    }
+    if (!value.trim()) return 'Please enter some text to verify';
+    if (value.trim().length < 3) return 'Please enter at least 3 characters for accurate verification';
     return null;
   }, []);
 
   const isValidUrl = useCallback((string) => {
-    try {
-      new URL(string);
-      return true;
-    } catch {
-      return false;
-    }
+    try { new URL(string); return true; } catch { return false; }
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     const validationError = validateInput(input);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    if (validationError) { setError(validationError); return; }
 
-    // Cancel any previous in-flight request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller
+    if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
-    
+
     setIsLoading(true);
     setError(null);
+    setCurrentStep(1);
+    setProgress(10);
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) { clearInterval(progressInterval); return 90; }
+        return prev + Math.random() * 8 + 2;
+      });
+      setCurrentStep((prev) => {
+        if (prev < 4) return prev + 1;
+        return prev;
+      });
+    }, 800);
 
     try {
-      // Detect if input is a URL
       const isUrl = isValidUrl(input.trim());
-      
-      const requestBody = isUrl
-        ? { url: input.trim() }
-        : { text: input.trim() };
+      const requestBody = isUrl ? { url: input.trim() } : { text: input.trim() };
 
-      console.log('Sending request to API:', isUrl ? 'URL mode' : 'Text mode');
-
-      // Use the apiClient which handles authentication automatically
-      // Pass abort signal to cancel on new submissions
       const result = await apiPost(API_ENDPOINTS.VERIFY, requestBody, {
         signal: abortControllerRef.current.signal
       });
-      
+
       if (!result.success) {
-        if (result.authError) {
-          setError('Session expired. Please log in again.');
-          return;
-        }
+        if (result.authError) { setError('Session expired. Please log in again.'); return; }
         throw new Error(result.error || 'Verification failed');
       }
 
+      clearInterval(progressInterval);
+      setProgress(100);
+      setCurrentStep(4);
+
       const data = result.data;
-      console.log('API Response received:', {
-        factlyScore: data.factly_score?.factly_score || data.factly_score?.score,
-        classification: data.factly_score?.classification
-      });
-      
-      // Update results in context (this also saves to sessionStorage)
       updateResults(data, input.trim());
-      
-      // Save to history (localStorage is for persistent history)
+
       const historyItem = {
         id: `history_${Date.now()}`,
         claim: input.trim(),
@@ -117,17 +109,17 @@ const VerificationForm = ({ initialValue = '' }) => {
         justifications: data.factly_score?.justifications || [],
         timestamp: new Date().toISOString()
       };
-      
-      // Add to existing history
+
       const existingHistory = JSON.parse(localStorage.getItem('factCheckHistory') || '[]');
       existingHistory.unshift(historyItem);
-      // Keep only last 50 items
-      const trimmedHistory = existingHistory.slice(0, 50);
-      localStorage.setItem('factCheckHistory', JSON.stringify(trimmedHistory));
-      
-      navigate('/results');
+      localStorage.setItem('factCheckHistory', JSON.stringify(existingHistory.slice(0, 50)));
+
+      setTimeout(() => navigate('/results'), 600);
     } catch (err) {
+      clearInterval(progressInterval);
       setError(err.message || 'Verification failed. Please try again.');
+      setCurrentStep(0);
+      setProgress(0);
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +135,38 @@ const VerificationForm = ({ initialValue = '' }) => {
     <div className="verification-form-container">
       <h2>Verify News Credibility</h2>
       <p>Enter a news headline, article URL, or paste text to check its credibility</p>
-      
+
+      <div className="vf-steps">
+        {STEPS.map((step, i) => (
+          <div
+            key={step.id}
+            className={`vf-step ${i <= currentStep ? 'active' : ''} ${i === currentStep && isLoading ? 'current' : ''} ${i < currentStep ? 'done' : ''}`}
+          >
+            <div className="vf-step__icon">
+              {i < currentStep ? (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              ) : (
+                step.icon
+              )}
+            </div>
+            <span className="vf-step__label">{step.label}</span>
+            {i < STEPS.length - 1 && <div className={`vf-step__connector ${i < currentStep ? 'done' : ''}`} />}
+          </div>
+        ))}
+      </div>
+
+      {isLoading && (
+        <div className="vf-progress">
+          <motion.div
+            className="vf-progress__bar"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.3 }}
+          />
+          <span className="vf-progress__text">{Math.round(progress)}%</span>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="verification-form" noValidate>
         <div className="input-wrapper">
           <textarea
@@ -153,68 +176,45 @@ const VerificationForm = ({ initialValue = '' }) => {
             rows={6}
             disabled={isLoading}
             aria-label="Enter news content to verify"
-            aria-describedby="input-help char-counter"
-            aria-invalid={error ? 'true' : 'false'}
-            aria-errormessage={error ? 'input-error' : undefined}
             maxLength={MAX_CHARS}
           />
-          <p id="input-help" className="sr-only">
-            Enter a news headline, article URL, or article text to verify its credibility.
-            Maximum {MAX_CHARS} characters.
-          </p>
-          <div 
-            id="char-counter" 
-            className={`char-counter ${getCharCountClass()}`}
-            aria-live="polite"
-            aria-atomic="true"
-          >
+          <div className={`char-counter ${getCharCountClass()}`}>
             {charCount}/{MAX_CHARS} characters
           </div>
         </div>
-        
+
         {error && (
-          <div 
-            id="input-error" 
-            className="error-message" 
-            role="alert"
-            aria-live="assertive"
-          >
+          <div className="error-message" role="alert">
             {error}
           </div>
         )}
-        
-        <button 
-          type="submit" 
-          disabled={isLoading || !input.trim()}
-          aria-busy={isLoading}
-          className="submit-button"
-        >
+
+        <button type="submit" disabled={isLoading || !input.trim()} className="submit-button">
           {isLoading ? (
             <>
-              <span className="spinner" aria-hidden="true"></span>
+              <span className="spinner" />
               <span>Verifying...</span>
             </>
           ) : (
             <>
-              <span aria-hidden="true">🔍</span>
               <span>Verify Now</span>
             </>
           )}
         </button>
       </form>
 
-      <div className="features" role="list" aria-label="Key features">
-        <div className="feature" role="listitem">
-          <span className="feature-icon" aria-hidden="true">🔍</span>
-          <span>Fact-check against multiple sources</span>
+      <div className="features">
+        <div className="feature">
+          <span className="feature-icon">1</span>
+          <span>Multi-source fact-checking</span>
         </div>
-        <div className="feature" role="listitem">
-          <span className="feature-icon" aria-hidden="true">📊</span>
-          <span>Get a credibility score</span>
+        <div className="feature">
+          <span className="feature-icon">2</span>
+          <span>Credibility score with evidence</span>
         </div>
-        <div className="feature" role="listitem">
-          <span className="feature-icon" aria-hidden="true">📚</span>
-          <span>View supporting evidence</span>
+        <div className="feature">
+          <span className="feature-icon">3</span>
+          <span>Source bias analysis</span>
         </div>
       </div>
     </div>

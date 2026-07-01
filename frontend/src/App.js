@@ -40,6 +40,10 @@ const SearchResultsPage = lazy(() => import('./pages/SearchResultsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AgentPage = lazy(() => import('./pages/AgentPage'));
+const DailyBriefingPage = lazy(() => import('./pages/DailyBriefingPage'));
+const TrendingPage = lazy(() => import('./pages/TrendingPage'));
+const AlertsPage = lazy(() => import('./pages/AlertsPage'));
+const CommunityPage = lazy(() => import('./pages/CommunityPage'));
 
 const PageLoader = () => (
   <div className="loading-container" role="status" aria-live="polite">
@@ -89,6 +93,10 @@ function App() {
                     <Route path="/search" element={<SearchResultsPage />} />
                     <Route path="/dashboard" element={<AdminDashboard />} />
                     <Route path="/agent" element={<AgentPage />} />
+                    <Route path="/digest" element={<DailyBriefingPage />} />
+                    <Route path="/trending" element={<TrendingPage />} />
+                    <Route path="/alerts" element={<AlertsPage />} />
+                    <Route path="/community" element={<CommunityPage />} />
                     <Route
                       path="/"
                       element={

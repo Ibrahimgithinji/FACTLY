@@ -1,0 +1,142 @@
+.factly-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.factly-badge--sm .factly-badge__ring {
+  width: 44px;
+  height: 44px;
+}
+
+.factly-badge--sm .factly-badge__score {
+  font-size: 0.72rem;
+}
+
+.factly-badge--sm .factly-badge__label {
+  font-size: 0.65rem;
+}
+
+.factly-badge--md .factly-badge__ring {
+  width: 68px;
+  height: 68px;
+}
+
+.factly-badge--lg .factly-badge__ring {
+  width: 100px;
+  height: 100px;
+}
+
+.factly-badge--lg .factly-badge__score {
+  font-size: 1.4rem;
+}
+
+.factly-badge--lg .factly-badge__label {
+  font-size: 0.88rem;
+}
+
+.factly-badge__ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.factly-badge__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.factly-badge__bg-path {
+  fill: none;
+  stroke: var(--border-color, #e5e7eb);
+  stroke-width: 2.8;
+}
+
+.factly-badge__fg-path {
+  fill: none;
+  stroke: var(--badge-color);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s ease-out;
+}
+
+.factly-badge__score {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary, #111);
+  z-index: 1;
+}
+
+.factly-badge__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.factly-badge__icon {
+  font-size: 0.7em;
+  font-weight: 900;
+}
+
+.factly-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.factly-inline-icon {
+  font-weight: 900;
+  font-size: 0.8em;
+}
+
+.factly-inline-score {
+  font-weight: 800;
+}
+
+.factly-inline-label {
+  font-weight: 600;
+}
+
+.factly-score-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.factly-score-bar__track {
+  height: 6px;
+  background: var(--border-color, #e5e7eb);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.factly-score-bar__fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.factly-score-bar__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .factly-badge__bg-path {
+  stroke: #374151;
+}
+
+[data-theme="dark"] .factly-badge__score {
+  color: #f3f4f6;
+}

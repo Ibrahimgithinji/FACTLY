@@ -1,0 +1,142 @@
+.sbi {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.sbi-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--text-primary, #1f2937);
+}
+
+.sbi-bar {
+  display: flex;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.sbi-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+.sbi-segment-label {
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sbi-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sbi-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.sbi-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sbi-legend-label {
+  color: var(--text-secondary, #6b7280);
+  font-weight: 500;
+}
+
+.sbi-legend-count {
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+}
+
+.sbi-sources {
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  padding-top: 12px;
+}
+
+.sbi-sources h5 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted, #9ca3af);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.sbi-source-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.sbi-source-name {
+  color: var(--text-primary, #1f2937);
+  font-weight: 500;
+}
+
+.sbi-source-badge {
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sbi-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sbi-compact-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+}
+
+.sbi-compact-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.sbi-compact-segment {
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+.sbi-compact-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+}
+
+[data-theme="dark"] .sbi {
+  border-color: #374151;
+}
+
+[data-theme="dark"] .sbi-title { color: #f3f4f6; }
+
+[data-theme="dark"] .sbi-legend-label { color: #9ca3af; }
+
+[data-theme="dark"] .sbi-sources { border-top-color: #374151; }
+
+[data-theme="dark"] .sbi-source-name { color: #e5e7eb; }

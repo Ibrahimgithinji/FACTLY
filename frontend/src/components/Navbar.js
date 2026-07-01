@@ -1,19 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import SearchOverlay from './SearchOverlay';
 import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
 import './Navbar.css';
 
-const NAV_CATEGORIES = [
-  { name: 'News', path: '/category/news' },
-  { name: 'Startups', path: '/category/startups' },
-  { name: 'Business', path: '/category/business' },
-  { name: 'Reviews', path: '/category/reviews' },
-  { name: 'Opinion', path: '/category/opinion' },
-  { name: 'Fact Checks', path: '/verify' },
-  { name: 'Explain', path: '/category/deep-dive' },
+const NAV_ITEMS = [
+  { name: 'Home', path: '/' },
+  { name: 'Verify', path: '/verify' },
+  { name: 'Briefing', path: '/digest' },
+  { name: 'Trending', path: '/trending' },
+  { name: 'Alerts', path: '/alerts' },
+  { name: 'Community', path: '/community' },
+];
+
+const TOPBAR_LINKS = [
+  { name: 'AI Agent', path: '/agent' },
+  { name: 'Daily Digest', path: '/digest' },
+  { name: 'Misinfo Alerts', path: '/alerts' },
+  { name: 'About', path: '/about' },
 ];
 
 const getTodayLabel = () => new Intl.DateTimeFormat('en-US', {
@@ -30,6 +37,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
 
   const handleScroll = useCallback(() => {
     setIsScrolled(window.scrollY > 8);
@@ -47,10 +55,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        setUserMenuOpen(false);
-        setIsMobileMenuOpen(false);
-      }
+      if (event.key === 'Escape') { setUserMenuOpen(false); setIsMobileMenuOpen(false); }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
@@ -58,9 +63,7 @@ const Navbar = () => {
 
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isMobileMenuOpen]);
 
   const toggleUserMenu = () => {
@@ -87,10 +90,9 @@ const Navbar = () => {
         <div className="navbar__topbar">
           <div className="navbar__topbar-inner">
             <span>{getTodayLabel()}</span>
-            <Link to="/agent" className="navbar__topbar-link">AI Agent</Link>
-            <Link to="/verify" className="navbar__topbar-link">Verify a claim</Link>
-            <Link to="/write-for-us" className="navbar__topbar-link">Submit a tip</Link>
-            <Link to="/about" className="navbar__topbar-link">Community</Link>
+            {TOPBAR_LINKS.map((link) => (
+              <Link key={link.path} to={link.path} className="navbar__topbar-link">{link.name}</Link>
+            ))}
           </div>
         </div>
 
@@ -104,17 +106,21 @@ const Navbar = () => {
               </span>
             </Link>
 
-            <nav className="navbar__nav" role="navigation" aria-label="Editorial navigation">
+            <nav className="navbar__nav" role="navigation" aria-label="Main navigation">
               <ul className="navbar__menu">
-                {NAV_CATEGORIES.map((item) => (
+                {NAV_ITEMS.map((item) => (
                   <li key={item.path} className="navbar__menu-item">
                     <NavLink
                       to={item.path}
+                      end={item.path === '/'}
                       className={({ isActive }) =>
-                        `navbar__link ${isActive ? 'navbar__link--active' : ''}`
+                        `navbar__link ${isActive || (item.path !== '/' && location.pathname.startsWith(item.path)) ? 'navbar__link--active' : ''}`
                       }
                     >
-                      {item.label || item.name}
+                      {item.name}
+                      {item.name === 'Alerts' && alertCount > 0 && (
+                        <span className="navbar__alert-dot">{alertCount}</span>
+                      )}
                     </NavLink>
                   </li>
                 ))}
@@ -212,7 +218,7 @@ const Navbar = () => {
             <li className="navbar__mobile-item">
               <NavLink to="/" end className="navbar__mobile-link">Home</NavLink>
             </li>
-            {NAV_CATEGORIES.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <li key={item.path} className="navbar__mobile-item">
                 <NavLink to={item.path} className="navbar__mobile-link">{item.name}</NavLink>
               </li>

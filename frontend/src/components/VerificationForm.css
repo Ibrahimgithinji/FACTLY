@@ -357,3 +357,118 @@
     border-width: 2px;
   }
 }
+
+.vf-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+.vf-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.vf-step__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-muted, #9ca3af);
+  border: 2px solid var(--border-color, #e5e7eb);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.vf-step.active .vf-step__icon {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.vf-step.done .vf-step__icon {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+
+.vf-step.current .vf-step__icon {
+  animation: stepPulse 1.5s ease infinite;
+}
+
+@keyframes stepPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+}
+
+.vf-step__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+.vf-step.active .vf-step__label {
+  color: #2563eb;
+}
+
+.vf-step.done .vf-step__label {
+  color: #22c55e;
+}
+
+.vf-step__connector {
+  width: 40px;
+  height: 2px;
+  background: var(--border-color, #e5e7eb);
+  margin: 0 4px;
+  border-radius: 1px;
+  transition: background 0.3s ease;
+}
+
+.vf-step__connector.done {
+  background: #22c55e;
+}
+
+.vf-progress {
+  height: 6px;
+  background: var(--bg-tertiary, #f3f4f6);
+  border-radius: 3px;
+  overflow: visible;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.vf-progress__bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.vf-progress__text {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+@media (max-width: 640px) {
+  .vf-step__label {
+    display: none;
+  }
+  .vf-step__connector {
+    width: 20px;
+  }
+}
