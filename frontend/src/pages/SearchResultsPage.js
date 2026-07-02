@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
+import SEOMeta from '../components/SEOMeta';
 import './CategoryPage.css';
 
 export default function SearchResultsPage() {
@@ -47,6 +48,7 @@ export default function SearchResultsPage() {
 
   return (
     <div className="category-page">
+      <SEOMeta title="Search Results" description="Search verified news articles and fact-checks on FACTLY." />
       <div className="category-hero" style={{ padding: '40px 20px' }}>
         <div className="category-hero-content">
           <h1>Search Results</h1>

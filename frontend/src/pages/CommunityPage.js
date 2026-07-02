@@ -4,6 +4,7 @@ import { FactlyScoreInline } from '../components/FactlyScoreBadge';
 import { RevealOnScroll, StaggerContainer, StaggerItem } from '../components/Animations';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../utils/constants';
+import SEOMeta from '../components/SEOMeta';
 import './CommunityPage.css';
 
 const CLAIMS_API = `${API_BASE_URL}/api/claims/`;
@@ -67,6 +68,7 @@ export default function CommunityTipsPage() {
 
   return (
     <div className="community-page">
+      <SEOMeta title="Community" description="Submit a tip - found a suspicious claim? Submit it for fact-checking by the FACTLY community. Browse recent claims with credibility scores." />
       <header className="community-header">
         <div className="community-header__left">
           <span className="section-label">Community</span>

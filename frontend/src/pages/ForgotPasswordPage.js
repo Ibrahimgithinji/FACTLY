@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEOMeta from '../components/SEOMeta';
 import './Auth.css';
 
 const ForgotPasswordPage = () => {
@@ -67,6 +68,7 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="auth-page">
+      <SEOMeta title="Reset Password" noindex={true} />
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo" aria-hidden="true">✓</div>

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../utils/constants';
+import SEOMeta from '../components/SEOMeta';
 import './Auth.css';
 
 const LoginPage = () => {
@@ -166,6 +167,7 @@ const LoginPage = () => {
 
   return (
     <div className="auth-page">
+      <SEOMeta title="Sign In" noindex={true} />
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo" aria-hidden="true">✓</div>

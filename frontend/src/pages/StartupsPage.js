@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import { CategoryPageSkeleton } from '../components/Skeleton';
+import SEOMeta from '../components/SEOMeta';
 import './CategoryPage.css';
 
 export default function StartupsPage() {
@@ -39,6 +40,7 @@ export default function StartupsPage() {
 
   return (
     <div className="category-page">
+      <SEOMeta title="Tech Startups" description="Discover promising tech startups. FACTLY tracks innovation, funding rounds, and startup launches across Africa and globally." />
       <div className="category-hero">
         <div className="category-hero-content">
           <div className="category-icon" style={{ fontSize: 32, marginBottom: 8 }}>🚀</div>

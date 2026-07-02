@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FactlyScoreBadge, FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
 import { RevealOnScroll, CountUp } from '../components/Animations';
 import { API_BASE_URL } from '../utils/constants';
+import SEOMeta from '../components/SEOMeta';
 import './DailyBriefingPage.css';
 
 const AGENT_API = `${API_BASE_URL}/api/agent`;
@@ -67,6 +68,7 @@ export default function DailyBriefingPage() {
 
   return (
     <div className="briefing-page">
+      <SEOMeta title="Daily Briefing" description="Your daily news digest - stories analyzed, verified, and ranked by credibility score. Stay informed with FACTLY." />
       <header className="briefing-header">
         <div className="briefing-header__left">
           <span className="section-label">Daily Briefing</span>

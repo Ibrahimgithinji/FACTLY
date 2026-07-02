@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FactlyScoreBadge, FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
 import { RevealOnScroll, StaggerContainer, StaggerItem } from '../components/Animations';
 import { API_BASE_URL } from '../utils/constants';
+import SEOMeta from '../components/SEOMeta';
 import './TrendingPage.css';
 
 const TRENDING_API = `${API_BASE_URL}/api/verification/trends/`;
@@ -43,8 +44,9 @@ export default function TrendingPage() {
 
   if (loading) {
     return (
-      <div className="trending-page">
-        <div className="trending-skeleton">
+<div className="trending-page">
+      <SEOMeta title="Trending & Risk Analysis" description="Track trending claims and misinformation risk levels. Live stories and real-time verification insights from FACTLY." />
+      <div className="trending-skeleton">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="trending-skeleton-card" />
           ))}
@@ -55,6 +57,7 @@ export default function TrendingPage() {
 
   return (
     <div className="trending-page">
+      <SEOMeta title="Trending & Risk Analysis" description="Track trending claims and misinformation risk levels. Live stories and real-time verification insights from FACTLY." />
       <header className="trending-page-header">
         <div>
           <span className="section-label">Trending Now</span>

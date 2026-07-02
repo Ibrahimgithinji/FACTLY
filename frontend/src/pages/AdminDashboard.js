@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEOMeta from '../components/SEOMeta';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -41,6 +42,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
+      <SEOMeta title="Admin Dashboard" noindex={true} />
       <h1 style={{ fontSize: 24, color: 'var(--text)', marginBottom: 4 }}>Dashboard</h1>
       <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 32 }}>
         Welcome back, {user.name}

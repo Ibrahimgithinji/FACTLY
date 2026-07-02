@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CONTENT_ENDPOINTS } from '../utils/api';
+import SEOMeta from '../components/SEOMeta';
 import './GuestSubmitPage.css';
 
 export default function GuestSubmitPage() {
@@ -65,6 +66,7 @@ export default function GuestSubmitPage() {
 
   return (
     <div className="guest-submit">
+      <SEOMeta title="Write for Us" description="Submit your article or contribute to FACTLY. Share verified journalism and fact-based reporting with our community." />
       <div className="guest-submit__inner">
         <h1 className="guest-submit__title">Write for Factly</h1>
         <p className="guest-submit__desc">

@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from '../utils/api';
 import { API_BASE_URL } from '../utils/constants';
 import { FactlyScoreBadge, FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
 import { RevealOnScroll, StaggerContainer, StaggerItem, CountUp } from '../components/Animations';
+import SEOMeta from '../components/SEOMeta';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
@@ -55,6 +56,7 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-page">
+      <SEOMeta title="My Profile" noindex={true} />
       <header className="profile-hero">
         <div className="profile-hero__avatar">
           {user?.name?.charAt(0).toUpperCase() || 'U'}

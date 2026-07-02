@@ -1,0 +1,38 @@
+# FACTLY robots.txt — crawl budget control and directive rules
+# Last updated: July 2026
+
+# --- Point search engines to XML sitemaps ---
+Sitemap: https://factly.app/sitemap.xml
+
+# --- Global rules (all user-agents) ---
+User-agent: *
+
+# Allow indexing of public-facing pages
+Allow: /
+Allow: /verify
+Allow: /digest
+Allow: /trending
+Allow: /alerts
+Allow: /community
+Allow: /about
+Allow: /category/
+Allow: /article/
+Allow: /author/
+Allow: /startups
+Allow: /write-for-us
+Allow: /search
+Allow: /agent
+
+# Disallow authenticated/internal pages (no SEO value, clutter index)
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /history
+Disallow: /bookmarks
+Disallow: /results
+
+# Crawl rate: polite pace for shared infrastructure
+Crawl-delay: 3

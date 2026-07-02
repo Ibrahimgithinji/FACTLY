@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
 import { ArticleCardSkeleton } from '../components/Skeleton';
 import { CONTENT_ENDPOINTS } from '../utils/api';
+import SEOMeta from '../components/SEOMeta';
 import './BookmarksPage.css';
 
 const fetchOpts = { credentials: 'include' };
@@ -34,6 +35,7 @@ export default function BookmarksPage() {
   if (!isAuthenticated) {
     return (
       <div className="bookmarks-page">
+        <SEOMeta title="Saved Articles" noindex={true} />
         <div className="bookmarks-page__empty">
           <h2>Saved Articles</h2>
           <p>Sign in to save articles for later.</p>
@@ -46,6 +48,7 @@ export default function BookmarksPage() {
   if (loading) {
     return (
       <div className="bookmarks-page">
+        <SEOMeta title="Saved Articles" noindex={true} />
         <h1 className="bookmarks-page__title">Saved Articles</h1>
         <div className="bookmarks-page__grid">
           {[...Array(4)].map((_, i) => <ArticleCardSkeleton key={i} />)}
@@ -56,6 +59,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="bookmarks-page">
+      <SEOMeta title="Saved Articles" noindex={true} />
       <h1 className="bookmarks-page__title">Saved Articles ({articles.length})</h1>
       {articles.length === 0 ? (
         <div className="bookmarks-page__empty">

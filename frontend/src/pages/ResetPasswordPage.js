@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEOMeta from '../components/SEOMeta';
 import './Auth.css';
 
 const ResetPasswordPage = () => {
@@ -141,6 +142,7 @@ const ResetPasswordPage = () => {
   if (isVerifying) {
     return (
       <div className="auth-page">
+        <SEOMeta title="Set New Password" noindex={true} />
         <div className="auth-container">
           <div className="auth-header">
             <div className="auth-logo" aria-hidden="true">✓</div>
@@ -154,6 +156,7 @@ const ResetPasswordPage = () => {
 
   return (
     <div className="auth-page">
+      <SEOMeta title="Set New Password" noindex={true} />
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo" aria-hidden="true">✓</div>

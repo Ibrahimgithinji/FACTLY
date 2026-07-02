@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEOMeta from '../components/SEOMeta';
 import './Auth.css';
 
 const SignupPage = () => {
@@ -112,6 +113,7 @@ const SignupPage = () => {
 
   return (
     <div className="auth-page">
+      <SEOMeta title="Create Account" noindex={true} />
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo" aria-hidden="true">✓</div>

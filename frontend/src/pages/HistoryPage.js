@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SEOMeta from '../components/SEOMeta';
 import './Auth.css';
 
 const HistoryPage = () => {
@@ -113,6 +114,7 @@ const HistoryPage = () => {
 
   return (
     <div className="auth-container">
+      <SEOMeta title="Verification History" noindex={true} />
       <div className="auth-card history-card">
         <div className="auth-header">
           <h1>Verification History</h1>

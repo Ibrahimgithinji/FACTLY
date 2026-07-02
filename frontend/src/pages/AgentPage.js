@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FactlyScoreBadge, FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
 import { API_BASE_URL } from '../utils/constants';
+import SEOMeta from '../components/SEOMeta';
 import './AgentPage.css';
 
 const AGENT_API = `${API_BASE_URL}/api/agent`;
@@ -108,6 +109,7 @@ function AgentPage() {
 
   return (
     <div className="agent-page">
+      <SEOMeta title="AI Agent" description="Ask FACTLY's AI agent any question about news, fact-checking, or trending topics. Get verified answers from trusted sources." />
       <div className="agent-header">
         <div className="agent-header__icon">
           <span>F</span>

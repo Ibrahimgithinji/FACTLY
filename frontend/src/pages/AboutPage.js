@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import SEOMeta from '../components/SEOMeta';
 import './AboutPage.css';
 
 export default function AboutPage() {
@@ -25,7 +26,7 @@ export default function AboutPage() {
 
   return (
     <div className="about-page">
-      {/* Hero */}
+      <SEOMeta title="About" description="Learn about FACTLY - our mission, team, and how we fight misinformation with AI-powered fact-checking technology." type="about" />
       <div className="about-hero">
         <h1>About Factly</h1>
         <p className="tagline">Tech News &bull; Verification &bull; Startup Stories</p>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
 import { RevealOnScroll, StaggerContainer, StaggerItem } from '../components/Animations';
 import { API_BASE_URL } from '../utils/constants';
+import SEOMeta from '../components/SEOMeta';
 import './AlertsPage.css';
 
 const ALERTS_API = `${API_BASE_URL}/api/alerts/`;
@@ -39,6 +40,7 @@ export default function AlertsPage() {
 
   return (
     <div className="alerts-page">
+      <SEOMeta title="Misinformation Alerts" description="Active misinformation alerts tracked by FACTLY. Filter by critical, high, medium, or low risk priority levels." />
       <header className="alerts-header">
         <div>
           <span className="section-label">Misinformation Alerts</span>
