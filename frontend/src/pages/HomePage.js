@@ -528,9 +528,14 @@ export default function HomePage() {
         <section className="home-ticker" aria-label="Trending articles">
           <span className="home-ticker__label">Now tracking</span>
           <div className="home-ticker__items">
-            {data.trending.slice(0, 5).map((article) => (
-              <Link key={article.id} to={`/article/${article.slug}`}>{article.title}</Link>
-            ))}
+            <div className="home-ticker__track">
+              {data.trending.slice(0, 5).map((article) => (
+                <Link key={article.id} to={`/article/${article.slug}`}>{article.title}</Link>
+              ))}
+              {data.trending.slice(0, 5).map((article) => (
+                <Link key={`dup-${article.id}`} to={`/article/${article.slug}`} aria-hidden="true">{article.title}</Link>
+              ))}
+            </div>
           </div>
         </section>
       )}
