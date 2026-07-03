@@ -46,3 +46,18 @@
   opacity: 0.9;
   color: var(--bg-primary);
 }
+
+@media (max-width: 640px) {
+  .bookmarks-page {
+    padding: 24px 16px;
+  }
+
+  .bookmarks-page__title {
+    font-size: 1.35rem;
+  }
+
+  .bookmarks-page__grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
