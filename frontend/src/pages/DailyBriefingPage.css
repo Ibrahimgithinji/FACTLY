@@ -300,7 +300,7 @@
 }
 
 .skeleton-pulse {
-  background: var(--border-color, #e5e7eb);
+  background: var(--border-color);
   border-radius: 8px;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
@@ -333,10 +333,33 @@
   }
 }
 
-[data-theme="dark"] .briefing-headline {
-  background: linear-gradient(135deg, rgba(30, 58, 95, 0.3), rgba(45, 27, 105, 0.3));
-}
+@media (max-width: 640px) {
+  .briefing-summary {
+    grid-template-columns: 1fr;
+  }
 
-[data-theme="dark"] .skeleton-pulse {
-  background: #374151;
+  .briefing-time-toggle {
+    flex-wrap: wrap;
+  }
+
+  .briefing-headline__title {
+    font-size: 1.15rem;
+  }
+
+  .story-card-lg {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .story-card-lg__rank {
+    display: none;
+  }
+
+  .story-card-lg__meta {
+    flex-wrap: wrap;
+  }
+
+  .categories-grid-lg {
+    grid-template-columns: 1fr;
+  }
 }
