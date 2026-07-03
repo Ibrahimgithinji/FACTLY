@@ -63,7 +63,7 @@ export const setupChunkErrorRecovery = () => {
       
       // Attempt to recover by reloading the page
       setTimeout(() => {
-        console.log('Attempting to recover from chunk loading error...');
+        if (process.env.NODE_ENV !== 'production') console.log('Attempting to recover from chunk loading error...');
         reloadPage();
       }, 1000);
     }

@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { apiPut } from '../utils/apiClient';
 import { API_ENDPOINTS } from '../utils/api';
-import { API_BASE_URL } from '../utils/constants';
 import { FactlyScoreBadge, FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
-import { RevealOnScroll, StaggerContainer, StaggerItem, CountUp } from '../components/Animations';
+import { StaggerContainer, StaggerItem, CountUp } from '../components/Animations';
 import SEOMeta from '../components/SEOMeta';
 import './ProfilePage.css';
 

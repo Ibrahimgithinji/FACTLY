@@ -35,7 +35,7 @@ class ErrorBoundary extends Component {
       // This is a common fix for HMR-related chunk loading errors
       setTimeout(() => {
         if (window.location.reload) {
-          console.log('Reloading page to recover from chunk loading error...');
+          if (process.env.NODE_ENV !== 'production') console.log('Reloading page to recover from chunk loading error...');
           window.location.reload();
         }
       }, 1000);

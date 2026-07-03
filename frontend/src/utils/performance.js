@@ -162,7 +162,7 @@ export const performanceMetrics = {
     const start = performance.now();
     const result = fn();
     const end = performance.now();
-    console.log(`${label} took ${(end - start).toFixed(2)}ms`);
+    if (process.env.NODE_ENV !== 'production') console.log(`${label} took ${(end - start).toFixed(2)}ms`);
     return result;
   },
 

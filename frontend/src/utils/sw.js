@@ -4,10 +4,10 @@ export function registerSW() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((reg) => {
-          console.log('SW registered:', reg.scope);
+          if (process.env.NODE_ENV !== 'production') console.log('SW registered:', reg.scope);
         })
         .catch((err) => {
-          console.log('SW registration failed:', err);
+          if (process.env.NODE_ENV !== 'production') console.log('SW registration failed:', err);
         });
     });
   }

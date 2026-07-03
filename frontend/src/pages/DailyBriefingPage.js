@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FactlyScoreBadge, FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
+import { FactlyScoreInline, FactlyScoreBar } from '../components/FactlyScoreBadge';
 import { RevealOnScroll, CountUp } from '../components/Animations';
 import { API_BASE_URL } from '../utils/constants';
 import SEOMeta from '../components/SEOMeta';
