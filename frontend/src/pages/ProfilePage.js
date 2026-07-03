@@ -89,10 +89,10 @@ export default function ProfilePage() {
         )}
       </header>
 
-      <div className="profile-tabs">
-        <button className={`profile-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
-        <button className={`profile-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Verification History</button>
-        <button className={`profile-tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>Settings</button>
+      <div className="profile-tabs" role="tablist" aria-label="Profile sections">
+        <button className={`profile-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} role="tab" aria-selected={activeTab === 'overview'}>Overview</button>
+        <button className={`profile-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')} role="tab" aria-selected={activeTab === 'history'}>Verification History</button>
+        <button className={`profile-tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')} role="tab" aria-selected={activeTab === 'settings'}>Settings</button>
       </div>
 
       <AnimatePresence mode="wait">

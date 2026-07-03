@@ -85,12 +85,14 @@ export default function TrendingPage() {
 
       {view === 'trends' && (
         <>
-          <div className="trending-filters">
+          <div className="trending-filters" role="group" aria-label="Filter by risk level">
             {['all', 'critical', 'high', 'medium', 'low'].map((level) => (
               <button
                 key={level}
                 className={`filter-btn ${filter === level ? 'filter-btn--active' : ''}`}
                 onClick={() => setFilter(level)}
+                aria-pressed={filter === level}
+                aria-label={`Show ${level === 'all' ? 'all risk levels' : level + ' risk stories'}`}
                 style={filter === level && level !== 'all' ? { '--filter-color': RISK_COLORS[level] } : {}}
               >
                 {level === 'all' ? 'All' : level.charAt(0).toUpperCase() + level.slice(1)}

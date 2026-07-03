@@ -118,10 +118,10 @@ function AgentPage() {
         <p className="agent-subtitle">Your AI news assistant — ask questions, get verified answers</p>
       </div>
 
-      <div className="agent-tabs">
-        <button className={`agent-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>Chat</button>
-        <button className={`agent-tab ${activeTab === 'digest' ? 'active' : ''}`} onClick={() => setActiveTab('digest')}>Daily Digest</button>
-        <button className={`agent-tab ${activeTab === 'ask' ? 'active' : ''}`} onClick={() => setActiveTab('ask')}>Ask Factly</button>
+      <div className="agent-tabs" role="tablist" aria-label="Agent features">
+        <button className={`agent-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')} role="tab" aria-selected={activeTab === 'chat'}>Chat</button>
+        <button className={`agent-tab ${activeTab === 'digest' ? 'active' : ''}`} onClick={() => setActiveTab('digest')} role="tab" aria-selected={activeTab === 'digest'}>Daily Digest</button>
+        <button className={`agent-tab ${activeTab === 'ask' ? 'active' : ''}`} onClick={() => setActiveTab('ask')} role="tab" aria-selected={activeTab === 'ask'}>Ask Factly</button>
       </div>
 
       {activeTab === 'chat' && (
@@ -213,7 +213,9 @@ function AgentPage() {
           </div>
 
           <div className="agent-input-bar">
+            <label htmlFor="agent-chat-input" className="sr-only">Ask about any news topic</label>
             <input
+              id="agent-chat-input"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -225,6 +227,7 @@ function AgentPage() {
               onClick={sendMessage}
               disabled={loading || !input.trim()}
               whileTap={{ scale: 0.95 }}
+              aria-label={loading ? 'Sending...' : 'Send message'}
             >
               {loading ? '...' : 'Send'}
             </motion.button>
@@ -334,7 +337,9 @@ function AgentPage() {
           </div>
 
           <div className="ask-factly-form">
+            <label htmlFor="ask-factly-input" className="sr-only">Ask a question about a claim or news topic</label>
             <input
+              id="ask-factly-input"
               type="text"
               value={askQuestion}
               onChange={(e) => setAskQuestion(e.target.value)}
@@ -346,6 +351,7 @@ function AgentPage() {
               onClick={submitAskQuestion}
               disabled={askLoading || !askQuestion.trim()}
               whileTap={{ scale: 0.95 }}
+              aria-label={askLoading ? 'Researching...' : 'Submit question'}
             >
               {askLoading ? 'Researching...' : 'Ask'}
             </motion.button>
@@ -359,6 +365,7 @@ function AgentPage() {
                   key={i}
                   className="ask-popular-item"
                   onClick={() => setAskQuestion(item.q)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAskQuestion(item.q); } }}
                   role="button"
                   tabIndex={0}
                 >

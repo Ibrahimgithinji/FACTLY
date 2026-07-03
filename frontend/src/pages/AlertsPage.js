@@ -69,12 +69,14 @@ export default function AlertsPage() {
         </div>
       )}
 
-      <div className="alerts-filters">
+      <div className="alerts-filters" role="group" aria-label="Filter alerts by priority">
         {['all', 'critical', 'high', 'medium', 'low'].map((level) => (
           <button
             key={level}
             className={`filter-btn ${filter === level ? 'filter-btn--active' : ''}`}
             onClick={() => setFilter(level)}
+            aria-pressed={filter === level}
+            aria-label={`Show ${level === 'all' ? 'all alerts' : level + ' priority alerts'}`}
             style={filter === level && level !== 'all' && PRIORITY_CONFIG[level]
               ? { background: PRIORITY_CONFIG[level].color, borderColor: PRIORITY_CONFIG[level].color }
               : {}}
