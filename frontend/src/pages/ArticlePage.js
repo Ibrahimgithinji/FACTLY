@@ -9,6 +9,7 @@ import BookmarkButton from '../components/BookmarkButton';
 import SEOMeta from '../components/SEOMeta';
 import { ArticlePageSkeleton, SidebarSkeleton } from '../components/Skeleton';
 import { CONTENT_ENDPOINTS } from '../utils/api';
+import { API_BASE_URL } from '../utils/constants';
 import './ArticlePage.css';
 
 export default function ArticlePage() {
@@ -49,7 +50,7 @@ export default function ArticlePage() {
   // Log page view
   useEffect(() => {
     if (!article) return;
-    fetch('/api/content/analytics/log-view/', {
+    fetch(`${API_BASE_URL}/api/content/analytics/log-view/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

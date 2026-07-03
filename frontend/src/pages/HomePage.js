@@ -425,6 +425,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [fetchError, setFetchError] = useState('');
   const pollRef = useRef(null);
   const mountedRef = useRef(false);
 
@@ -439,13 +440,16 @@ export default function HomePage() {
         fetch(CONTENT_ENDPOINTS.CATEGORIES),
       ]);
       if (!mountedRef.current) return;
+      if (!homeRes.ok || !catRes.ok) throw new Error('Failed to load homepage data');
       const homeData = await homeRes.json();
       const catData = await catRes.json();
       setData(homeData);
       setCategories(catData);
       setLastUpdated(new Date().toISOString());
+      setFetchError('');
     } catch (err) {
       if (!mountedRef.current) return;
+      setFetchError(err.message || 'Could not load homepage');
       console.error('Failed to load homepage:', err);
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -495,6 +499,20 @@ export default function HomePage() {
           <ArticleCardSkeleton />
           <ArticleCardSkeleton />
           <SidebarSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError && !data) {
+    return (
+      <div className="home-page">
+        <div className="home-error">
+          <h2>Unable to Load Content</h2>
+          <p>{fetchError}</p>
+          <button className="home-retry-btn" onClick={() => { setLoading(true); setFetchError(''); fetchHomeData(); }}>
+            Try Again
+          </button>
         </div>
       </div>
     );

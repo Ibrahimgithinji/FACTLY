@@ -1016,3 +1016,47 @@
   background: rgba(59, 130, 246, 0.15);
   color: #60a5fa;
 }
+
+.home-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 20px;
+  min-height: 60vh;
+  gap: 16px;
+}
+
+.home-error h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.home-error p {
+  color: var(--text-muted);
+  font-size: 15px;
+  max-width: 400px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.home-retry-btn {
+  margin-top: 8px;
+  padding: 10px 24px;
+  background: var(--color-secondary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}

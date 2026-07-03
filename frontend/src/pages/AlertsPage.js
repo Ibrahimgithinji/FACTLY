@@ -19,16 +19,20 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch(`${ALERTS_API}?limit=50`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error('Failed to fetch alerts');
+        return r.json();
+      })
       .then((data) => {
         setAlerts(data.results || data.alerts || []);
         setLoading(false);
       })
-      .catch(() => {
-        setAlerts([]);
+      .catch((err) => {
+        setError(err.message || 'Could not load alerts');
         setLoading(false);
       });
   }, []);
@@ -90,6 +94,12 @@ export default function AlertsPage() {
           {[1, 2, 3].map((i) => (
             <div key={i} className="alert-skeleton" />
           ))}
+        </div>
+      ) : error ? (
+        <div className="alerts-empty alerts-empty--error">
+          <h2>Failed to Load Alerts</h2>
+          <p>{error}</p>
+          <button className="alerts-retry-btn" onClick={() => window.location.reload()}>Retry</button>
         </div>
       ) : filteredAlerts.length === 0 ? (
         <div className="alerts-empty">

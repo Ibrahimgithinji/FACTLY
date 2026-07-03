@@ -65,19 +65,19 @@ export default function ProfilePage() {
           <p>{user?.email || 'user@example.com'}</p>
           <div className="profile-hero__stats">
             <div className="profile-stat">
-              <span className="profile-stat__num"><CountUp end={stats.total} duration={1.2} /></span>
+                <span className="profile-stat__num"><CountUp target={stats.total} duration={1.2} /></span>
               <span className="profile-stat__label">Verifications</span>
             </div>
             <div className="profile-stat">
-              <span className="profile-stat__num"><CountUp end={stats.avgScore} duration={1.2} /></span>
+                <span className="profile-stat__num"><CountUp target={stats.avgScore} duration={1.2} /></span>
               <span className="profile-stat__label">Avg Score</span>
             </div>
             <div className="profile-stat">
-              <span className="profile-stat__num" style={{ color: '#22c55e' }}><CountUp end={stats.verified} duration={1.2} /></span>
+                <span className="profile-stat__num" style={{ color: '#22c55e' }}><CountUp target={stats.verified} duration={1.2} /></span>
               <span className="profile-stat__label">Verified</span>
             </div>
             <div className="profile-stat">
-              <span className="profile-stat__num" style={{ color: '#ef4444' }}><CountUp end={stats.flagged} duration={1.2} /></span>
+                <span className="profile-stat__num" style={{ color: '#ef4444' }}><CountUp target={stats.flagged} duration={1.2} /></span>
               <span className="profile-stat__label">Flagged</span>
             </div>
           </div>

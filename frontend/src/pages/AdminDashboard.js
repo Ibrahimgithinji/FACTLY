@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SEOMeta from '../components/SEOMeta';
+import { API_BASE_URL } from '../utils/constants';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -10,7 +11,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/content/analytics/dashboard/', {
+    fetch(`${API_BASE_URL}/api/content/analytics/dashboard/`, {
       credentials: 'include',
     })
       .then((r) => {

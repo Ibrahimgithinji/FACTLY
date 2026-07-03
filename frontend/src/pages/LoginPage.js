@@ -113,7 +113,7 @@ const LoginPage = () => {
         client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '__GOOGLE_CLIENT_ID__',
         callback: async (response) => {
           try {
-            const res = await fetch('/api/verification/auth/social/', {
+            const res = await fetch(`${API_BASE_URL}/api/verification/auth/social/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
@@ -143,7 +143,7 @@ const LoginPage = () => {
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
     const popup = window.open(
-      '/api/verification/auth/github/login/',
+      `${API_BASE_URL}/api/verification/auth/github/login/`,
       'github-oauth',
       `width=${width},height=${height},left=${left},top=${top},popup=1`
     );

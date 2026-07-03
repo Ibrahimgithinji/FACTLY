@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import SEOMeta from '../components/SEOMeta';
+import { API_BASE_URL } from '../utils/constants';
 import './CategoryPage.css';
 
 export default function SearchResultsPage() {
@@ -16,7 +17,7 @@ export default function SearchResultsPage() {
   const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    fetch('/api/content/categories/')
+    fetch(`${API_BASE_URL}/api/content/categories/`)
       .then((r) => r.ok ? r.json() : [])
       .then(setCategories)
       .catch(() => {});
@@ -27,7 +28,7 @@ export default function SearchResultsPage() {
       if (!query) { setResults([]); setCount(0); setLoading(false); return; }
       setLoading(true);
       try {
-        let url = `/api/content/search/?q=${encodeURIComponent(query)}`;
+        let url = `${API_BASE_URL}/api/content/search/?q=${encodeURIComponent(query)}`;
         if (categoryFilter) url += `&category=${categoryFilter}`;
         if (dateFrom) url += `&date_from=${dateFrom}`;
         if (dateTo) url += `&date_to=${dateTo}`;

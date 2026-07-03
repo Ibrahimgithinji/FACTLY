@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SEOMeta from '../components/SEOMeta';
+import { API_BASE_URL } from '../utils/constants';
 import './AboutPage.css';
 
 export default function AboutPage() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    fetch('/api/content/analytics/dashboard/', {
+    fetch(`${API_BASE_URL}/api/content/analytics/dashboard/`, {
       credentials: 'include',
     })
       .then((r) => r.ok ? r.json() : null)
