@@ -30,7 +30,7 @@ export default function Sidebar({ categories, recentPosts }) {
               <li key={post.id}>
                 <Link to={`/article/${post.slug}`} className="sidebar__post-link">
                   {post.featured_image && (
-                    <img src={post.featured_image} alt="" className="sidebar__post-img" loading="lazy" />
+                    <img src={post.featured_image} alt={post.title} className="sidebar__post-img" loading="lazy" />
                   )}
                   <div className="sidebar__post-info">
                     <span className="sidebar__post-title">{post.title}</span>

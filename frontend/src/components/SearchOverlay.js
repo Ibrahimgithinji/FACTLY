@@ -94,7 +94,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
                   onClick={onClose}
                 >
                   {article.featured_image && (
-                    <img src={article.featured_image} alt="" className="search-overlay__item-img" loading="lazy" />
+                    <img src={article.featured_image} alt={article.title} className="search-overlay__item-img" loading="lazy" />
                   )}
                   <div className="search-overlay__item-info">
                     <span className="search-overlay__item-title">{article.title}</span>

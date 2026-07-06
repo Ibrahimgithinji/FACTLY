@@ -125,7 +125,7 @@ export default function ArticlePage() {
             {article.author && (
               <div className="article-page__author">
                 {article.author.avatar && (
-                  <img src={article.author.avatar} alt="" className="article-page__author-img" />
+                  <img src={article.author.avatar} alt={article.author.display_name} className="article-page__author-img" />
                 )}
                 <div>
                   <Link to={`/author/${article.author.id}`} className="article-page__author-name">{article.author.display_name}</Link>
@@ -175,7 +175,7 @@ export default function ArticlePage() {
               <h3>About the Author</h3>
               <div className="article-page__author-bio-inner">
                 {article.author.avatar && (
-                  <img src={article.author.avatar} alt="" className="article-page__author-bio-img" />
+                  <img src={article.author.avatar} alt={article.author.display_name} className="article-page__author-bio-img" />
                 )}
                 <div>
                   <strong>{article.author.display_name}</strong>
