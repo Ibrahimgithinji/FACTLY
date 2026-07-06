@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import ArticleCard from '../components/ArticleCard';
 import SocialShare from '../components/SocialShare';
 import Sidebar from '../components/Sidebar';
@@ -146,7 +147,7 @@ export default function ArticlePage() {
             <p className="article-page__excerpt">{article.excerpt}</p>
           )}
 
-          <div className="article-page__content" dangerouslySetInnerHTML={{ __html: article.content }} />
+          <div className="article-page__content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
 
           {article.tags && article.tags.length > 0 && (
             <div className="article-page__tags">
