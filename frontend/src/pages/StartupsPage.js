@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import { CategoryPageSkeleton } from '../components/Skeleton';
 import SEOMeta from '../components/SEOMeta';
+import { CONTENT_ENDPOINTS } from '../utils/api';
 import './CategoryPage.css';
 
 export default function StartupsPage() {
@@ -14,8 +15,8 @@ export default function StartupsPage() {
     async function fetchData() {
       try {
         const [listRes, featuredRes] = await Promise.all([
-          fetch('/api/content/articles/?category=startups&page_size=50'),
-          fetch('/api/content/articles/?category=startups&featured=true&page_size=1'),
+          fetch(`${CONTENT_ENDPOINTS.ARTICLES}?category=startups&page_size=50`),
+          fetch(`${CONTENT_ENDPOINTS.ARTICLES}?category=startups&featured=true&page_size=1`),
         ]);
         if (listRes.ok) {
           const data = await listRes.json();

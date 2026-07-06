@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   TRENDING_LIVE: `${API_BASE_URL}/api/verification/trending/live/`,
   GLOBAL_EVENTS: `${API_BASE_URL}/api/verification/global-events/`,
   REFRESH_DATA: `${API_BASE_URL}/api/verification/refresh/`,
+  CLAIMS: `${API_BASE_URL}/api/verification/claims/`,
 };
 
 // Content/Article API endpoints
@@ -34,6 +35,7 @@ export const CONTENT_ENDPOINTS = {
   BOOKMARKS: `${API_BASE_URL}/api/content/bookmarks/`,
   BOOKMARK: (articleId) => `${API_BASE_URL}/api/content/bookmarks/${articleId}/`,
   AUTHOR: (authorId) => `${API_BASE_URL}/api/content/authors/${authorId}/`,
+  PUSH_SUBSCRIBE: `${API_BASE_URL}/api/content/push/subscribe/`,
 };
 
 // Export for use in fetch requests

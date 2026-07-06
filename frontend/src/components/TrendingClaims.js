@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { API_ENDPOINTS } from '../utils/api';
 import './TrendingClaims.css';
 
 const CLAIMS_POLL_MS = 10 * 60 * 1000;
@@ -26,7 +27,7 @@ export default function TrendingClaims() {
 
   const fetchClaims = useCallback(async () => {
     try {
-      const r = await fetch('/api/verification/claims/');
+      const r = await fetch(API_ENDPOINTS.CLAIMS);
       if (!mountedRef.current) return;
       const data = r.ok ? await r.json() : { claims: [] };
       setClaims(data.claims || []);

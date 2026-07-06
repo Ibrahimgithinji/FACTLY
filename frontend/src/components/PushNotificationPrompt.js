@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CONTENT_ENDPOINTS } from '../utils/api';
 
 const PUBLIC_VAPID_KEY = 'BGb5sRFzl-JOMxXNG3t0xMJi0s5LiioU7lfSWBW5fkwFr_wYAe0d2GlXdAHBeJERGCQsl5rDjZm1BXXDEXk7KRI';
 
@@ -46,7 +47,7 @@ export default function PushNotificationPrompt() {
         applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
       });
 
-      await fetch('/api/content/push/subscribe/', {
+      await fetch(CONTENT_ENDPOINTS.PUSH_SUBSCRIBE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub),
