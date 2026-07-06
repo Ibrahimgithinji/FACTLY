@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SEOMeta from '../components/SEOMeta';
+import { Skeleton } from '../components/Skeleton';
 import { API_BASE_URL } from '../utils/constants';
 
 export default function AdminDashboard() {
@@ -29,7 +30,18 @@ export default function AdminDashboard() {
   }, []);
 
   if (!user) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Please log in.</p>;
-  if (loading) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Loading...</p>;
+  if (loading) return (
+    <div className="admin-dashboard">
+      <div className="admin-stats">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="admin-stat-card">
+            <Skeleton width="60%" height="14px" />
+            <Skeleton width="40%" height="28px" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <p style={{ padding: 40, color: 'red' }}>{error}</p>;
   if (!stats) return null;
 

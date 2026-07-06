@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
+import { ArticleCardSkeleton } from '../components/Skeleton';
 import SEOMeta from '../components/SEOMeta';
 import { API_BASE_URL } from '../utils/constants';
 import './CategoryPage.css';
@@ -123,7 +124,9 @@ export default function SearchResultsPage() {
         )}
 
         {loading ? (
-          <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 40 }}>Searching...</p>
+          <div className="article-grid">
+            {[1, 2, 3, 4, 5, 6].map((i) => <ArticleCardSkeleton key={i} />)}
+          </div>
         ) : results.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
             <p style={{ fontSize: 18, color: 'var(--text-secondary)', marginBottom: 8 }}>No results found</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SEOMeta from '../components/SEOMeta';
+import { Skeleton } from '../components/Skeleton';
 import './Auth.css';
 
 const HistoryPage = () => {
@@ -105,7 +106,19 @@ const HistoryPage = () => {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>Loading...</h1>
+            <Skeleton width="200px" height="28px" />
+            <Skeleton width="160px" height="16px" />
+          </div>
+          <div style={{ padding: '20px 0' }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 16, padding: 16, borderBottom: '1px solid var(--border)' }}>
+                <Skeleton width="60px" height="24px" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton width="100%" height="18px" />
+                  <Skeleton width="40%" height="14px" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
