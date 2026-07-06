@@ -18,12 +18,13 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchData() {
       setLoading(true);
       try {
         const [catRes, artRes] = await Promise.all([
-          fetch(CONTENT_ENDPOINTS.CATEGORIES),
-          fetch(`${CONTENT_ENDPOINTS.ARTICLES}?category=${slug}&page=${page}`),
+          fetch(CONTENT_ENDPOINTS.CATEGORIES, { signal: controller.signal }),
+          fetch(`${CONTENT_ENDPOINTS.ARTICLES}?category=${slug}&page=${page}`, { signal: controller.signal }),
         ]);
         const catData = await catRes.json();
         const artData = await artRes.json();
@@ -34,12 +35,14 @@ export default function CategoryPage() {
         const found = catData.find(c => c.slug === slug);
         setCategory(found || null);
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error('Failed to load category:', err);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
+    return () => controller.abort();
   }, [slug, page]);
 
   useEffect(() => { setPage(1); }, [slug]);

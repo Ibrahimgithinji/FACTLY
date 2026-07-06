@@ -17,13 +17,19 @@ export default function SearchResultsPage() {
   const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/content/categories/`)
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/api/content/categories/`, { signal: controller.signal })
       .then((r) => r.ok ? r.json() : [])
       .then(setCategories)
-      .catch(() => console.warn('Failed to load categories for search filters'));
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        console.warn('Failed to load categories for search filters');
+      });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function doSearch() {
       if (!query) { setResults([]); setCount(0); setLoading(false); return; }
       setLoading(true);
@@ -32,19 +38,21 @@ export default function SearchResultsPage() {
         if (categoryFilter) url += `&category=${categoryFilter}`;
         if (dateFrom) url += `&date_from=${dateFrom}`;
         if (dateTo) url += `&date_to=${dateTo}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           setResults(data.results || []);
           setCount(data.count || 0);
         }
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error('Search failed:', err);
       } finally {
         setLoading(false);
       }
     }
     doSearch();
+    return () => controller.abort();
   }, [query, categoryFilter, dateFrom, dateTo]);
 
   return (

@@ -21,9 +21,10 @@ export default function DailyBriefingPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
-    fetch(`${AGENT_API}/digest/?hours=${hours}`)
+    fetch(`${AGENT_API}/digest/?hours=${hours}`, { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error('Failed to fetch digest');
         return r.json();
@@ -33,9 +34,11 @@ export default function DailyBriefingPage() {
         setLoading(false);
       })
       .catch((err) => {
+        if (err.name === 'AbortError') return;
         setError(err.message);
         setLoading(false);
       });
+    return () => controller.abort();
   }, [hours]);
 
   if (loading) {

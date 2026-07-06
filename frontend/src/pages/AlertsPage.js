@@ -22,7 +22,8 @@ export default function AlertsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${ALERTS_API}?limit=50`)
+    const controller = new AbortController();
+    fetch(`${ALERTS_API}?limit=50`, { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error('Failed to fetch alerts');
         return r.json();
@@ -32,9 +33,11 @@ export default function AlertsPage() {
         setLoading(false);
       })
       .catch((err) => {
+        if (err.name === 'AbortError') return;
         setError(err.message || 'Could not load alerts');
         setLoading(false);
       });
+    return () => controller.abort();
   }, []);
 
   const filteredAlerts = filter === 'all'

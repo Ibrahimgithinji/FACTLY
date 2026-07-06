@@ -8,8 +8,10 @@ export default function AboutPage() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     fetch(`${API_BASE_URL}/api/content/analytics/dashboard/`, {
       credentials: 'include',
+      signal: controller.signal,
     })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -22,7 +24,11 @@ export default function AboutPage() {
           });
         }
       })
-      .catch(() => console.warn('Failed to load dashboard stats'));
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        console.warn('Failed to load dashboard stats');
+      });
+    return () => controller.abort();
   }, []);
 
   return (

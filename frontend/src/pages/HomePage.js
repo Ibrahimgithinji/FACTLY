@@ -384,8 +384,9 @@ function AlertBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/alerts/?limit=3`)
-      .then((r) => r.json())
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/api/alerts/?limit=3`, { signal: controller.signal })
+      .then((r) => r.ok ? r.json() : [])
       .then((data) => {
             const results = data.results || data.alerts || [];
             if (results.length > 0) {
@@ -393,7 +394,11 @@ function AlertBanner() {
               setVisible(true);
             }
           })
-          .catch(() => console.warn('Failed to fetch alerts'));
+          .catch((err) => {
+            if (err.name === 'AbortError') return;
+            console.warn('Failed to fetch alerts');
+          });
+    return () => controller.abort();
   }, []);
 
   if (!visible || alerts.length === 0) return null;
@@ -428,16 +433,20 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState('');
   const pollRef = useRef(null);
   const mountedRef = useRef(false);
+  const abortRef = useRef(null);
 
   const handleTopicClick = (topic) => {
     window.location.href = `/verify?topic=${encodeURIComponent(topic)}`;
   };
 
   const fetchHomeData = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const [homeRes, catRes] = await Promise.all([
-        fetch(CONTENT_ENDPOINTS.HOMEPAGE),
-        fetch(CONTENT_ENDPOINTS.CATEGORIES),
+        fetch(CONTENT_ENDPOINTS.HOMEPAGE, { signal: controller.signal }),
+        fetch(CONTENT_ENDPOINTS.CATEGORIES, { signal: controller.signal }),
       ]);
       if (!mountedRef.current) return;
       if (!homeRes.ok || !catRes.ok) throw new Error('Failed to load homepage data');
@@ -448,6 +457,7 @@ export default function HomePage() {
       setLastUpdated(new Date().toISOString());
       setFetchError('');
     } catch (err) {
+      if (err.name === 'AbortError') return;
       if (!mountedRef.current) return;
       setFetchError(err.message || 'Could not load homepage');
       console.error('Failed to load homepage:', err);
@@ -472,6 +482,7 @@ export default function HomePage() {
 
     return () => {
       mountedRef.current = false;
+      if (abortRef.current) abortRef.current.abort();
       clearInterval(pollRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('online', handleOnline);

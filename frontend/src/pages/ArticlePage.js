@@ -21,12 +21,13 @@ export default function ArticlePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchData() {
       setLoading(true);
       try {
         const [artRes, catRes] = await Promise.all([
-          fetch(CONTENT_ENDPOINTS.ARTICLE(slug)),
-          fetch(CONTENT_ENDPOINTS.CATEGORIES),
+          fetch(CONTENT_ENDPOINTS.ARTICLE(slug), { signal: controller.signal }),
+          fetch(CONTENT_ENDPOINTS.CATEGORIES, { signal: controller.signal }),
         ]);
         if (!artRes.ok) throw new Error('Article not found');
         const artData = await artRes.json();
@@ -34,23 +35,26 @@ export default function ArticlePage() {
         setArticle(artData);
         setCategories(catData);
 
-        const relRes = await fetch(CONTENT_ENDPOINTS.RELATED(slug));
+        const relRes = await fetch(CONTENT_ENDPOINTS.RELATED(slug), { signal: controller.signal });
         if (relRes.ok) {
           const relData = await relRes.json();
           setRelated(relData);
         }
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error('Failed to load article:', err);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
+    return () => controller.abort();
   }, [slug]);
 
   // Log page view
   useEffect(() => {
     if (!article) return;
+    const controller = new AbortController();
     fetch(`${API_BASE_URL}/api/content/analytics/log-view/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -58,7 +62,12 @@ export default function ArticlePage() {
         path: `/article/${slug}`,
         article_id: article.id,
       }),
-    }).catch(() => console.warn('Failed to log page view'));
+      signal: controller.signal,
+    }).catch((err) => {
+      if (err.name === 'AbortError') return;
+      console.warn('Failed to log page view');
+    });
+    return () => controller.abort();
   }, [article, slug]);
 
   if (loading) {

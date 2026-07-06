@@ -15,22 +15,25 @@ export default function AuthorPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     (async () => {
       setLoading(true);
       setError(false);
       try {
-        const res = await fetch(CONTENT_ENDPOINTS.AUTHOR(id));
+        const res = await fetch(CONTENT_ENDPOINTS.AUTHOR(id), { signal: controller.signal });
         if (!res.ok) { setError(true); return; }
         const data = await res.json();
         setAuthor(data.author);
         setArticles(data.articles);
         setCount(data.article_count);
-      } catch {
+      } catch (err) {
+        if (err.name === 'AbortError') return;
         setError(true);
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [id]);
 
   if (loading) {

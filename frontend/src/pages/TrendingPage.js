@@ -24,18 +24,21 @@ export default function TrendingPage() {
   const [view, setView] = useState('trends');
 
   useEffect(() => {
+    const controller = new AbortController();
     Promise.all([
-      fetch(`${TRENDING_API}?limit=30`).then((r) => r.json()),
-      fetch(LIVE_API).then((r) => r.json()).catch(() => ({ trending_stories: [] })),
+      fetch(`${TRENDING_API}?limit=30`, { signal: controller.signal }).then((r) => r.json()),
+      fetch(LIVE_API, { signal: controller.signal }).then((r) => r.json()).catch(() => ({ trending_stories: [] })),
     ])
       .then(([trendData, liveData]) => {
         setTrends(trendData.results || trendData.trending_topics || []);
         setLiveStories(liveData.trending_stories || []);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
         setLoading(false);
       });
+    return () => controller.abort();
   }, []);
 
   const filteredTrends = filter === 'all'

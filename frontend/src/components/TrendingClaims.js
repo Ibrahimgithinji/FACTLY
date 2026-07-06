@@ -24,15 +24,20 @@ export default function TrendingClaims() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const pollRef = useRef(null);
   const mountedRef = useRef(false);
+  const abortRef = useRef(null);
 
   const fetchClaims = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const r = await fetch(API_ENDPOINTS.CLAIMS);
+      const r = await fetch(API_ENDPOINTS.CLAIMS, { signal: controller.signal });
       if (!mountedRef.current) return;
       const data = r.ok ? await r.json() : { claims: [] };
       setClaims(data.claims || []);
       setLastUpdated(new Date().toISOString());
-    } catch {
+    } catch (err) {
+      if (err.name === 'AbortError') return;
       if (!mountedRef.current) return;
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -52,6 +57,7 @@ export default function TrendingClaims() {
 
     return () => {
       mountedRef.current = false;
+      if (abortRef.current) abortRef.current.abort();
       clearInterval(pollRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
     };

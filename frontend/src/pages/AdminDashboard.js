@@ -11,15 +11,21 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const controller = new AbortController();
     fetch(`${API_BASE_URL}/api/content/analytics/dashboard/`, {
       credentials: 'include',
+      signal: controller.signal,
     })
       .then((r) => {
         if (!r.ok) throw new Error('Unauthorized');
         return r.json();
       })
       .then((data) => { setStats(data); setLoading(false); })
-      .catch((err) => { setError(err.message); setLoading(false); });
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setError(err.message); setLoading(false);
+      });
+    return () => controller.abort();
   }, []);
 
   if (!user) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Please log in.</p>;

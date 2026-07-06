@@ -76,6 +76,7 @@ export function CountUp({ target, duration = 1.5, suffix = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
   const nodeRef = useRef(null);
+  const rafRef = useRef(null);
 
   React.useEffect(() => {
     if (!isInView || !nodeRef.current) return;
@@ -89,9 +90,10 @@ export function CountUp({ target, duration = 1.5, suffix = '' }) {
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(eased * end);
       nodeRef.current.textContent = `${current}${suffix}`;
-      if (progress < 1) requestAnimationFrame(step);
+      if (progress < 1) rafRef.current = requestAnimationFrame(step);
     };
-    requestAnimationFrame(step);
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
   }, [isInView, target, duration, suffix]);
 
   return <span ref={(el) => { ref.current = el; nodeRef.current = el; }}>0{suffix}</span>;
