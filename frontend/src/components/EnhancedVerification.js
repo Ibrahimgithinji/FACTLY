@@ -47,15 +47,15 @@ const EnhancedVerification = () => {
           <h4>Evidence Summary</h4>
           <div className="metrics">
             <div className="metric">
-              <span className="value">{analysis.evidence_summary.total_sources}</span>
+              <span className="value">{analysis?.evidence_summary?.total_sources ?? 0}</span>
               <span className="label">Total Sources</span>
             </div>
             <div className="metric">
-              <span className="value">{analysis.evidence_summary.fact_checks}</span>
+              <span className="value">{analysis?.evidence_summary?.fact_checks ?? 0}</span>
               <span className="label">Fact Checks</span>
             </div>
             <div className="metric">
-              <span className="value">{analysis.evidence_summary.news_sources}</span>
+              <span className="value">{analysis?.evidence_summary?.news_sources ?? 0}</span>
               <span className="label">News Sources</span>
             </div>
           </div>
@@ -64,16 +64,16 @@ const EnhancedVerification = () => {
         {/* Verdict Consensus */}
         <div className="analysis-card consensus">
           <h4>Verdict Consensus</h4>
-          <div className={`consensus-result ${getVerdictColor(analysis.verdict_consensus.consensus_verdict)}`}>
+          <div className={`consensus-result ${getVerdictColor(analysis?.verdict_consensus?.consensus_verdict ?? '')}`}>
             <div className="verdict-main">
               <span className="verdict-label">
-                {analysis.verdict_consensus.consensus_verdict.toUpperCase()}
+                {(analysis?.verdict_consensus?.consensus_verdict ?? 'UNKNOWN').toUpperCase()}
               </span>
               <span className="verdict-percentage">
-                {analysis.verdict_consensus.consensus_percentage}% consensus
+                {analysis?.verdict_consensus?.consensus_percentage ?? 0}% consensus
               </span>
             </div>
-            {analysis.verdict_consensus.has_conflicts && (
+            {analysis?.verdict_consensus?.has_conflicts && (
               <div className="conflict-warning">
                 ⚠️ Conflicting evidence detected
               </div>
@@ -88,15 +88,15 @@ const EnhancedVerification = () => {
             <div className="credibility-gauge">
               <div
                 className="credibility-fill"
-                style={{ width: `${analysis.source_credibility.average_score * 100}%` }}
+                style={{ width: `${(analysis?.source_credibility?.average_score ?? 0) * 100}%` }}
               ></div>
             </div>
             <div className="credibility-info">
               <span className="credibility-value">
-                {analysis.source_credibility.credibility_level}
+                {analysis?.source_credibility?.credibility_level ?? 'Unknown'}
               </span>
               <span className="credibility-percent">
-                {(analysis.source_credibility.average_score * 100).toFixed(0)}%
+                {(analysis?.source_credibility?.average_score ?? 0) * 100}%
               </span>
             </div>
           </div>
@@ -105,16 +105,16 @@ const EnhancedVerification = () => {
         {/* Data Freshness */}
         <div className="analysis-card freshness">
           <h4>Data Freshness</h4>
-          <div className={`freshness-indicator ${analysis.evidence_freshness.is_fresh ? 'fresh' : analysis.evidence_freshness.is_stale ? 'stale' : 'moderate'}`}>
+          <div className={`freshness-indicator ${analysis?.evidence_freshness?.is_fresh ? 'fresh' : analysis?.evidence_freshness?.is_stale ? 'stale' : 'moderate'}`}>
             <div className="freshness-icon">
-              {analysis.evidence_freshness.is_fresh ? '🟢' : analysis.evidence_freshness.is_stale ? '🔴' : '🟡'}
+              {analysis?.evidence_freshness?.is_fresh ? '🟢' : analysis?.evidence_freshness?.is_stale ? '🔴' : '🟡'}
             </div>
             <div className="freshness-info">
               <span className="freshness-age">
-                Avg: {formatAge(analysis.evidence_freshness.average_age_hours)}
+                Avg: {formatAge(analysis?.evidence_freshness?.average_age_hours ?? Infinity)}
               </span>
               <span className="freshness-status">
-                {analysis.evidence_freshness.freshness_level}
+                {analysis?.evidence_freshness?.freshness_level ?? 'Unknown'}
               </span>
             </div>
           </div>
@@ -127,15 +127,15 @@ const EnhancedVerification = () => {
             <div className="verification-gauge">
               <div
                 className="verification-fill"
-                style={{ width: `${analysis.cross_verification.cross_verification_score * 100}%` }}
+                style={{ width: `${(analysis?.cross_verification?.cross_verification_score ?? 0) * 100}%` }}
               ></div>
             </div>
             <div className="verification-info">
               <span className="verification-sources">
-                {analysis.cross_verification.unique_sources} unique sources
+                {analysis?.cross_verification?.unique_sources ?? 0} unique sources
               </span>
               <span className="verification-strength">
-                {analysis.cross_verification.verification_strength}
+                {analysis?.cross_verification?.verification_strength ?? 'Unknown'}
               </span>
             </div>
           </div>
