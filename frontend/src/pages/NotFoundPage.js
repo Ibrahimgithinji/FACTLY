@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SEOMeta from '../components/SEOMeta';
-import { CONTENT_ENDPOINTS } from '../utils/api';
+import { API_ENDPOINTS } from '../utils/api';
 import './NotFoundPage.css';
 
 export default function NotFoundPage() {
@@ -10,10 +10,18 @@ export default function NotFoundPage() {
   const [trending, setTrending] = useState([]);
 
   useEffect(() => {
-    fetch(CONTENT_ENDPOINTS.HOMEPAGE)
-      .then(r => r.json())
-      .then(data => setTrending(data.trending?.slice(0, 4) || []))
-      .catch(() => console.warn('Failed to load trending data for 404 page'));
+    const controller = new AbortController();
+    fetch(API_ENDPOINTS.TRENDING, { signal: controller.signal })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const list = data.results || data.claims || data.trending_topics || [];
+        setTrending(list.slice(0, 4));
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        console.warn('Failed to load trending data for 404 page');
+      });
+    return () => controller.abort();
   }, []);
 
   const handleSearch = e => {
