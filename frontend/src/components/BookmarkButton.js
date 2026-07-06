@@ -17,7 +17,7 @@ export default function BookmarkButton({ articleId }) {
         const ids = (data.results || data).map(a => a.id);
         setIsBookmarked(ids.includes(articleId));
       })
-      .catch(() => {});
+      .catch(() => console.warn('Failed to load bookmark state'));
   }, [isAuthenticated, articleId]);
 
   const toggle = useCallback(async () => {
@@ -35,7 +35,7 @@ export default function BookmarkButton({ articleId }) {
       if (res.ok) {
         setIsBookmarked(!isBookmarked);
       }
-    } catch {}
+      } catch (e) { console.warn('Failed to toggle bookmark:', e); }
   }, [isAuthenticated, isBookmarked, articleId]);
 
   return (

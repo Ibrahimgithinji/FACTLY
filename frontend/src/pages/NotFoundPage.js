@@ -13,7 +13,7 @@ export default function NotFoundPage() {
     fetch(CONTENT_ENDPOINTS.HOMEPAGE)
       .then(r => r.json())
       .then(data => setTrending(data.trending?.slice(0, 4) || []))
-      .catch(() => {});
+      .catch(() => console.warn('Failed to load trending data for 404 page'));
   }, []);
 
   const handleSearch = e => {

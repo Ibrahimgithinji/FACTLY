@@ -22,7 +22,7 @@ export default function AboutPage() {
           });
         }
       })
-      .catch(() => {});
+      .catch(() => console.warn('Failed to load dashboard stats'));
   }, []);
 
   return (

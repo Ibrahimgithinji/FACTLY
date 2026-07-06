@@ -19,7 +19,7 @@ function getInitialSettings() {
       const parsed = JSON.parse(stored);
       return { ...DEFAULTS, ...parsed };
     }
-  } catch {}
+  } catch (e) { console.warn('Failed to load settings from localStorage:', e); }
   return { ...DEFAULTS };
 }
 

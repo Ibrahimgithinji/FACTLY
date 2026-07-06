@@ -20,7 +20,7 @@ export default function SearchResultsPage() {
     fetch(`${API_BASE_URL}/api/content/categories/`)
       .then((r) => r.ok ? r.json() : [])
       .then(setCategories)
-      .catch(() => {});
+      .catch(() => console.warn('Failed to load categories for search filters'));
   }, []);
 
   useEffect(() => {

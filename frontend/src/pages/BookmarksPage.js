@@ -26,7 +26,7 @@ export default function BookmarksPage() {
           const data = await res.json();
           setArticles(data.results || data);
         }
-      } catch {} finally {
+      } catch (e) { console.warn('Failed to load bookmarks:', e); } finally {
         setLoading(false);
       }
     })();

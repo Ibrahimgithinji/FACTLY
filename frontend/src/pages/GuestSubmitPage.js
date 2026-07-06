@@ -21,7 +21,7 @@ export default function GuestSubmitPage() {
     fetch(CONTENT_ENDPOINTS.CATEGORIES)
       .then(r => r.json())
       .then(setCategories)
-      .catch(() => {});
+      .catch(() => console.warn('Failed to load categories'));
   }, []);
 
   const handleChange = e => {

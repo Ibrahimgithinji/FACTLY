@@ -387,13 +387,13 @@ function AlertBanner() {
     fetch(`${API_BASE_URL}/api/alerts/?limit=3`)
       .then((r) => r.json())
       .then((data) => {
-        const results = data.results || data.alerts || [];
-        if (results.length > 0) {
-          setAlerts(results.slice(0, 3));
-          setVisible(true);
-        }
-      })
-      .catch(() => {});
+            const results = data.results || data.alerts || [];
+            if (results.length > 0) {
+              setAlerts(results.slice(0, 3));
+              setVisible(true);
+            }
+          })
+          .catch(() => console.warn('Failed to fetch alerts'));
   }, []);
 
   if (!visible || alerts.length === 0) return null;

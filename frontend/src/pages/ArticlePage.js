@@ -58,7 +58,7 @@ export default function ArticlePage() {
         path: `/article/${slug}`,
         article_id: article.id,
       }),
-    }).catch(() => {});
+    }).catch(() => console.warn('Failed to log page view'));
   }, [article, slug]);
 
   if (loading) {
