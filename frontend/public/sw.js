@@ -2,6 +2,12 @@ const CACHE_NAME = 'factly-v2';
 const API_CACHE_NAME = 'factly-api-v1';
 const STATIC_CACHE_NAME = 'factly-static-v1';
 
+const safeRespond = (promise) => {
+  return Promise.resolve(promise)
+    .then(response => response instanceof Response ? response : new Response(null, { status: 503 }))
+    .catch(() => new Response(null, { status: 503 }));
+};
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -24,7 +30,7 @@ self.addEventListener('fetch', (event) => {
 
   // API requests - network first, cache fallback
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
+    event.respondWith(safeRespond(
       fetch(event.request)
         .then((response) => {
           const cloned = response.clone();
@@ -34,13 +40,13 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => caches.match(event.request))
-    );
+    ));
     return;
   }
 
   // Static assets (JS, CSS, images, fonts) - cache first
   if (/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/i.test(url.pathname)) {
-    event.respondWith(
+    event.respondWith(safeRespond(
       caches.open(STATIC_CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cached) => {
           const fetchPromise = fetch(event.request).then((response) => {
@@ -50,13 +56,13 @@ self.addEventListener('fetch', (event) => {
           return cached || fetchPromise;
         });
       })
-    );
+    ));
     return;
   }
 
   // Navigation requests (SPA) - network first, fall back to cached /, then offline page
   if (event.request.mode === 'navigate') {
-    event.respondWith(
+    event.respondWith(safeRespond(
       fetch(event.request).catch(() => {
         return caches.match('/').then((cached) => {
           return cached || new Response(
@@ -65,12 +71,12 @@ self.addEventListener('fetch', (event) => {
           );
         });
       })
-    );
+    ));
     return;
   }
 
   // Everything else - network only
-  event.respondWith(fetch(event.request).catch(() => new Response('Offline', { status: 503 })));
+  event.respondWith(safeRespond(fetch(event.request).catch(() => new Response('Offline', { status: 503 }))));
 });
 
 self.addEventListener('push', (event) => {
