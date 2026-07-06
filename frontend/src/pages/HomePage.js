@@ -543,7 +543,7 @@ export default function HomePage() {
       <div className="home-freshness">
         {lastUpdated && (
           <span>
-            <span className="freshness-dot" />
+            <span className="freshness-dot" aria-label="Recent" />
             Updated {formatRelativeTime(lastUpdated)}
           </span>
         )}

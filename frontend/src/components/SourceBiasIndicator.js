@@ -37,6 +37,8 @@ export default function SourceBiasIndicator({ sources = [], compact = false }) {
               className="sbi-compact-segment"
               style={{ width: `${(count / total) * 100}%`, background: BIAS_LABELS[bias].color }}
               title={`${BIAS_LABELS[bias].label}: ${count}`}
+              role="img"
+              aria-label={`${BIAS_LABELS[bias].label}: ${count}`}
             />
           ))}
         </div>

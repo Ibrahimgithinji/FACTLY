@@ -144,7 +144,7 @@ const Navbar = () => {
                     >
                       {item.name}
                       {item.name === 'Alerts' && alertCount > 0 && (
-                        <span className="navbar__alert-dot">{alertCount}</span>
+                        <span className="navbar__alert-dot" aria-label={`${alertCount} active alert${alertCount === 1 ? '' : 's'}`}>{alertCount}</span>
                       )}
                     </NavLink>
                   </li>

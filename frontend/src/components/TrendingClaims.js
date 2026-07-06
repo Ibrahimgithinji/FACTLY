@@ -81,7 +81,7 @@ export default function TrendingClaims() {
         <div className="trending-claims__actions">
           {lastUpdated && (
             <span className="claims-timestamp">
-              <span className="freshness-dot" />
+              <span className="freshness-dot" aria-label="Recent" />
               {formatRelativeTime(lastUpdated)}
             </span>
           )}
