@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
 import InstallPrompt from './components/InstallPrompt';
 import PushNotificationPrompt from './components/PushNotificationPrompt';
+import SkipLink from './components/SkipLink';
 import { setupChunkErrorRecovery } from './utils/chunkRecovery';
 import './App.css';
 
@@ -66,6 +67,9 @@ const ResultsPage = () => (
 
 function App() {
   return (
+    <>
+      <SkipLink />
+      <HelmetProvider>
     <AuthProvider>
       <ResultsProvider>
         <ThemeProvider>
