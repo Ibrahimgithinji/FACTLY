@@ -67,14 +67,12 @@ const ResultsPage = () => (
 
 function App() {
   return (
-    <>
+    <HelmetProvider>
       <SkipLink />
-      <HelmetProvider>
     <AuthProvider>
       <ResultsProvider>
         <ThemeProvider>
           <SettingsProvider>
-          <HelmetProvider>
           <Router future={{ v7_relativeSplatPath: true }}>
             <div className="App">
               <Navbar />
@@ -137,11 +135,11 @@ function App() {
             <PushNotificationPrompt />
           </div>
         </Router>
-        </HelmetProvider>
           </SettingsProvider>
         </ThemeProvider>
     </ResultsProvider>
     </AuthProvider>
+    </HelmetProvider>
   );
 }
 
