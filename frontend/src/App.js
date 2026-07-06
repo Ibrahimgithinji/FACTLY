@@ -91,7 +91,7 @@ function App() {
                     <Route path="/author/:id" element={<AuthorPage />} />
                     <Route path="/startups" element={<StartupsPage />} />
                     <Route path="/search" element={<SearchResultsPage />} />
-                    <Route path="/dashboard" element={<AdminDashboard />} />
+                    <Route path="/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                     <Route path="/agent" element={<AgentPage />} />
                     <Route path="/digest" element={<DailyBriefingPage />} />
                     <Route path="/trending" element={<TrendingPage />} />
