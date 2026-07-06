@@ -10,8 +10,8 @@ import './ProfilePage.css';
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
@@ -19,6 +19,14 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({ total: 0, avgScore: 0, verified: 0, flagged: 0 });
+
+  // Sync form fields when user data loads from server
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('factCheckHistory') || '[]');
