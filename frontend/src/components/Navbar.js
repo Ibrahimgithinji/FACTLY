@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SearchOverlay from './SearchOverlay';
 import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
 import { CONTENT_ENDPOINTS } from '../utils/api';
+import { useFocusTrap } from '../hooks/useAccessibility';
 import './Navbar.css';
 
 const NAV_ITEMS = [
@@ -38,6 +39,18 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
+  const previousFocusRef = useRef(null);
+  const mobileMenuRef = useFocusTrap(isMobileMenuOpen);
+
+  // Save and restore focus for mobile menu
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      previousFocusRef.current = document.activeElement;
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isMobileMenuOpen]);
 
   const handleScroll = useCallback(() => {
     setIsScrolled(window.scrollY > 8);
@@ -204,6 +217,7 @@ const Navbar = () => {
       <div
         id="mobile-menu"
         className={`navbar__mobile ${isMobileMenuOpen ? 'navbar__mobile--open' : ''}`}
+        ref={mobileMenuRef}
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"

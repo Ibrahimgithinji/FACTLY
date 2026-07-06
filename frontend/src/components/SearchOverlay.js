@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { CONTENT_ENDPOINTS } from '../utils/api';
+import { useFocusTrap } from '../hooks/useAccessibility';
 import './SearchOverlay.css';
 
 export default function SearchOverlay({ isOpen, onClose }) {
@@ -9,10 +10,16 @@ export default function SearchOverlay({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
   const timeoutRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const overlayRef = useFocusTrap(isOpen);
 
+  // Save and restore focus
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
     }
   }, [isOpen]);
 
@@ -56,7 +63,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="search-overlay" onClick={onClose}>
+    <div className="search-overlay" onClick={onClose} ref={overlayRef}>
       <div className="search-overlay__content" onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit} className="search-overlay__form">
           <input
