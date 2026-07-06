@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import { CategoryPageSkeleton } from '../components/Skeleton';
@@ -36,6 +36,12 @@ export default function StartupsPage() {
     }
     fetchData();
   }, []);
+
+  // Deduplicate: exclude the spotlight article from the grid
+  const gridArticles = useMemo(() => {
+    if (!spotlight) return articles;
+    return articles.filter((a) => a.id !== spotlight.id);
+  }, [articles, spotlight]);
 
   if (loading) return <CategoryPageSkeleton />;
 
@@ -84,16 +90,16 @@ export default function StartupsPage() {
 
         <div className="section-header">
           <h2>All Startup Stories</h2>
-          <span className="article-count">{articles.length} articles</span>
+                          <span className="article-count">{gridArticles.length} articles</span>
         </div>
 
-        {articles.length === 0 ? (
+        {gridArticles.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 40 }}>
             No startup stories yet. Check back soon!
           </p>
         ) : (
           <div className="article-grid">
-            {articles.map((article) => (
+            {gridArticles.map((article) => (
               <ArticleCard key={article.id} article={article} />
             ))}
           </div>
