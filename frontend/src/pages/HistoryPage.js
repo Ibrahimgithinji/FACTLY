@@ -97,7 +97,7 @@ const HistoryPage = () => {
       claim: item.claim,
       originalText: item.originalText || item.claim
     }));
-    navigate('/');
+    navigate('/verify');
   };
 
   if (loading) {

@@ -35,6 +35,22 @@ const VerificationForm = ({ initialValue = '' }) => {
     setError(null);
   }, [initialValue]);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('reverifyClaim');
+      if (stored) {
+        const { claim } = JSON.parse(stored);
+        if (claim) {
+          setInput(claim);
+          setCharCount(claim.length);
+        }
+        localStorage.removeItem('reverifyClaim');
+      }
+    } catch {
+      localStorage.removeItem('reverifyClaim');
+    }
+  }, []);
+
   const handleInputChange = useCallback((e) => {
     const value = e.target.value;
     if (value.length <= MAX_CHARS) {
