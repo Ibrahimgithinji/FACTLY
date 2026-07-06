@@ -113,11 +113,7 @@ function App() {
                     />
                     <Route
                       path="/results"
-                      element={
-                        <ProtectedRoute>
-                          <ResultsPage />
-                        </ProtectedRoute>
-                      }
+                      element={<ResultsPage />}
                     />
                     <Route
                       path="/history"
