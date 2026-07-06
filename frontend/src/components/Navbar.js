@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import SearchOverlay from './SearchOverlay';
 import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
+import { CONTENT_ENDPOINTS } from '../utils/api';
 import './Navbar.css';
 
 const NAV_ITEMS = [
@@ -64,6 +65,18 @@ const Navbar = () => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(CONTENT_ENDPOINTS.ALERTS, { signal: controller.signal })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => {
+        const list = data.results || data.alerts || [];
+        setAlertCount(list.length);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   const toggleUserMenu = () => {
     setUserMenuOpen(prev => !prev);

@@ -36,6 +36,7 @@ export const CONTENT_ENDPOINTS = {
   BOOKMARK: (articleId) => `${API_BASE_URL}/api/content/bookmarks/${articleId}/`,
   AUTHOR: (authorId) => `${API_BASE_URL}/api/content/authors/${authorId}/`,
   PUSH_SUBSCRIBE: `${API_BASE_URL}/api/content/push/subscribe/`,
+  ALERTS: `${API_BASE_URL}/api/alerts/`,
 };
 
 // Export for use in fetch requests
