@@ -145,6 +145,9 @@ const RealTimeVerification = ({ verificationData }) => {
         <div
           className="section-header"
           onClick={() => setExpandedSources(!expandedSources)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedSources(!expandedSources); } }}
+          role="button"
+          tabIndex={0}
         >
           <span className="header-title">📰 Primary Sources ({primary_sources.length})</span>
           <span className="expand-icon">
@@ -204,11 +207,14 @@ const RealTimeVerification = ({ verificationData }) => {
       {/* Verification Timeline */}
       {verification_timeline && verification_timeline.length > 0 && (
         <div className="timeline-section">
-          <div
-            className="section-header"
-            onClick={() => setExpandedTimeline(!expandedTimeline)}
-          >
-            <span className="header-title">📅 Verification Timeline</span>
+        <div
+          className="section-header"
+          onClick={() => setExpandedTimeline(!expandedTimeline)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedTimeline(!expandedTimeline); } }}
+          role="button"
+          tabIndex={0}
+        >
+          <span className="header-title">📅 Verification Timeline</span>
             <span className="expand-icon">
               {expandedTimeline ? '▼' : '▶'}
             </span>

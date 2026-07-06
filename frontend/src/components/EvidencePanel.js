@@ -113,7 +113,7 @@ const EvidencePanel = () => {
               role="article"
               aria-label={`Evidence ${index + 1}: ${claim.rating || claim.verdict || 'Unverified'}`}
             >
-              <div className="claim-header" onClick={() => toggleClaim(index)}>
+              <div className="claim-header" onClick={() => toggleClaim(index)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleClaim(index); } }} role="button" tabIndex={0}>
                 <span 
                   className={`claim-rating ${getRatingClass(claim.rating || claim.verdict)}`}
                   aria-label={`Rating: ${claim.rating || claim.verdict || 'Unverified'}`}

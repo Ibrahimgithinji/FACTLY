@@ -124,6 +124,9 @@ export default function AlertsPage() {
                   className={`alert-item ${isExpanded ? 'alert-item--expanded' : ''}`}
                   style={{ borderLeftColor: cfg.color }}
                   onClick={() => setExpandedId(isExpanded ? null : alert.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isExpanded ? null : alert.id); } }}
+                  role="button"
+                  tabIndex={0}
                   whileHover={{ x: 4 }}
                 >
                   <div className="alert-item__header">

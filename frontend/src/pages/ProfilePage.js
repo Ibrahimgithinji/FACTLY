@@ -98,14 +98,14 @@ export default function ProfilePage() {
       </header>
 
       <div className="profile-tabs" role="tablist" aria-label="Profile sections">
-        <button className={`profile-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} role="tab" aria-selected={activeTab === 'overview'}>Overview</button>
-        <button className={`profile-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')} role="tab" aria-selected={activeTab === 'history'}>Verification History</button>
-        <button className={`profile-tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')} role="tab" aria-selected={activeTab === 'settings'}>Settings</button>
+        <button id="tab-overview" className={`profile-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} role="tab" aria-selected={activeTab === 'overview'} aria-controls="panel-overview">Overview</button>
+        <button id="tab-history" className={`profile-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')} role="tab" aria-selected={activeTab === 'history'} aria-controls="panel-history">Verification History</button>
+        <button id="tab-settings" className={`profile-tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')} role="tab" aria-selected={activeTab === 'settings'} aria-controls="panel-settings">Settings</button>
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === 'overview' && (
-          <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="profile-overview">
+          <motion.div key="overview" role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="profile-overview">
             <div className="profile-overview__grid">
               <div className="profile-card">
                 <h3>Trust Score</h3>
@@ -129,7 +129,7 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'history' && (
-          <motion.div key="history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="profile-history">
+          <motion.div key="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="profile-history">
             {history.length === 0 ? (
               <div className="profile-empty-state">
                 <p>No verification history yet. Start by verifying a claim!</p>
@@ -163,7 +163,7 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'settings' && (
-          <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="profile-settings">
+          <motion.div key="settings" role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="profile-settings">
             {message && <div className="profile-message success">{message}</div>}
             {error && <div className="profile-message error">{error}</div>}
             <form className="profile-form" onSubmit={handleSubmit}>

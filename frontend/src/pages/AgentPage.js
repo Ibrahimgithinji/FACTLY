@@ -119,13 +119,13 @@ function AgentPage() {
       </div>
 
       <div className="agent-tabs" role="tablist" aria-label="Agent features">
-        <button className={`agent-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')} role="tab" aria-selected={activeTab === 'chat'}>Chat</button>
-        <button className={`agent-tab ${activeTab === 'digest' ? 'active' : ''}`} onClick={() => setActiveTab('digest')} role="tab" aria-selected={activeTab === 'digest'}>Daily Digest</button>
-        <button className={`agent-tab ${activeTab === 'ask' ? 'active' : ''}`} onClick={() => setActiveTab('ask')} role="tab" aria-selected={activeTab === 'ask'}>Ask Factly</button>
+        <button id="tab-chat" className={`agent-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')} role="tab" aria-selected={activeTab === 'chat'} aria-controls="panel-chat">Chat</button>
+        <button id="tab-digest" className={`agent-tab ${activeTab === 'digest' ? 'active' : ''}`} onClick={() => setActiveTab('digest')} role="tab" aria-selected={activeTab === 'digest'} aria-controls="panel-digest">Daily Digest</button>
+        <button id="tab-ask" className={`agent-tab ${activeTab === 'ask' ? 'active' : ''}`} onClick={() => setActiveTab('ask')} role="tab" aria-selected={activeTab === 'ask'} aria-controls="panel-ask">Ask Factly</button>
       </div>
 
       {activeTab === 'chat' && (
-        <div className="agent-chat-container">
+        <div className="agent-chat-container" role="tabpanel" id="panel-chat" aria-labelledby="tab-chat">
           <div className="agent-messages">
             {messages.length === 0 && (
               <div className="agent-welcome">
@@ -236,7 +236,7 @@ function AgentPage() {
       )}
 
       {activeTab === 'digest' && (
-        <div className="agent-digest">
+        <div className="agent-digest" role="tabpanel" id="panel-digest" aria-labelledby="tab-digest">
           {digestLoading ? (
             <div className="loading-container"><div className="loading-spinner" /><p>Loading today's digest...</p></div>
           ) : digest ? (
@@ -330,7 +330,7 @@ function AgentPage() {
       )}
 
       {activeTab === 'ask' && (
-        <div className="ask-factly-section">
+        <div className="ask-factly-section" role="tabpanel" id="panel-ask" aria-labelledby="tab-ask">
           <div className="ask-factly-intro">
             <h2>Ask Factly</h2>
             <p>Submit a question about any claim or news topic. Our AI agent researches and verifies it for you.</p>
