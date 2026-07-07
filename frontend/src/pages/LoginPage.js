@@ -23,12 +23,12 @@ const LoginPage = () => {
   // Get the page user was trying to access, or default to home
   const from = location.state?.from?.pathname || '/';
 
-  // Listen for postMessage from GitHub OAuth popup
+  // Listen for postMessage from OAuth popup
   useEffect(() => {
     const handleMessage = (event) => {
-      if (event.origin !== API_BASE_URL && event.origin !== window.location.origin) return;
+      if (event.origin !== window.location.origin) return;
       const data = event.data;
-      if (data && data.user) {
+      if (data && data.user && typeof data.user === 'object' && data.user.email) {
         navigate(from, { replace: true });
         window.location.reload();
       }
