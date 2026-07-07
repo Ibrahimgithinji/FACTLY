@@ -4,7 +4,7 @@
  */
 
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://localhost:8000';
 export const API_TIMEOUT_MS = 30000; // 30 seconds
 export const API_RETRY_ATTEMPTS = 3;
 export const API_RETRY_DELAY_MS = 1000; // Base delay for exponential backoff
@@ -98,9 +98,9 @@ export const ROUTES = {
 };
 
 // Local Storage Keys
+// NOTE: Auth tokens are handled via httpOnly cookies (credentials: 'include'),
+// NOT via localStorage. Do NOT add AUTH_TOKEN or REFRESH_TOKEN here.
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'factly_auth_token',
-  REFRESH_TOKEN: 'factly_refresh_token',
   USER_PREFERENCES: 'factly_user_preferences',
   RECENT_SEARCHES: 'factly_recent_searches',
   THEME: 'factly_theme',
