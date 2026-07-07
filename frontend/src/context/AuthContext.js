@@ -121,6 +121,10 @@ export const AuthProvider = ({ children }) => {
       await fetch(API_ENDPOINTS.LOGOUT, { ...fetchOptions, method: 'POST' });
     } catch (e) {
     }
+    localStorage.removeItem('factCheckHistory');
+    localStorage.removeItem('reverifyClaim');
+    sessionStorage.removeItem('factCheckResult');
+    sessionStorage.removeItem('factCheckQuery');
     setUser(null);
     setIsAuthenticated(false);
   };
