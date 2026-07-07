@@ -3,20 +3,10 @@
  * Central export for all utility functions
  */
 
+import { focusUtils, announce, keyboard, contrast, skipLink, motion, highContrast, aria } from './accessibility';
+export { focusUtils, announce, keyboard, contrast, skipLink, motion, highContrast, aria };
 export { default as accessibility } from './accessibility';
 export { default as performance } from './performance';
-
-// Re-export individual utilities for convenience
-export const {
-  focusUtils,
-  announce,
-  keyboard,
-  contrast,
-  skipLink,
-  motion,
-  highContrast,
-  aria,
-} = accessibility;
 
 export const {
   debounce,
