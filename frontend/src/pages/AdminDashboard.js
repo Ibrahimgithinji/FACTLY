@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (!user) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Please log in.</p>;
+  if (user.role !== 'admin' && user.role !== 'staff' && !user.is_staff && !user.is_superuser) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Access denied. Admin privileges required.</p>;
   if (loading) return (
     <div className="admin-dashboard">
       <div className="admin-stats">
