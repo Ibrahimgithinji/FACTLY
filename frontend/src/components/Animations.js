@@ -80,7 +80,6 @@ export function CountUp({ target, duration = 1.5, suffix = '' }) {
 
   React.useEffect(() => {
     if (!isInView || !nodeRef.current) return;
-    let start = 0;
     const end = parseInt(target, 10);
     if (isNaN(end)) { nodeRef.current.textContent = `${target}${suffix}`; return; }
     const startTime = performance.now();

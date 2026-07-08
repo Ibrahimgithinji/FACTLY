@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FactlyScoreInline } from '../components/FactlyScoreBadge';
-import { RevealOnScroll, StaggerContainer, StaggerItem } from '../components/Animations';
+import { StaggerContainer, StaggerItem } from '../components/Animations';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../utils/constants';
 import SEOMeta from '../components/SEOMeta';

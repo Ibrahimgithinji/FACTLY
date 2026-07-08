@@ -197,7 +197,7 @@ export const useLiveRegion = () => {
   return { announce, liveRegionProps, message };
 };
 
-export default {
+export const accessibilityHooks = {
   useFocusTrap,
   useAnnouncer,
   useReducedMotion,
@@ -208,3 +208,5 @@ export default {
   useInViewport,
   useLiveRegion,
 };
+
+export default accessibilityHooks;

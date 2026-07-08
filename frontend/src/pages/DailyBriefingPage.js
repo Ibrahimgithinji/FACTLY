@@ -8,12 +8,6 @@ import './DailyBriefingPage.css';
 
 const AGENT_API = `${API_BASE_URL}/api/agent`;
 
-function scoreColor(score) {
-  if (score >= 70) return '#22c55e';
-  if (score >= 40) return '#eab308';
-  return '#ef4444';
-}
-
 export default function DailyBriefingPage() {
   const [digest, setDigest] = useState(null);
   const [loading, setLoading] = useState(true);

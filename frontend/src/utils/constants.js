@@ -113,7 +113,7 @@ export const THEMES = {
   AUTO: 'auto',
 };
 
-export default {
+export const appConstants = {
   API_BASE_URL,
   MAX_INPUT_LENGTH,
   CONFIDENCE_THRESHOLDS,
@@ -122,3 +122,5 @@ export default {
   ERROR_MESSAGES,
   ROUTES,
 };
+
+export default appConstants;

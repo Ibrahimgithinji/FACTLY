@@ -218,6 +218,7 @@ export const useSlowConnection = () => {
  * @returns {*} Memoized value
  */
 export const useMemoized = (factory, deps) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(factory, deps);
 };
 
@@ -296,7 +297,7 @@ export const useScrollPosition = (throttleMs = 100) => {
   return position;
 };
 
-export default {
+export const performanceHooks = {
   useDebounce,
   useThrottle,
   useIsMounted,
@@ -310,3 +311,5 @@ export default {
   useWindowSize,
   useScrollPosition,
 };
+
+export default performanceHooks;

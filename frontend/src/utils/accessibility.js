@@ -320,7 +320,7 @@ export const aria = {
   },
 };
 
-export default {
+export const accessibilityUtils = {
   focusUtils,
   announce,
   keyboard,
@@ -330,3 +330,5 @@ export default {
   highContrast,
   aria,
 };
+
+export default accessibilityUtils;

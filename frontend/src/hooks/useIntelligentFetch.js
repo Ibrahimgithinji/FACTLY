@@ -402,19 +402,6 @@ export const useIntelligentFetch = (url, options = {}) => {
     return fetchData();
   }, [fetchData]);
 
-  const cancel = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    cancelExistingRequest(getDedupKey());
-    setLoading(false);
-  }, [cancelExistingRequest, getDedupKey]);
-
-  const clearCache = useCallback(() => {
-    const cacheKey = getCacheKey();
-    cacheStore.delete(cacheKey);
-  }, [getCacheKey]);
-
   // Auto-fetch effect
   useEffect(() => {
     if (!autoFetch || !url) {
@@ -444,7 +431,7 @@ export const useIntelligentFetch = (url, options = {}) => {
       
       cancelExistingRequest(getDedupKey());
     };
-  }, [autoFetch, url]); // Only stable deps
+  }, [autoFetch, url, fetchData, cancelExistingRequest, getDedupKey]);
 
   // Cleanup on unmount
   useEffect(() => {

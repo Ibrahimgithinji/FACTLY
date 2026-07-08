@@ -388,7 +388,7 @@ export const imageOptimizer = {
   },
 };
 
-export default {
+export const performanceUtils = {
   debounce,
   throttle,
   memoize,
@@ -401,3 +401,5 @@ export default {
   network,
   imageOptimizer,
 };
+
+export default performanceUtils;

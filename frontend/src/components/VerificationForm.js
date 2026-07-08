@@ -1,11 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useResults } from '../context/ResultsContext';
 import { API_ENDPOINTS } from '../utils/api';
 import { apiPost } from '../utils/apiClient';
-import { FactlyScoreBadge, FactlyScoreBar } from './FactlyScoreBadge';
-import SourceBiasIndicator from './SourceBiasIndicator';
+
 import './VerificationForm.css';
 
 const STEPS = [

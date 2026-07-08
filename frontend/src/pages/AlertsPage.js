@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RevealOnScroll, StaggerContainer, StaggerItem } from '../components/Animations';
+import { StaggerContainer, StaggerItem } from '../components/Animations';
 import { API_BASE_URL } from '../utils/constants';
 import SEOMeta from '../components/SEOMeta';
 import './AlertsPage.css';

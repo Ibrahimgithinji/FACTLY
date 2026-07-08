@@ -100,8 +100,7 @@ function SectionGrid({ section }) {
 
 function VerificationWidget() {
   const [claim, setClaim] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-
+  const [, setIsFocused] = useState(false);
   const submitClaim = (event) => {
     event.preventDefault();
     const query = claim.trim();

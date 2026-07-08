@@ -12,12 +12,6 @@ function formatTime(d) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function scoreColor(score) {
-  if (score >= 70) return '#22c55e';
-  if (score >= 40) return '#eab308';
-  return '#ef4444';
-}
-
 const ASK_FACTLY_QUESTIONS = [
   { q: 'Is climate change really caused by humans?', category: 'Science', asked_by: 'Priya M.', answered: true },
   { q: 'Did the government really announce free electricity?', category: 'Politics', asked_by: 'Rahul K.', answered: true },
