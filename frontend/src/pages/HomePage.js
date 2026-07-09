@@ -448,7 +448,8 @@ export default function HomePage() {
         fetch(CONTENT_ENDPOINTS.CATEGORIES, { signal: controller.signal }),
       ]);
       if (!mountedRef.current) return;
-      if (!homeRes.ok || !catRes.ok) throw new Error('Failed to load homepage data');
+      if (!homeRes.ok) throw new Error(`Failed to load homepage (status ${homeRes.status})`);
+      if (!catRes.ok) throw new Error(`Failed to load categories (status ${catRes.status})`);
       const homeData = await homeRes.json();
       const catData = await catRes.json();
       setData(homeData);
