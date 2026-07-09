@@ -4,7 +4,7 @@
  */
 
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 export const API_TIMEOUT_MS = 30000; // 30 seconds
 export const API_RETRY_ATTEMPTS = 3;
 export const API_RETRY_DELAY_MS = 1000; // Base delay for exponential backoff
