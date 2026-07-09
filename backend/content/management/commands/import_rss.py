@@ -49,15 +49,11 @@ ALLOWED_RSS_ATTRIBUTES = {
     'img': ['src', 'alt', 'title', 'width', 'height'],
     '*': ['class'],
 }
-ALLOWED_RSS_STYLES = []
-
-
 def clean_html(html):
     return bleach.clean(
         html,
         tags=ALLOWED_RSS_TAGS,
         attributes=ALLOWED_RSS_ATTRIBUTES,
-        styles=ALLOWED_RSS_STYLES,
         strip=True,
     ).strip()
 
