@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './NewsletterSignup.css';
 
@@ -8,9 +8,13 @@ export default function NewsletterSignup({ variant = 'sidebar' }) {
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const abortRef = useRef(null);
 
   const handleSubmit = async e => {
     e.preventDefault();
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
     setError('');
     setSending(true);
     try {
@@ -18,6 +22,7 @@ export default function NewsletterSignup({ variant = 'sidebar' }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name }),
+        signal: ac.signal,
       });
       if (!res.ok) {
         const data = await res.json();
@@ -25,6 +30,7 @@ export default function NewsletterSignup({ variant = 'sidebar' }) {
       }
       setDone(true);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setError(err.message);
     } finally {
       setSending(false);
