@@ -55,12 +55,14 @@ export default function NewsletterSignup({ variant = 'sidebar' }) {
           <form className="newsletter__form" onSubmit={handleSubmit}>
             {error && <div className="newsletter__error">{error}</div>}
             <input
+              id="newsletter-email"
               type="email"
               required
               placeholder="Enter your email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="newsletter__input"
+              aria-label="Email address for newsletter"
             />
             <button type="submit" className="newsletter__btn" disabled={sending}>
               {sending ? 'Subscribing...' : 'Subscribe'}
@@ -73,19 +75,23 @@ export default function NewsletterSignup({ variant = 'sidebar' }) {
           {error && <div className="newsletter__error">{error}</div>}
           <div className="newsletter__inline-row">
             <input
+              id="newsletter-name"
               type="text"
               placeholder="Your name"
               value={name}
               onChange={e => setName(e.target.value)}
               className="newsletter__input"
+              aria-label="Your name for newsletter"
             />
             <input
+              id="newsletter-email-inline"
               type="email"
               required
               placeholder="Your email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="newsletter__input"
+              aria-label="Email address for newsletter"
             />
             <button type="submit" className="newsletter__btn" disabled={sending}>
               {sending ? '...' : 'Subscribe'}
