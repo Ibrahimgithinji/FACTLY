@@ -9,6 +9,7 @@ export default function BookmarkButton({ articleId }) {
   const { isAuthenticated } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const abortRef = useRef(null);
+  const pendingRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -30,10 +31,12 @@ export default function BookmarkButton({ articleId }) {
   }, [isAuthenticated, articleId]);
 
   const toggle = useCallback(async () => {
+    if (pendingRef.current) return;
     if (!isAuthenticated) {
       window.location.href = '/login';
       return;
     }
+    pendingRef.current = true;
     const method = isBookmarked ? 'DELETE' : 'POST';
     try {
       const res = await fetch(CONTENT_ENDPOINTS.BOOKMARK(articleId), {
@@ -44,7 +47,8 @@ export default function BookmarkButton({ articleId }) {
       if (res.ok) {
         setIsBookmarked(!isBookmarked);
       }
-      } catch (e) { console.warn('Failed to toggle bookmark:', e); }
+    } catch (e) { console.warn('Failed to toggle bookmark:', e); }
+    finally { pendingRef.current = false; }
   }, [isAuthenticated, isBookmarked, articleId]);
 
   return (
