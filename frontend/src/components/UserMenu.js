@@ -13,16 +13,44 @@ export default function UserMenu({ isOpen, onClose }) {
 
   useEffect(() => {
     if (!isOpen) return;
+
+    const focusableSelector = 'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])';
+    let firstFocusable = null;
+    let lastFocusable = null;
+
+    const trapFocus = (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = menuRef.current.querySelectorAll(focusableSelector);
+      if (focusable.length === 0) return;
+      firstFocusable = focusable[0];
+      lastFocusable = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === firstFocusable) {
+        e.preventDefault();
+        lastFocusable.focus();
+      } else if (!e.shiftKey && document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
+      trapFocus(e);
     };
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         onClose();
       }
     };
+
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
+
+    requestAnimationFrame(() => {
+      const focusable = menuRef.current.querySelectorAll(focusableSelector);
+      if (focusable.length > 0) focusable[0].focus();
+    });
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
