@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS } from '../utils/api';
 
 const AuthContext = createContext(null);
@@ -20,24 +20,32 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const abortControllerRef = useRef(null);
 
   const fetchUser = useCallback(async () => {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    const ac = new AbortController();
+    abortControllerRef.current = ac;
+
     try {
       let response = await fetch(API_ENDPOINTS.USER_PROFILE, {
         ...fetchOptions,
         method: 'GET',
+        signal: ac.signal,
       });
 
       if (response.status === 401) {
         const refreshResponse = await fetch(API_ENDPOINTS.REFRESH, {
           ...fetchOptions,
           method: 'POST',
+          signal: ac.signal,
         });
 
         if (refreshResponse.ok) {
           response = await fetch(API_ENDPOINTS.USER_PROFILE, {
             ...fetchOptions,
             method: 'GET',
+            signal: ac.signal,
           });
         } else {
           setUser(null);
@@ -57,6 +65,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       return false;
     } catch (e) {
+      if (e.name === 'AbortError') return false;
       console.warn('fetchUser error:', e);
       return false;
     }
@@ -117,9 +126,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    const ac = new AbortController();
+    abortControllerRef.current = ac;
     try {
-      await fetch(API_ENDPOINTS.LOGOUT, { ...fetchOptions, method: 'POST' });
+      await fetch(API_ENDPOINTS.LOGOUT, { ...fetchOptions, method: 'POST', signal: ac.signal });
     } catch (e) {
+      if (e.name === 'AbortError') return;
     }
     localStorage.removeItem('factCheckHistory');
     localStorage.removeItem('reverifyClaim');
