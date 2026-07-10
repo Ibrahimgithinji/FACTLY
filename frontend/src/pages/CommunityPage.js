@@ -19,6 +19,7 @@ export default function CommunityTipsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ claim_text: '', source_url: '', category: 'general' });
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState(null);
   const abortRef = useRef(null);
   const submitAbortRef = useRef(null);
 
@@ -31,11 +32,13 @@ export default function CommunityTipsPage() {
         if (ac.signal.aborted) return;
         setClaims(data.results || data.claims || []);
         setLoading(false);
+        setFetchError(null);
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
         setClaims([]);
         setLoading(false);
+        setFetchError('Failed to load claims.');
       });
     return () => { ac.abort(); };
   }, []);
@@ -171,6 +174,11 @@ export default function CommunityTipsPage() {
             {[1, 2, 3].map((i) => (
               <div key={i} className="claim-skeleton" />
             ))}
+          </div>
+        ) : fetchError ? (
+          <div className="community-empty">
+            <p>{fetchError}</p>
+            <button onClick={() => window.location.reload()} className="community-submit-btn">Try Again</button>
           </div>
         ) : claims.length === 0 ? (
           <div className="community-empty">
