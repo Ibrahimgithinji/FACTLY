@@ -13,6 +13,7 @@ export default function BookmarksPage() {
   const { isAuthenticated } = useAuth();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const abortRef = useRef(null);
 
   useEffect(() => {
@@ -30,10 +31,14 @@ export default function BookmarksPage() {
           const data = await res.json();
           if (ac.signal.aborted) return;
           setArticles(data.results || data);
+          setFetchError(null);
+        } else {
+          setFetchError('Failed to load bookmarks.');
         }
       } catch (e) {
         if (e.name === 'AbortError') return;
         console.warn('Failed to load bookmarks:', e);
+        setFetchError('Failed to load bookmarks.');
       } finally {
         if (!ac.signal.aborted) {
           setLoading(false);
@@ -72,7 +77,12 @@ export default function BookmarksPage() {
     <div className="bookmarks-page">
       <SEOMeta title="Saved Articles" noindex={true} />
       <h1 className="bookmarks-page__title">Saved Articles ({articles.length})</h1>
-      {articles.length === 0 ? (
+      {fetchError ? (
+        <div className="bookmarks-page__empty">
+          <p>{fetchError}</p>
+          <button onClick={() => window.location.reload()} className="bookmarks-page__btn">Try Again</button>
+        </div>
+      ) : articles.length === 0 ? (
         <div className="bookmarks-page__empty">
           <p>You haven't saved any articles yet.</p>
           <Link to="/" className="bookmarks-page__btn">Browse Articles</Link>
