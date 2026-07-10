@@ -1,9 +1,10 @@
 import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 
 export function RevealOnScroll({ children, delay = 0, direction = 'up', className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
+  const prefersReducedMotion = useReducedMotion();
 
   const directionMap = {
     up: { y: 40 },
@@ -11,6 +12,10 @@ export function RevealOnScroll({ children, delay = 0, direction = 'up', classNam
     left: { x: 40 },
     right: { x: -40 },
   };
+
+  if (prefersReducedMotion) {
+    return <div ref={ref} className={className}>{children}</div>;
+  }
 
   return (
     <motion.div
@@ -28,6 +33,11 @@ export function RevealOnScroll({ children, delay = 0, direction = 'up', classNam
 export function StaggerContainer({ children, className = '', staggerDelay = 0.1 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-40px' });
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) {
+    return <div ref={ref} className={className}>{children}</div>;
+  }
 
   return (
     <motion.div
@@ -46,6 +56,12 @@ export function StaggerContainer({ children, className = '', staggerDelay = 0.1 
 }
 
 export function StaggerItem({ children, className = '' }) {
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={className}
@@ -60,6 +76,12 @@ export function StaggerItem({ children, className = '' }) {
 }
 
 export function PageTransition({ children }) {
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) {
+    return <div>{children}</div>;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -77,8 +99,16 @@ export function CountUp({ target, duration = 1.5, suffix = '' }) {
   const isInView = useInView(ref, { once: true });
   const nodeRef = useRef(null);
   const rafRef = useRef(null);
+  const prefersReducedMotion = useReducedMotion();
 
   React.useEffect(() => {
+    if (prefersReducedMotion) {
+      const end = parseInt(target, 10);
+      if (nodeRef.current) {
+        nodeRef.current.textContent = isNaN(end) ? `${target}${suffix}` : `${end}${suffix}`;
+      }
+      return;
+    }
     if (!isInView || !nodeRef.current) return;
     const end = parseInt(target, 10);
     if (isNaN(end)) { nodeRef.current.textContent = `${target}${suffix}`; return; }
@@ -93,7 +123,7 @@ export function CountUp({ target, duration = 1.5, suffix = '' }) {
     };
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [isInView, target, duration, suffix]);
+  }, [isInView, target, duration, suffix, prefersReducedMotion]);
 
   return <span ref={(el) => { ref.current = el; nodeRef.current = el; }}>0{suffix}</span>;
 }
