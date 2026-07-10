@@ -74,6 +74,7 @@ export default function CommentsSection({ articleId }) {
   const [comments, setComments] = useState([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const abortRef = useRef(null);
 
   const fetchComments = useCallback(async () => {
@@ -88,9 +89,13 @@ export default function CommentsSection({ articleId }) {
         if (ac.signal.aborted) return;
         setComments(data);
         setCount(data.length);
+        setFetchError(null);
+      } else {
+        setFetchError('Failed to load comments.');
       }
-    } catch {
-      /* ignore */
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      setFetchError('Failed to load comments.');
     } finally {
       if (!ac.signal.aborted) {
         setLoading(false);
@@ -113,6 +118,8 @@ export default function CommentsSection({ articleId }) {
 
       {loading ? (
         <p className="comments-section__loading">Loading comments...</p>
+      ) : fetchError ? (
+        <p className="comments-section__error" role="alert">{fetchError}</p>
       ) : comments.length > 0 ? (
         <div className="comments-section__list">
           {comments.map(c => (
