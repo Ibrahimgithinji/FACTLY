@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './BookmarkButton.css';
@@ -8,16 +8,25 @@ const fetchOpts = { credentials: 'include' };
 export default function BookmarkButton({ articleId }) {
   const { isAuthenticated } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetch(CONTENT_ENDPOINTS.BOOKMARKS, fetchOpts)
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    fetch(CONTENT_ENDPOINTS.BOOKMARKS, { ...fetchOpts, signal: ac.signal })
       .then(r => r.json())
       .then(data => {
+        if (ac.signal.aborted) return;
         const ids = (data.results || data).map(a => a.id);
         setIsBookmarked(ids.includes(articleId));
       })
-      .catch(() => console.warn('Failed to load bookmark state'));
+      .catch(() => {
+        if (ac.signal.aborted) return;
+        console.warn('Failed to load bookmark state');
+      });
+    return () => { if (abortRef.current) abortRef.current.abort(); };
   }, [isAuthenticated, articleId]);
 
   const toggle = useCallback(async () => {
