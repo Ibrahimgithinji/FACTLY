@@ -28,6 +28,7 @@ const VerificationForm = ({ initialValue = '' }) => {
   const { updateResults } = useResults();
   const abortControllerRef = useRef(null);
   const intervalRef = useRef(null);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     setInput(initialValue);
@@ -77,9 +78,11 @@ const VerificationForm = ({ initialValue = '' }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     const validationError = validateInput(input);
     if (validationError) { setError(validationError); return; }
 
+    submittingRef.current = true;
     if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
 
@@ -142,6 +145,7 @@ const VerificationForm = ({ initialValue = '' }) => {
       setCurrentStep(0);
       setProgress(0);
     } finally {
+      submittingRef.current = false;
       setIsLoading(false);
     }
   };
