@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
@@ -13,23 +13,34 @@ export default function BookmarksPage() {
   const { isAuthenticated } = useAuth();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setLoading(false);
       return;
     }
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
     (async () => {
       try {
-        const res = await fetch(CONTENT_ENDPOINTS.BOOKMARKS, fetchOpts);
+        const res = await fetch(CONTENT_ENDPOINTS.BOOKMARKS, { ...fetchOpts, signal: ac.signal });
         if (res.ok) {
           const data = await res.json();
+          if (ac.signal.aborted) return;
           setArticles(data.results || data);
         }
-      } catch (e) { console.warn('Failed to load bookmarks:', e); } finally {
-        setLoading(false);
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.warn('Failed to load bookmarks:', e);
+      } finally {
+        if (!ac.signal.aborted) {
+          setLoading(false);
+        }
       }
     })();
+    return () => { if (abortRef.current) abortRef.current.abort(); };
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
