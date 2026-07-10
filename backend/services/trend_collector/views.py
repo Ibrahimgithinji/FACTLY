@@ -639,6 +639,7 @@ class TriggerCollectionAPIView(APIView):
     Manually trigger trend collection from all sources.
     """
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'trend_collect'
     
     def post(self, request):
         """Trigger trend collection."""
