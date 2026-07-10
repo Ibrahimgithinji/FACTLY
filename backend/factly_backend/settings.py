@@ -399,6 +399,7 @@ REST_FRAMEWORK = {
         'verify_token': '10/minute',
         'oauth': '10/minute',
         'oauth_init': '10/minute',
+        'trend_collect': '5/hour',
     },
 }
 
