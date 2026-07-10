@@ -23,7 +23,7 @@ class CookieJWTAuthentication(JWTAuthentication):
 def set_jwt_cookies(response, access_token, refresh_token=None):
     cookie_settings = {
         'httponly': True,
-        'secure': os.getenv('JWT_COOKIE_SECURE', 'False').lower() in ('true', '1'),
+        'secure': os.getenv('JWT_COOKIE_SECURE', 'True').lower() in ('true', '1'),
         'samesite': 'Lax',
         'path': '/',
     }
