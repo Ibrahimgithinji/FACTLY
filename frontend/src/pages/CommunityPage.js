@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FactlyScoreInline } from '../components/FactlyScoreBadge';
 import { StaggerContainer, StaggerItem } from '../components/Animations';
@@ -19,22 +19,32 @@ export default function CommunityTipsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ claim_text: '', source_url: '', category: 'general' });
   const [error, setError] = useState('');
+  const abortRef = useRef(null);
+  const submitAbortRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${CLAIMS_API}?limit=50`)
+    const ac = new AbortController();
+    abortRef.current = ac;
+    fetch(`${CLAIMS_API}?limit=50`, { signal: ac.signal })
       .then((r) => r.json())
       .then((data) => {
+        if (ac.signal.aborted) return;
         setClaims(data.results || data.claims || []);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
         setClaims([]);
         setLoading(false);
       });
+    return () => { ac.abort(); };
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitAbortRef.current) submitAbortRef.current.abort();
+    const ac = new AbortController();
+    submitAbortRef.current = ac;
     if (!formData.claim_text.trim()) {
       setError('Please enter a claim.');
       return;
@@ -47,6 +57,7 @@ export default function CommunityTipsPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(formData),
+        signal: ac.signal,
       });
       if (!resp.ok) {
         const err = await resp.json();
@@ -59,6 +70,7 @@ export default function CommunityTipsPage() {
       setTimeout(() => setSubmitted(false), 3000);
       setShowForm(false);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setError(err.message);
     }
     setSubmitting(false);
