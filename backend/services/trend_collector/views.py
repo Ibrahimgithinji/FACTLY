@@ -638,7 +638,7 @@ class TriggerCollectionAPIView(APIView):
     
     Manually trigger trend collection from all sources.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         """Trigger trend collection."""
