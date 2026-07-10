@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const abortControllerRef = useRef(null);
+  const authPendingRef = useRef(false);
 
   const fetchUser = useCallback(async () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -76,6 +77,8 @@ export const AuthProvider = ({ children }) => {
   }, [fetchUser]);
 
   const login = async (email, password) => {
+    if (authPendingRef.current) return { success: false, error: 'Already processing authentication.' };
+    authPendingRef.current = true;
     try {
       const response = await fetch(API_ENDPOINTS.LOGIN, {
         ...fetchOptions,
@@ -97,10 +100,14 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message || 'Login failed. Please try again.' };
+    } finally {
+      authPendingRef.current = false;
     }
   };
 
   const signup = async (name, email, password) => {
+    if (authPendingRef.current) return { success: false, error: 'Already processing authentication.' };
+    authPendingRef.current = true;
     try {
       const response = await fetch(API_ENDPOINTS.SIGNUP, {
         ...fetchOptions,
@@ -122,6 +129,8 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message || 'Signup failed. Please try again.' };
+    } finally {
+      authPendingRef.current = false;
     }
   };
 
