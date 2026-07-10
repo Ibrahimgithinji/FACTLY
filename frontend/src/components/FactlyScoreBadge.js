@@ -3,14 +3,14 @@ import { motion } from 'framer-motion';
 import './FactlyScoreBadge.css';
 
 const VERDICT_CONFIG = {
-  true: { label: 'True', color: '#22c55e', bg: '#22c55e15', icon: '✓' },
-  mostly_true: { label: 'Mostly True', color: '#86efac', bg: '#86efac15', icon: '✓' },
-  half_true: { label: 'Half True', color: '#eab308', bg: '#eab30815', icon: '◐' },
-  mostly_false: { label: 'Mostly False', color: '#fb923c', bg: '#fb923c15', icon: '◑' },
-  false: { label: 'False', color: '#ef4444', bg: '#ef444415', icon: '✗' },
-  misleading: { label: 'Misleading', color: '#f97316', bg: '#f9731615', icon: '!' },
-  unverifiable: { label: 'Unverifiable', color: '#6b7280', bg: '#6b728015', icon: '?' },
-  unknown: { label: 'Unknown', color: '#9ca3af', bg: '#9ca3af15', icon: '—' },
+  true: { label: 'True', color: '#15803d', bg: '#22c55e15', icon: '✓' },
+  mostly_true: { label: 'Mostly True', color: '#16a34a', bg: '#86efac15', icon: '✓' },
+  half_true: { label: 'Half True', color: '#a16207', bg: '#eab30815', icon: '◐' },
+  mostly_false: { label: 'Mostly False', color: '#c2410c', bg: '#fb923c15', icon: '◑' },
+  false: { label: 'False', color: '#b91c1c', bg: '#ef444415', icon: '✗' },
+  misleading: { label: 'Misleading', color: '#c2410c', bg: '#f9731615', icon: '!' },
+  unverifiable: { label: 'Unverifiable', color: '#374151', bg: '#6b728015', icon: '?' },
+  unknown: { label: 'Unknown', color: '#6b7280', bg: '#9ca3af15', icon: '—' },
 };
 
 function getVerdictFromScore(score) {
