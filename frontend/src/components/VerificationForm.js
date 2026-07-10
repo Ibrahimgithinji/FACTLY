@@ -27,6 +27,7 @@ const VerificationForm = ({ initialValue = '' }) => {
   const navigate = useNavigate();
   const { updateResults } = useResults();
   const abortControllerRef = useRef(null);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     setInput(initialValue);
@@ -48,6 +49,11 @@ const VerificationForm = ({ initialValue = '' }) => {
     } catch {
       localStorage.removeItem('reverifyClaim');
     }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
   }, []);
 
   const handleInputChange = useCallback((e) => {
@@ -82,9 +88,9 @@ const VerificationForm = ({ initialValue = '' }) => {
     setCurrentStep(1);
     setProgress(10);
 
-    const progressInterval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 90) { clearInterval(progressInterval); return 90; }
+        if (prev >= 90) { clearInterval(intervalRef.current); return 90; }
         return prev + Math.random() * 8 + 2;
       });
       setCurrentStep((prev) => {
@@ -106,7 +112,7 @@ const VerificationForm = ({ initialValue = '' }) => {
         throw new Error(result.error || 'Verification failed');
       }
 
-      clearInterval(progressInterval);
+      clearInterval(intervalRef.current);
       setProgress(100);
       setCurrentStep(4);
 
@@ -131,7 +137,7 @@ const VerificationForm = ({ initialValue = '' }) => {
 
       setTimeout(() => navigate('/results'), 600);
     } catch (err) {
-      clearInterval(progressInterval);
+      clearInterval(intervalRef.current);
       setError(err.message || 'Verification failed. Please try again.');
       setCurrentStep(0);
       setProgress(0);
