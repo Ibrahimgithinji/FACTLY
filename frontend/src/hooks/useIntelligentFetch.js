@@ -185,6 +185,7 @@ export const useIntelligentFetch = (url, options = {}) => {
   const abortControllerRef = useRef(null);
   const timeoutRef = useRef(null);
   const mountedRef = useRef(true);
+  const currentDedupKeyRef = useRef(null);
 
   // Stable key generation using refs
   const getCacheKey = useCallback(() => {
@@ -216,6 +217,7 @@ export const useIntelligentFetch = (url, options = {}) => {
       return;
     }
 
+    currentDedupKeyRef.current = dedupKey;
     cancelExistingRequest(dedupKey);
 
     if (abortControllerRef.current) {
@@ -429,7 +431,8 @@ export const useIntelligentFetch = (url, options = {}) => {
         abortControllerRef.current.abort();
       }
       
-      cancelExistingRequest(getDedupKey());
+      const key = currentDedupKeyRef.current || getDedupKey();
+      cancelExistingRequest(key);
     };
   }, [autoFetch, url, fetchData, cancelExistingRequest, getDedupKey]);
 
@@ -449,7 +452,8 @@ export const useIntelligentFetch = (url, options = {}) => {
         abortControllerRef.current.abort();
       }
       
-      cancelExistingRequest(getDedupKey());
+      const key = currentDedupKeyRef.current || getDedupKey();
+      cancelExistingRequest(key);
     };
   }, [cancelExistingRequest, getDedupKey]);
 
