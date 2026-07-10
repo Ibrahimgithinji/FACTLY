@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 import './CommentsSection.css';
 
@@ -74,23 +74,36 @@ export default function CommentsSection({ articleId }) {
   const [comments, setComments] = useState([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const abortRef = useRef(null);
 
   const fetchComments = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     try {
-      const res = await fetch(CONTENT_ENDPOINTS.COMMENTS(articleId));
+      const res = await fetch(CONTENT_ENDPOINTS.COMMENTS(articleId), { signal: ac.signal });
       if (res.ok) {
         const data = await res.json();
+        if (ac.signal.aborted) return;
         setComments(data);
         setCount(data.length);
       }
     } catch {
       /* ignore */
     } finally {
-      setLoading(false);
+      if (!ac.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [articleId]);
 
-  useEffect(() => { fetchComments(); }, [articleId, fetchComments]);
+  useEffect(() => {
+    fetchComments();
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [articleId, fetchComments]);
 
   return (
     <section className="comments-section">
