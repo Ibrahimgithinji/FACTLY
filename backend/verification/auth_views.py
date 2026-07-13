@@ -208,16 +208,14 @@ class LoginView(APIView):
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            logger.warning(f"Login attempt with non-existent email: {email}")
             return Response(
                 {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         except User.MultipleObjectsReturned:
-            logger.error(f"Multiple user accounts found for email: {email}", exc_info=True)
             return Response(
-                {'error': 'Multiple accounts found for this email address. Please contact support.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
             )
         except Exception as e:
             logger.error(f"Database error during user lookup: {e}", exc_info=True)
@@ -232,7 +230,6 @@ class LoginView(APIView):
             username = user.username or email
             user = authenticate(username=username, password=password)
             if not user:
-                logger.warning(f"Failed login attempt for user: {email}")
                 return Response(
                     {'error': 'Invalid credentials'},
                     status=status.HTTP_401_UNAUTHORIZED
@@ -513,7 +510,7 @@ class ResetPasswordView(APIView):
             reset_token.is_used = True
             reset_token.save()
             
-            logger.info(f"Password reset successfully for user: {user.email}")
+            logger.info("Password reset successfully")
             return Response(
                 {'message': 'Password has been reset successfully'},
                 status=status.HTTP_200_OK
