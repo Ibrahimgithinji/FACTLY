@@ -24,7 +24,7 @@ def set_jwt_cookies(response, access_token, refresh_token=None):
     cookie_settings = {
         'httponly': True,
         'secure': os.getenv('JWT_COOKIE_SECURE', 'True').lower() in ('true', '1'),
-        'samesite': 'Lax',
+        'samesite': 'Strict',
         'path': '/',
     }
     response.set_cookie(
