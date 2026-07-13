@@ -19,7 +19,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
 
@@ -638,7 +638,7 @@ class TriggerCollectionAPIView(APIView):
     
     Manually trigger trend collection from all sources.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     throttle_scope = 'trend_collect'
     
     def post(self, request):
