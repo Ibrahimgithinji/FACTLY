@@ -453,7 +453,7 @@ class TrendRanker:
         
         for trend in normalized_trends:
             # Get risk score for this trend
-            trend_key = hashlib.md5(trend.topic.encode()).hexdigest()
+            trend_key = hashlib.sha256(trend.topic.encode()).hexdigest()
             risk_data = risk_scores.get(trend_key, {'risk_score': 0})
             
             # Calculate priority score
