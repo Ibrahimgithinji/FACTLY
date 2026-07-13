@@ -29,24 +29,50 @@ function showInlineBadge(data) {
   else if (score >= 36) { color = '#eab308'; label = 'Uncertain'; }
   else { color = '#ef4444'; label = 'Likely Fake'; }
 
-  badge.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-      <div style="width:48px;height:48px;border-radius:50%;background:conic-gradient(${color} ${score}%, #e5e7eb ${score}%);display:flex;align-items:center;justify-content:center">
-        <div style="width:40px;height:40px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#1f2937">${score}</div>
-      </div>
-      <div>
-        <div style="font-weight:600;font-size:14px;color:#1f2937">Factly Score</div>
-        <div style="font-size:12px;color:${color};font-weight:500">${label}</div>
-      </div>
-    </div>
-    <div style="font-size:11px;color:#6b7280;border-top:1px solid #f3f4f6;padding-top:8px">
-      Confidence: ${data.confidence_level} &middot; ${data.sources_consulted || 0} sources
-    </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="factly-badge-open" style="flex:1;padding:6px 12px;font-size:12px;border:none;border-radius:6px;background:#1f2937;color:white;cursor:pointer;font-weight:500">View Details</button>
-      <button id="factly-badge-close" style="padding:6px 10px;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;background:white;color:#6b7280;cursor:pointer">X</button>
-    </div>
-  `;
+  const scoreCircle = document.createElement('div');
+  scoreCircle.style.cssText = 'width:48px;height:48px;border-radius:50%;background:conic-gradient(' + color + ' ' + score + '%, #e5e7eb ' + score + '%);display:flex;align-items:center;justify-content:center';
+  const scoreInner = document.createElement('div');
+  scoreInner.style.cssText = 'width:40px;height:40px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#1f2937';
+  scoreInner.textContent = String(score);
+  scoreCircle.appendChild(scoreInner);
+
+  const scoreLabel = document.createElement('div');
+  scoreLabel.style.cssText = 'font-weight:600;font-size:14px;color:#1f2937';
+  scoreLabel.textContent = 'Factly Score';
+  const verdictLabel = document.createElement('div');
+  verdictLabel.style.cssText = 'font-size:12px;color:' + color + ';font-weight:500';
+  verdictLabel.textContent = label;
+  const labelCol = document.createElement('div');
+  labelCol.appendChild(scoreLabel);
+  labelCol.appendChild(verdictLabel);
+
+  const topRow = document.createElement('div');
+  topRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:8px';
+  topRow.appendChild(scoreCircle);
+  topRow.appendChild(labelCol);
+
+  const meta = document.createElement('div');
+  meta.style.cssText = 'font-size:11px;color:#6b7280;border-top:1px solid #f3f4f6;padding-top:8px';
+  meta.textContent = 'Confidence: ' + data.confidence_level + ' · ' + (data.sources_consulted || 0) + ' sources';
+
+  const openBtn = document.createElement('button');
+  openBtn.id = 'factly-badge-open';
+  openBtn.style.cssText = 'flex:1;padding:6px 12px;font-size:12px;border:none;border-radius:6px;background:#1f2937;color:white;cursor:pointer;font-weight:500';
+  openBtn.textContent = 'View Details';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.id = 'factly-badge-close';
+  closeBtn.style.cssText = 'padding:6px 10px;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;background:white;color:#6b7280;cursor:pointer';
+  closeBtn.textContent = 'X';
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+  btnRow.appendChild(openBtn);
+  btnRow.appendChild(closeBtn);
+
+  badge.appendChild(topRow);
+  badge.appendChild(meta);
+  badge.appendChild(btnRow);
 
   document.body.appendChild(badge);
   factlyBadge = badge;
