@@ -188,11 +188,18 @@ async function loadHistory() {
       else if (item.score <= 35) scoreClass = 'low';
 
       const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : '';
-      div.innerHTML = `
-        <div class="history-score ${scoreClass}">${escapeHtml(String(item.score))}</div>
-        <div class="history-text">${escapeHtml(item.text || 'Unknown')}</div>
-        <div class="history-time">${escapeHtml(time)}</div>
-      `;
+      const scoreDiv = document.createElement('div');
+      scoreDiv.className = 'history-score ' + scoreClass;
+      scoreDiv.textContent = String(item.score);
+      const textDiv = document.createElement('div');
+      textDiv.className = 'history-text';
+      textDiv.textContent = item.text || 'Unknown';
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'history-time';
+      timeDiv.textContent = time;
+      div.appendChild(scoreDiv);
+      div.appendChild(textDiv);
+      div.appendChild(timeDiv);
       const rawText = item.fullText || item.text || '';
       div.addEventListener('click', () => {
         $('claim-input').value = rawText;
