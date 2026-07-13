@@ -458,7 +458,7 @@ def custom_exception_handler(exc, context):
 # JWT Settings for djangorestframework-simplejwt
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Access token expires in 60 minutes
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Access token expires in 15 minutes
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),       # Refresh token valid for 7 days
     'ROTATE_REFRESH_TOKENS': True,                     # Issue new refresh token on each refresh
     'BLACKLIST_AFTER_ROTATION': True,                 # Blacklist old refresh tokens
