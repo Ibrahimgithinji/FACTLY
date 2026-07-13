@@ -130,7 +130,7 @@ class APIRateLimiter:
         
         # Include user agent for more granular identification
         user_agent = request.META.get('HTTP_USER_AGENT', 'unknown')
-        user_agent_hash = hashlib.md5(user_agent.encode()).hexdigest()[:8]
+        user_agent_hash = hashlib.sha256(user_agent.encode()).hexdigest()[:8]
         
         return f"ip:{ip}:ua:{user_agent_hash}"
     
