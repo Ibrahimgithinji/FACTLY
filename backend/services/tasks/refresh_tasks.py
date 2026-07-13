@@ -327,7 +327,8 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
                    risk_level, verification_status, last_updated
     """
     import re
-    import hashlib
+            import hashlib
+
     from collections import Counter, defaultdict
 
     stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
@@ -380,7 +381,7 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
 
             freshness = max(0.1, 1.0 - (age_hours / 48.0))
 
-            id_hash = hashlib.md5(topic_text.encode()).hexdigest()[:8]
+            id_hash = hashlib.sha256(topic_text.encode()).hexdigest()[:8]
 
             trending.append({
                 'id': f'live-{id_hash}',
@@ -411,7 +412,7 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
     for idx, (word, count) in enumerate(word_counts.most_common(10)):
         if count >= 1:
             topic_text = word.title()
-            id_hash = hashlib.md5(topic_text.encode()).hexdigest()[:8]
+            id_hash = hashlib.sha256(topic_text.encode()).hexdigest()[:8]
 
             freshness = min(1.0, count / 10.0)
 
