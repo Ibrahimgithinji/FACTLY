@@ -47,7 +47,7 @@ class CacheManager:
             'params': params
         }
         key_string = json.dumps(key_data, sort_keys=True)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return hashlib.sha256(key_string.encode()).hexdigest()
 
     def get(self, api_name: str, params: dict, data_type: str = 'default') -> Optional[Any]:
         """Retrieve cached response if available."""
