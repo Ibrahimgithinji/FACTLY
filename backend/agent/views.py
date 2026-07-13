@@ -30,8 +30,8 @@ class ChatView(APIView):
     Body: {"query": "your question here"}
     """
 
-    permission_classes = [AllowAny]
-    throttle_classes = [AgentRateThrottle]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def post(self, request):
         query = request.data.get("query", "").strip()
