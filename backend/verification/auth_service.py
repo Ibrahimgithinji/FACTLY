@@ -54,7 +54,6 @@ class AuthService:
         )
 
         if not matching_users:
-            logger.warning(f"Password reset attempt for non-existent email: {email}")
             return
 
         user = matching_users[0]
