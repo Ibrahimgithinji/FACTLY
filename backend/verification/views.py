@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from .serializers import VerificationRequestSerializer, VerificationResponseSerializer, QuickCheckSerializer
 from .services import ClaimService, EnhancedVerificationService
@@ -98,6 +99,7 @@ class EnhancedVerificationView(APIView):
     """API view for enhanced content verification with direct source verification."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     RATE_LIMIT_CONFIG = {
         'max_requests': int(os.getenv('VERIFICATION_ENHANCED_MAX_REQUESTS', '10')),
@@ -159,6 +161,7 @@ class VerificationView(APIView):
     """API view for content verification using Factly Score™."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     RATE_LIMIT_CONFIG = {
         'max_requests': int(os.getenv('VERIFICATION_MAX_REQUESTS', '10')),
@@ -289,6 +292,7 @@ class QuickCheckView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     RATE_LIMIT_CONFIG = {
         'max_requests': int(os.getenv('QUICK_CHECK_MAX_REQUESTS', '60')),
@@ -378,6 +382,7 @@ class TrendingTopicsView(APIView):
     and regional global events digest.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     
     def get(self, request):
         """
@@ -446,6 +451,7 @@ class LiveTrendingStoriesView(APIView):
     Uses Redis caching for 10-minute intervals.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     
     def get(self, request):
         """
@@ -690,6 +696,7 @@ class RefreshDataView(APIView):
 class TrendsAPIView(APIView):
     """API view for fetching trends with caching."""
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     def get(self, request):
         try:
