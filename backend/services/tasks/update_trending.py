@@ -24,13 +24,17 @@ logger = logging.getLogger(__name__)
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or None
+REDIS_SSL = os.getenv('REDIS_SSL', 'false').lower() in ('1', 'true', 'yes')
 
 try:
     redis_client = redis.Redis(
         host=REDIS_HOST,
         port=REDIS_PORT,
         db=REDIS_DB,
-        decode_responses=True
+        password=REDIS_PASSWORD,
+        decode_responses=True,
+        ssl=REDIS_SSL,
     )
     redis_available = True
 except Exception as e:
