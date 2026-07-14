@@ -13,6 +13,17 @@ from .models import PushSubscription, Article
 logger = logging.getLogger(__name__)
 
 
+class VapidPublicKeyView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from django.conf import settings
+        key = getattr(settings, 'VAPID_PUBLIC_KEY', '')
+        if not key:
+            return Response({'error': 'VAPID not configured'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response({'publicKey': key})
+
+
 class PushSubscribeView(APIView):
     permission_classes = [IsAuthenticated]
 

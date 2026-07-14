@@ -35,6 +35,7 @@ export const CONTENT_ENDPOINTS = {
   BOOKMARKS: `${API_BASE_URL}/api/content/bookmarks/`,
   BOOKMARK: (articleId) => `${API_BASE_URL}/api/content/bookmarks/${articleId}/`,
   AUTHOR: (authorId) => `${API_BASE_URL}/api/content/authors/${authorId}/`,
+  PUSH_VAPID_KEY: `${API_BASE_URL}/api/content/push/vapid-public-key/`,
   PUSH_SUBSCRIBE: `${API_BASE_URL}/api/content/push/subscribe/`,
   ALERTS: `${API_BASE_URL}/api/alerts/`,
 };

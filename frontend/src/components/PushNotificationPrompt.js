@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'react';
 import { CONTENT_ENDPOINTS } from '../utils/api';
 
-const PUBLIC_VAPID_KEY = 'BGb5sRFzl-JOMxXNG3t0xMJi0s5LiioU7lfSWBW5fkwFr_wYAe0d2GlXdAHBeJERGCQsl5rDjZm1BXXDEXk7KRI';
+let cachedVapidKey = null;
+
+async function getVapidKey() {
+  if (cachedVapidKey) return cachedVapidKey;
+  try {
+    const res = await fetch(CONTENT_ENDPOINTS.PUSH_VAPID_KEY, { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch VAPID key');
+    const data = await res.json();
+    cachedVapidKey = data.publicKey;
+    return cachedVapidKey;
+  } catch {
+    return null;
+  }
+}
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -41,16 +54,23 @@ export default function PushNotificationPrompt() {
         return;
       }
 
+      const vapidKey = await getVapidKey();
+      if (!vapidKey) {
+        console.error('VAPID public key not available');
+        return;
+      }
+
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
       await fetch(CONTENT_ENDPOINTS.PUSH_SUBSCRIBE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub),
+        credentials: 'include',
       });
 
       setStatus('subscribed');

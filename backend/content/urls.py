@@ -22,4 +22,5 @@ urlpatterns = [
     path('push/notify-all/', push_views.PushNotifyAllView.as_view(), name='push-notify-all'),
     path('analytics/log-view/', dashboard_views.LogPageView.as_view(), name='log-page-view'),
     path('analytics/dashboard/', dashboard_views.DashboardStatsView.as_view(), name='dashboard-stats'),
+    path('push/vapid-public-key/', push_views.VapidPublicKeyView.as_view(), name='vapid-public-key'),
 ]
