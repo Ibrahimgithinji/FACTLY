@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class PushSubscribeView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         endpoint = request.data.get('endpoint')
@@ -50,7 +50,7 @@ class PushSubscribeView(APIView):
 
 
 class PushUnsubscribeView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         endpoint = request.data.get('endpoint')
