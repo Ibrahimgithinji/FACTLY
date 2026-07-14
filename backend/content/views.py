@@ -181,7 +181,7 @@ class CommentPagination(PageNumberPagination):
 
 
 class CommentListView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     throttle_classes = [AnonRateThrottle]
     pagination_class = CommentPagination
 
