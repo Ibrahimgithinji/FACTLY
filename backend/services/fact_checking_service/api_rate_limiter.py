@@ -214,13 +214,22 @@ class APIRateLimiter:
             redis_host = os.getenv('REDIS_HOST', 'localhost')
             redis_port = int(os.getenv('REDIS_PORT', '6379'))
             redis_db = int(os.getenv('REDIS_DB', '0'))
+            redis_password = os.getenv('REDIS_PASSWORD', None) or None
+            
+            if not settings.DEBUG and not redis_password:
+                logger.warning(
+                    "REDIS_PASSWORD not set — Redis connection without authentication "
+                    "is insecure in production. Set REDIS_PASSWORD in your environment."
+                )
             
             if not hasattr(self, '_redis_client') or self._redis_client is None:
                 self._redis_client = redis.Redis(
                     host=redis_host,
                     port=redis_port,
                     db=redis_db,
-                    decode_responses=True
+                    password=redis_password,
+                    decode_responses=True,
+                    ssl=os.getenv('REDIS_SSL', 'false').lower() in ('1', 'true', 'yes'),
                 )
             
             r = self._redis_client
