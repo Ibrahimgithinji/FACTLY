@@ -463,7 +463,7 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,                     # Issue new refresh token on each refresh
     'BLACKLIST_AFTER_ROTATION': True,                 # Blacklist old refresh tokens
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
+    'SIGNING_KEY': os.getenv('JWT_SIGNING_KEY', SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
