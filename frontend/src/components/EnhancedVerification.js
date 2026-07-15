@@ -14,7 +14,7 @@ const EnhancedVerification = () => {
     return (
       <div className="enhanced-verification">
         <h3>Verification Analysis</h3>
-        <div className="loading-state">
+        <div className="loading-state" role="status" aria-live="polite">
           <div className="loading-spinner"></div>
           <p>Analyzing evidence...</p>
         </div>
@@ -88,6 +88,10 @@ const EnhancedVerification = () => {
             <div className="credibility-gauge">
               <div
                 className="credibility-fill"
+                role="progressbar"
+                aria-valuenow={Math.round((analysis?.source_credibility?.average_score ?? 0) * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
                 style={{ width: `${(analysis?.source_credibility?.average_score ?? 0) * 100}%` }}
               ></div>
             </div>
@@ -127,6 +131,10 @@ const EnhancedVerification = () => {
             <div className="verification-gauge">
               <div
                 className="verification-fill"
+                role="progressbar"
+                aria-valuenow={Math.round((analysis?.cross_verification?.cross_verification_score ?? 0) * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
                 style={{ width: `${(analysis?.cross_verification?.cross_verification_score ?? 0) * 100}%` }}
               ></div>
             </div>
