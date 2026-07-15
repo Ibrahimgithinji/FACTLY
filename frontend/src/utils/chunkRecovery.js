@@ -58,7 +58,7 @@ export const setupChunkErrorRecovery = () => {
         error?.message?.includes('Failed to fetch') ||
         error?.message?.includes('chunk')) {
       
-      console.warn('Chunk loading error detected:', error.message);
+      if (process.env.NODE_ENV !== 'production') console.warn('Chunk loading error detected:', error.message);
       event.preventDefault(); // Prevent the default error handling
       
       // Attempt to recover by reloading the page
