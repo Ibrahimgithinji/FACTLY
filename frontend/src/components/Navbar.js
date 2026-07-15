@@ -200,9 +200,9 @@ const Navbar = () => {
               aria-controls="mobile-menu"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
-              <span className="navbar__toggle-bar" />
-              <span className="navbar__toggle-bar" />
-              <span className="navbar__toggle-bar" />
+              <span className="navbar__toggle-bar" aria-hidden="true" />
+              <span className="navbar__toggle-bar" aria-hidden="true" />
+              <span className="navbar__toggle-bar" aria-hidden="true" />
             </button>
           </div>
         </div>

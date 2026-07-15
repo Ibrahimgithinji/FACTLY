@@ -29,8 +29,8 @@ export default function AdminDashboard() {
     return () => controller.abort();
   }, []);
 
-  if (!user) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Please log in.</p>;
-  if (user.role !== 'admin' && user.role !== 'staff' && !user.is_staff && !user.is_superuser) return <p style={{ padding: 40, color: 'var(--text-secondary)' }}>Access denied. Admin privileges required.</p>;
+  if (!user) return <p style={{ padding: 40, color: 'var(--text-secondary)' }} role="alert">Please log in.</p>;
+  if (user.role !== 'admin' && user.role !== 'staff' && !user.is_staff && !user.is_superuser) return <p style={{ padding: 40, color: 'var(--text-secondary)' }} role="alert">Access denied. Admin privileges required.</p>;
   if (loading) return (
     <div className="admin-dashboard">
       <div className="admin-stats">
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-  if (error) return <p style={{ padding: 40, color: 'red' }}>{error}</p>;
+  if (error) return <p style={{ padding: 40, color: 'red' }} role="alert">{error}</p>;
   if (!stats) return null;
 
   const card = (title, value, sub) => (

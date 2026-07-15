@@ -38,7 +38,7 @@ export default function DailyBriefingPage() {
   if (loading) {
     return (
       <div className="briefing-page">
-        <div className="briefing-skeleton">
+        <div className="briefing-skeleton" role="status" aria-label="Loading daily briefing">
           <div className="skeleton-pulse" style={{ height: 40, width: '60%', marginBottom: 8 }} />
           <div className="skeleton-pulse" style={{ height: 20, width: '40%', marginBottom: 32 }} />
           <div className="briefing-summary">
@@ -80,6 +80,7 @@ export default function DailyBriefingPage() {
               <button
                 key={value}
                 className={`time-btn ${hours === value ? 'time-btn--active' : ''}`}
+                aria-pressed={hours === value}
                 onClick={() => setHours(value)}
               >
                 {label}

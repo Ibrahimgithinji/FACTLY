@@ -167,7 +167,7 @@ const HistoryPage = () => {
                     onClick={() => handleViewDetails(item)}
                     role="button"
                     tabIndex={0}
-                    onKeyPress={(e) => e.key === 'Enter' && handleViewDetails(item)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleViewDetails(item)}
                   >
                     <div className="history-item-header">
                       <span 

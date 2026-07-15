@@ -125,5 +125,5 @@ export function CountUp({ target, duration = 1.5, suffix = '' }) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [isInView, target, duration, suffix, prefersReducedMotion]);
 
-  return <span ref={(el) => { ref.current = el; nodeRef.current = el; }}>0{suffix}</span>;
+  return <span ref={(el) => { ref.current = el; nodeRef.current = el; }} aria-live="polite">0{suffix}</span>;
 }

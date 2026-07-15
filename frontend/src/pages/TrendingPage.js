@@ -74,12 +74,14 @@ export default function TrendingPage() {
       <div className="trending-view-toggle">
         <button
           className={`view-btn ${view === 'trends' ? 'view-btn--active' : ''}`}
+          aria-pressed={view === 'trends'}
           onClick={() => setView('trends')}
         >
           Risk Analysis
         </button>
         <button
           className={`view-btn ${view === 'live' ? 'view-btn--active' : ''}`}
+          aria-pressed={view === 'live'}
           onClick={() => setView('live')}
         >
           Live Stories
