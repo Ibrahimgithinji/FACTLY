@@ -47,6 +47,7 @@ export default function NotFoundPage() {
           <input
             type="text"
             placeholder="Search articles..."
+            aria-label="Search articles"
             value={query}
             onChange={e => setQuery(e.target.value)}
             className="not-found__input"
