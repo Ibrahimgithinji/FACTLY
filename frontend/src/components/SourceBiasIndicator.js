@@ -56,6 +56,8 @@ export default function SourceBiasIndicator({ sources = [], compact = false }) {
             key={bias}
             className="sbi-segment"
             style={{ width: `${(count / total) * 100}%`, background: BIAS_LABELS[bias].color }}
+            role="img"
+            aria-label={`${BIAS_LABELS[bias].label}: ${count} sources`}
           >
             {(count / total) * 100 >= 12 && (
               <span className="sbi-segment-label">{count}</span>
