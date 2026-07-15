@@ -148,7 +148,7 @@ export default function ArticlePage() {
 
           {article.featured_image && (
             <div className="article-page__featured">
-              <img src={article.featured_image} alt={article.title} />
+              <img src={article.featured_image} alt="" />
             </div>
           )}
 
@@ -182,9 +182,9 @@ export default function ArticlePage() {
                   {article.author.position && <span> — {article.author.position}</span>}
                   {article.author.bio && <p>{article.author.bio}</p>}
                   <div className="article-page__author-social">
-                    {article.author.twitter && <a href={article.author.twitter} target="_blank" rel="noopener noreferrer">X</a>}
-                    {article.author.linkedin && <a href={article.author.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
-                    {article.author.website && <a href={article.author.website} target="_blank" rel="noopener noreferrer">Website</a>}
+                    {article.author.twitter && <a href={article.author.twitter} target="_blank" rel="noopener noreferrer" aria-label="Follow on X (opens in new tab)">X</a>}
+                    {article.author.linkedin && <a href={article.author.linkedin} target="_blank" rel="noopener noreferrer" aria-label="Follow on LinkedIn (opens in new tab)">LinkedIn</a>}
+                    {article.author.website && <a href={article.author.website} target="_blank" rel="noopener noreferrer" aria-label="Visit website (opens in new tab)">Website</a>}
                   </div>
                 </div>
               </div>

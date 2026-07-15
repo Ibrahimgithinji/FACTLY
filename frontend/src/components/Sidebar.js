@@ -30,7 +30,7 @@ export default function Sidebar({ categories, recentPosts }) {
               <li key={post.id}>
                 <Link to={`/article/${post.slug}`} className="sidebar__post-link">
                   {post.featured_image && (
-                    <img src={post.featured_image} alt={post.title} className="sidebar__post-img" loading="lazy" />
+                    <img src={post.featured_image} alt="" className="sidebar__post-img" loading="lazy" />
                   )}
                   <div className="sidebar__post-info">
                     <span className="sidebar__post-title">{post.title}</span>
@@ -52,9 +52,9 @@ export default function Sidebar({ categories, recentPosts }) {
       <div className="sidebar__widget sidebar__cta">
         <h3 className="sidebar__title">Verify a Claim</h3>
         <p>Spot something suspicious? Paste it in our verification tool and get a Factly Score.</p>
-        <a href="/verify" className="sidebar__cta-btn">
+        <Link to="/verify" className="sidebar__cta-btn">
           Verify Now
-        </a>
+        </Link>
       </div>
     </aside>
   );

@@ -25,7 +25,7 @@ export default function ArticleCard({ article, featured, compact, horizontal }) 
         <Link to={`/article/${slug}`} className="article-card__link">
           {featured_image && (
             <div className="article-card__image">
-              <img src={featured_image} alt={title} loading="lazy" />
+<img src={featured_image} alt="" loading="lazy" />
               {showSignal && (
                 <span className="article-card__signal">
                   {score ? `${score}% verified` : verdict}

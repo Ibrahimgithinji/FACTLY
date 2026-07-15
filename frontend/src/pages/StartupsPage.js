@@ -79,7 +79,7 @@ export default function StartupsPage() {
               {spotlight.featured_image && (
                 <img
                   src={spotlight.featured_image}
-                  alt={spotlight.title}
+                  alt=""
                   style={{ width: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: 12 }}
                   onError={(e) => { e.target.style.display = 'none' }}
                 />
