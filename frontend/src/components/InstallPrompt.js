@@ -33,23 +33,27 @@ export default function InstallPrompt() {
   if (!show) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 20,
-      left: 20,
-      right: 20,
-      maxWidth: 400,
-      margin: '0 auto',
-      background: 'var(--card-bg)',
-      border: '1px solid var(--border)',
-      borderRadius: 12,
-      padding: 16,
-      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-    }}>
+    <div
+      role="dialog"
+      aria-label="Install Factly"
+      aria-modal="true"
+      style={{
+        position: 'fixed',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        maxWidth: 400,
+        margin: '0 auto',
+        background: 'var(--card-bg)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: 16,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}>
       <div style={{ flex: 1 }}>
         <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>
           Install Factly
@@ -75,6 +79,7 @@ export default function InstallPrompt() {
       </button>
       <button
         onClick={() => setShow(false)}
+        aria-label="Dismiss install prompt"
         style={{
           padding: 8,
           background: 'none',
