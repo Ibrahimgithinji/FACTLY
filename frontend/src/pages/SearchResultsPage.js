@@ -75,8 +75,9 @@ export default function SearchResultsPage() {
             padding: 16, background: 'var(--card-bg)', borderRadius: 12, border: '1px solid var(--border)',
             alignItems: 'center',
           }}>
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Filters:</span>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }} id="search-filters-label">Filters:</span>
             <select
+              aria-labelledby="search-filters-label"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               style={{
@@ -93,6 +94,7 @@ export default function SearchResultsPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
+              aria-label="Date from"
               placeholder="From"
               style={{
                 padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)',
@@ -103,6 +105,7 @@ export default function SearchResultsPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
+              aria-label="Date to"
               placeholder="To"
               style={{
                 padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)',
