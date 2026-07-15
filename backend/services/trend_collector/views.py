@@ -764,7 +764,7 @@ class AnalyticsAPIView(APIView):
                 recent_alerts = MisinformationAlert.objects.filter(
                     status='active'
                 ).count()
-            except:
+            except Exception:
                 recent_alerts = 0
             
             return Response({

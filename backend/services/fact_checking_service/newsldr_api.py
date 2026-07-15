@@ -97,7 +97,7 @@ class NewsLdrClient:
         for article in articles:
             try:
                 publish_date = datetime.fromisoformat(article.get('publishedAt', '').replace('Z', '+00:00'))
-            except:
+            except Exception:
                 publish_date = datetime.now()
 
             news_item = RelatedNews(

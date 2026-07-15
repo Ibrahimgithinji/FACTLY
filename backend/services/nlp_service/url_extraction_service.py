@@ -229,7 +229,7 @@ class URLExtractionService:
                 date_str = date_meta.get('content', '')
                 try:
                     publish_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                except:
+                except Exception:
                     pass
 
             return ExtractedContent(

@@ -389,7 +389,7 @@ class EvidenceSearchService:
             reliability = None
             try:
                 reliability = self.newsldr_client.get_source_reliability(news.source)
-            except:
+            except Exception:
                 pass
 
             credibility = reliability.reliability_score if reliability else 0.5
@@ -481,7 +481,7 @@ class EvidenceSearchService:
             if date_str:
                 try:
                     published_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                except:
+                except Exception:
                     pass
 
             evidence = EvidenceItem(
@@ -512,7 +512,7 @@ class EvidenceSearchService:
             from urllib.parse import urlparse
             parsed = urlparse(url)
             return parsed.netloc.replace('www.', '')
-        except:
+        except Exception:
             return ''
 
     def _calculate_source_diversity(self, evidence_items: List[EvidenceItem]) -> float:
@@ -630,7 +630,7 @@ class EvidenceSearchService:
                 reliability = self.newsldr_client.get_source_reliability(source_name)
                 if reliability:
                     return reliability.reliability_score
-            except:
+            except Exception:
                 pass
 
         # Default moderate credibility
@@ -709,7 +709,7 @@ class EvidenceSearchService:
             if date_str:
                 try:
                     published_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                except:
+                except Exception:
                     pass
 
             evidence = EvidenceItem(

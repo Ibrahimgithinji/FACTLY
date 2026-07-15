@@ -443,7 +443,7 @@ class RealTimeNewsService:
         if date_str:
             try:
                 return datetime(*date_str[:6])
-            except:
+            except Exception:
                 pass
 
         # Fallback to current time if parsing fails

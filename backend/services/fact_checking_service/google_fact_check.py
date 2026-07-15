@@ -122,7 +122,7 @@ class GoogleFactCheckClient:
             review_date_str = review_data.get('reviewDate', '')
             try:
                 review_date = datetime.fromisoformat(review_date_str.replace('Z', '+00:00'))
-            except:
+            except Exception:
                 review_date = datetime.now()
 
             claim_review = ClaimReview(

@@ -375,7 +375,7 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
                 if isinstance(published, str):
                     try:
                         published = datetime.fromisoformat(published.replace('Z', '+00:00'))
-                    except:
+                    except Exception:
                         published = now
                 age_hours = (now - published).total_seconds() / 3600 if published else 24
 

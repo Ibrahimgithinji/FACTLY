@@ -486,7 +486,7 @@ class AsyncEvidenceSearchService:
             from urllib.parse import urlparse
             parsed = urlparse(url)
             return parsed.netloc.replace('www.', '')
-        except:
+        except Exception:
             return ''
 
     def _calculate_source_diversity(self, evidence_items: List[EvidenceItem]) -> float:
