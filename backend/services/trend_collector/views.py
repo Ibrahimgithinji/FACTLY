@@ -776,8 +776,7 @@ class AnalyticsAPIView(APIView):
                 'average_engagement': round(aggregated['avg_engagement'] or 0, 2),
                 'active_alerts': recent_alerts,
                 'timestamp': timezone.now().isoformat(),
-                'status': 'live',
-                'debug_new_field': 'This is the new response format!'
+                'status': 'live'
             })
         except Exception as e:
             import logging
