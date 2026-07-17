@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Article, PageView, NewsletterSubscriber, PushSubscription, Bookmark, Comment
+import ipaddress
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +23,20 @@ class LogPageView(APIView):
         if not path:
             return Response({'error': 'path required'}, status=400)
 
+        raw_ip = request.META.get('REMOTE_ADDR', '')
+        try:
+            ip_obj = ipaddress.ip_address(raw_ip)
+            if isinstance(ip_obj, ipaddress.IPv4Address):
+                anonymized_ip = '.'.join(raw_ip.split('.')[:3]) + '.0'
+            else:
+                anonymized_ip = ':'.join(raw_ip.split(':')[:3]) + '::'
+        except ValueError:
+            anonymized_ip = ''
+
         PageView.objects.create(
             article_id=article_id if article_id else None,
             path=path[:500],
-            ip_address=request.META.get('REMOTE_ADDR'),
+            ip_address=anonymized_ip,
             user_agent=bleach.clean(
                 request.META.get('HTTP_USER_AGENT', ''), tags=[], strip=True
             )[:500],
