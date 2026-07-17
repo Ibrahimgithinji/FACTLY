@@ -300,11 +300,19 @@ class SignupView(APIView):
             )
         
         # check for existing account with same email (case-insensitive)
-        if User.objects.filter(email__iexact=email).exists():
-            return Response(
-                {'error': 'Email already registered'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        existing_account = User.objects.filter(email__iexact=email).first()
+        if existing_account:
+            logger.info(f"Duplicate signup attempt for {email}")
+            refresh = RefreshToken.for_user(existing_account)
+            response = Response({
+                'user': {
+                    'id': existing_account.id,
+                    'email': existing_account.email,
+                    'name': existing_account.first_name or existing_account.username,
+                }
+            }, status=status.HTTP_200_OK)
+            set_jwt_cookies(response, str(refresh.access_token), str(refresh))
+            return response
         
         try:
             user = User.objects.create_user(
@@ -561,19 +569,32 @@ class SocialLoginView(APIView):
         user_info = None
         try:
             if provider == 'google':
-                resp = requests.get(
-                    'https://www.googleapis.com/oauth2/v3/userinfo',
-                    headers={'Authorization': f'Bearer {access_token}'},
+                # Use tokeninfo endpoint to verify the ID token and check aud claim
+                verify_resp = requests.get(
+                    f'https://oauth2.googleapis.com/tokeninfo?id_token={access_token}',
                     timeout=10
                 )
-                if resp.status_code != 200:
+                if verify_resp.status_code != 200:
                     return Response({'error': 'Invalid Google token'}, status=status.HTTP_401_UNAUTHORIZED)
-                data = resp.json()
+                token_data = verify_resp.json()
+                # Confused deputy protection: verify the token was issued for our app
+                expected_aud = settings.GOOGLE_CLIENT_ID
+                if expected_aud and token_data.get('aud') != expected_aud:
+                    logger.warning(
+                        f"Google token aud mismatch: expected {expected_aud}, "
+                        f"got {token_data.get('aud')}"
+                    )
+                    return Response({'error': 'Invalid Google token'}, status=status.HTTP_401_UNAUTHORIZED)
+                if not token_data.get('email_verified'):
+                    return Response(
+                        {'error': 'Google email not verified'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 user_info = {
-                    'id': data['sub'],
-                    'email': data.get('email', ''),
-                    'name': data.get('name', ''),
-                    'picture': data.get('picture', ''),
+                    'id': token_data['sub'],
+                    'email': token_data.get('email', ''),
+                    'name': token_data.get('name', ''),
+                    'picture': token_data.get('picture', ''),
                 }
             elif provider == 'github':
                 resp = requests.get(
