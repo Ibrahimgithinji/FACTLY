@@ -52,7 +52,6 @@ def readiness_check(request):
         return JsonResponse({
             "status": "not ready",
             "service": "factly-backend",
-            "error": str(e),
             "timestamp": datetime.now().isoformat() + "Z"
         }, status=503)
 
@@ -92,7 +91,7 @@ def comprehensive_health_check(request):
         cursor.execute("SELECT 1")
         health_status["checks"]["database"] = {"status": "healthy", "details": "connected"}
     except Exception as e:
-        health_status["checks"]["database"] = {"status": "unhealthy", "error": str(e)}
+        health_status["checks"]["database"] = {"status": "unhealthy"}
         health_status["status"] = "unhealthy"
 
     # Cache check (if Redis is available)
@@ -105,20 +104,8 @@ def comprehensive_health_check(request):
         else:
             health_status["checks"]["cache"] = {"status": "unhealthy", "error": "cache not working"}
             health_status["status"] = "unhealthy"
-    except Exception as e:
-        health_status["checks"]["cache"] = {"status": "unhealthy", "error": str(e)}
-
-    # External API checks (optional)
-    try:
-        import requests
-        # Quick check to Google (basic connectivity)
-        response = requests.get("https://www.google.com", timeout=5)
-        if response.status_code == 200:
-            health_status["checks"]["external_connectivity"] = {"status": "healthy", "details": "internet accessible"}
-        else:
-            health_status["checks"]["external_connectivity"] = {"status": "unhealthy", "error": f"HTTP {response.status_code}"}
-    except Exception as e:
-        health_status["checks"]["external_connectivity"] = {"status": "unhealthy", "error": str(e)}
+    except Exception:
+        health_status["checks"]["cache"] = {"status": "unhealthy"}
 
     status_code = 200 if health_status["status"] == "healthy" else 503
     return JsonResponse(health_status, status=status_code)
