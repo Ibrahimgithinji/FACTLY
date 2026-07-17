@@ -599,8 +599,9 @@ class PredictionAPIView(APIView):
                     ]
                 })
             except Exception as e:
+                logger.exception(f"Prediction lookup failed for trend {trend_id}")
                 return Response(
-                    {'error': str(e)},
+                    {'error': 'Internal server error'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
@@ -671,7 +672,7 @@ class AlertsAPIView(APIView):
     
     Get active misinformation alerts.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     def get(self, request):
         """Get active alerts."""
@@ -783,7 +784,7 @@ class AnalyticsAPIView(APIView):
             logger = logging.getLogger(__name__)
             logger.error(f"Analytics API error: {str(e)}")
             return Response({
-                'error': str(e),
+                'error': 'Internal server error',
                 'total_trends': 0,
                 'status': 'error'
             }, status=500)
