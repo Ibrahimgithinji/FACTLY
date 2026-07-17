@@ -10,7 +10,7 @@ import requests
 import socket
 import ipaddress
 from typing import Dict, Any, Optional, List
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from datetime import datetime
 from bs4 import BeautifulSoup
 from newspaper import Article, ArticleException
@@ -94,6 +94,7 @@ class URLExtractionService:
         self.timeout = timeout
         self.user_agent = user_agent or "FACTLY-Bot/1.0"
         self.session = requests.Session()
+        self.session.hooks['response'].append(self._validate_redirect_hook)
         self.session.headers.update({
             'User-Agent': self.user_agent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -102,6 +103,12 @@ class URLExtractionService:
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         })
+
+    _BLOCKED_IPS = [
+        '169.254.169.254',   # AWS/GCP/Azure metadata
+        '100.100.100.200',   # Alibaba cloud metadata
+        '0.0.0.0',
+    ]
 
     def _is_valid_url(self, url: str) -> bool:
         """Check if URL is well-formed and not pointing to private/internal hosts (SSRF protection)."""
@@ -117,6 +124,9 @@ class URLExtractionService:
             # Disallow localhost or direct IPs to private ranges
             if hostname in ('localhost', '127.0.0.1', '::1'):
                 return False
+            # Block well-known metadata IPs regardless of address class
+            if hostname in self._BLOCKED_IPS:
+                return False
             # If hostname is an IP address, check if it's private
             try:
                 addr = ipaddress.ip_address(hostname)
@@ -130,6 +140,20 @@ class URLExtractionService:
         except (ValueError, TypeError) as e:
             logger.warning(f"Error validating URL: {e}")
             return False
+
+    def _validate_redirect_hook(self, response, *args, **kwargs):
+        """Requests hook that validates every redirect hop to prevent SSRF.
+
+        If a redirect target resolves to a private/internal IP, the hook
+        raises ValueError which causes the request to fail.
+        """
+        if response.is_redirect:
+            location = response.headers.get('Location', '')
+            redirect_url = urljoin(response.url, location)
+            if not self._is_valid_url(redirect_url):
+                logger.warning(f"SSRF blocked: redirect to {redirect_url}")
+                raise ValueError(f"Blocked redirect to invalid URL: {redirect_url}")
+        return response
 
     def _detect_source_type(self, url: str) -> str:
         """Detect the type of content source."""
@@ -157,7 +181,7 @@ class URLExtractionService:
         """Extract content using newspaper3k library."""
         try:
             article = Article(url)
-            article.download()
+            article.download(session=self.session)
             article.parse()
             article.nlp()
 
