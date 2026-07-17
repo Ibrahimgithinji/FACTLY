@@ -122,11 +122,14 @@ class APIRateLimiter:
             return f"user:{request.user.id}"
         
         # Fall back to IP-based identification
+        # Only trust X-Forwarded-For when it comes from a known proxy
+        ip = request.META.get('REMOTE_ADDR', 'unknown')
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR', 'unknown')
+            forwarded_ips = [x.strip() for x in x_forwarded_for.split(',')]
+            trusted_proxies = getattr(settings, 'TRUSTED_PROXIES', [])
+            if ip in trusted_proxies and len(forwarded_ips) > 0:
+                ip = forwarded_ips[0]
         
         # Include user agent for more granular identification
         user_agent = request.META.get('HTTP_USER_AGENT', 'unknown')
@@ -291,8 +294,7 @@ class APIRateLimiter:
             
         except Exception as e:
             logger.error(f"Redis rate limit check failed: {e}")
-            # Fail open on Redis errors
-            return (True, 0)
+            return (False, 60)
     
     def _check_rate_limit_memory(
         self,
