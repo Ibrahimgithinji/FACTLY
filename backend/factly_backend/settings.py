@@ -54,6 +54,11 @@ SECRET_KEY = _secret_key
 _allowed = os.getenv('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [_h.strip() for _h in _allowed.split(',') if _h.strip()] if _allowed else (['localhost', '127.0.0.1', 'testserver'] if DEBUG else ['localhost', '127.0.0.1'])
 
+# Google OAuth client ID (used by SocialLoginView to verify ID token aud claim)
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+
+# Trusted proxy IPs for X-Forwarded-For validation (used by rate limiter)
+TRUSTED_PROXIES = os.getenv('TRUSTED_PROXIES', '').split(',') if os.getenv('TRUSTED_PROXIES') else []
 
 # Application definition
 
@@ -137,12 +142,14 @@ def get_sqlite_db_path():
             parent = db_path.expanduser().resolve().parent
             parent.mkdir(parents=True, exist_ok=True)
             probe = parent / f"factly-write-test-{os.getpid()}.tmp"
-            with probe.open('w', encoding='utf-8') as handle:
-                handle.write('ok')
             try:
-                probe.unlink(missing_ok=True)
-            except OSError:
-                logger.warning("Could not remove SQLite write probe: %s", probe)
+                with probe.open('w', encoding='utf-8') as handle:
+                    handle.write('ok')
+            finally:
+                try:
+                    probe.unlink(missing_ok=True)
+                except OSError:
+                    pass
             return True
         except OSError:
             return False
@@ -400,6 +407,7 @@ REST_FRAMEWORK = {
         'oauth': '10/minute',
         'oauth_init': '10/minute',
         'trend_collect': '5/hour',
+        'guest_submit': '3/hour',
     },
 }
 
@@ -463,7 +471,7 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,                     # Issue new refresh token on each refresh
     'BLACKLIST_AFTER_ROTATION': True,                 # Blacklist old refresh tokens
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': os.getenv('JWT_SIGNING_KEY', SECRET_KEY),
+    'SIGNING_KEY': os.getenv('JWT_SECRET', SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
@@ -491,16 +499,17 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('DATA_UPLOAD_MAX_MEMORY_SIZE', 5 * 1
 FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('FILE_UPLOAD_MAX_MEMORY_SIZE', 5 * 1024 * 1024))  # 5 MB
 
 # Production-only security flags (toggle via env)
-SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('1', 'true', 'yes')
+_is_prod = not DEBUG
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', str(_is_prod)).lower() in ('1', 'true', 'yes')
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() in ('1', 'true', 'yes')
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True').lower() in ('1', 'true', 'yes')
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
-SECURE_HSTS_SECONDS = os.getenv('SECURE_HSTS_SECONDS', '0')
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000' if _is_prod else '0'))
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Content Security Policy
 # Uses the Django 5.0+ setting name (SECURE_ prefix was deprecated).
