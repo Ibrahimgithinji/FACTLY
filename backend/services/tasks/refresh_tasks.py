@@ -327,7 +327,7 @@ def extract_trending_topics(news_items: List[Any]) -> List[Dict[str, Any]]:
                    risk_level, verification_status, last_updated
     """
     import re
-            import hashlib
+    import hashlib
 
     from collections import Counter, defaultdict
 
