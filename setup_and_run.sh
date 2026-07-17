@@ -12,13 +12,16 @@ echo "[FACTLY] Root: $ROOT_DIR"
 
 cleanup() {
   echo "[FACTLY] Cleaning up background processes..."
-  if [ -f "$ROOT_DIR/backend/.backend_pid" ]; then
-    pid=$(cat "$ROOT_DIR/backend/.backend_pid" 2>/dev/null || echo "")
-    if [ -n "$pid" ]; then
-      kill "$pid" 2>/dev/null || true
-      rm -f "$ROOT_DIR/backend/.backend_pid"
+  for pidfile in celery_worker.pid celery_beat.pid backend_pid frontend_pid; do
+    filepath="$ROOT_DIR/backend/.$pidfile"
+    if [ -f "$filepath" ]; then
+      pid=$(cat "$filepath" 2>/dev/null || echo "")
+      if [ -n "$pid" ]; then
+        kill "$pid" 2>/dev/null || true
+        rm -f "$filepath"
+      fi
     fi
-  fi
+  done
   if [ -f "$ROOT_DIR/frontend/.frontend_pid" ]; then
     pid=$(cat "$ROOT_DIR/frontend/.frontend_pid" 2>/dev/null || echo "")
     if [ -n "$pid" ]; then
@@ -101,6 +104,38 @@ echo "$BACKEND_PID" > "$ROOT_DIR/backend/.backend_pid"
 echo "[FACTLY] Backend PID: $BACKEND_PID (logs: $ROOT_DIR/backend/runserver.log)"
 
 ##########################
+# Redis + Celery startup
+##########################
+echo "[FACTLY] Checking for Redis..."
+if command -v redis-server >/dev/null 2>&1; then
+  if redis-cli ping 2>/dev/null | grep -q PONG; then
+    echo "[FACTLY] Redis already running."
+  else
+    echo "[FACTLY] Starting Redis (background)..."
+    nohup redis-server >"$ROOT_DIR/backend/redis.log" 2>&1 &
+    sleep 1
+    echo "[FACTLY] Redis started (logs: $ROOT_DIR/backend/redis.log)"
+  fi
+else
+  echo "[WARN] redis-server not found in PATH. Celery requires Redis."
+  echo "        Install Redis or ensure REDIS_HOST points to a running instance."
+fi
+
+echo "[FACTLY] Starting Celery worker (background)..."
+nohup "$VENV_PY" -m celery -A factly_backend worker -l info -Q high_priority,ingestion,low_priority,default \
+  >"$ROOT_DIR/backend/celery_worker.log" 2>&1 &
+CELERY_WORKER_PID=$!
+echo "$CELERY_WORKER_PID" > "$ROOT_DIR/backend/.celery_worker.pid"
+echo "[FACTLY] Celery worker PID: $CELERY_WORKER_PID (logs: $ROOT_DIR/backend/celery_worker.log)"
+
+echo "[FACTLY] Starting Celery beat (background)..."
+nohup "$VENV_PY" -m celery -A factly_backend beat -l info --pidfile /tmp/celerybeat.pid \
+  >"$ROOT_DIR/backend/celery_beat.log" 2>&1 &
+CELERY_BEAT_PID=$!
+echo "$CELERY_BEAT_PID" > "$ROOT_DIR/backend/.celery_beat.pid"
+echo "[FACTLY] Celery beat PID: $CELERY_BEAT_PID (logs: $ROOT_DIR/backend/celery_beat.log)"
+
+##########################
 # Frontend setup & run
 ##########################
 echo "[FACTLY] Setting up frontend..."
@@ -123,9 +158,13 @@ echo "$FRONTEND_PID" > "$ROOT_DIR/frontend/.frontend_pid"
 echo "[FACTLY] Frontend PID: $FRONTEND_PID (logs: $ROOT_DIR/frontend/npm.log)"
 
 echo "[FACTLY] All services started."
-echo "Backend: http://localhost:8000  (PID $BACKEND_PID)"
-echo "Frontend: http://localhost:3000 (PID $FRONTEND_PID)"
+echo "Backend:       http://localhost:8000  (PID $BACKEND_PID)"
+echo "Frontend:      http://localhost:3000 (PID $FRONTEND_PID)"
+echo "Celery worker: running (PID $CELERY_WORKER_PID)"
+echo "Celery beat:   running (PID $CELERY_BEAT_PID)"
+echo "Logs: backend/runserver.log, backend/celery_worker.log, backend/celery_beat.log, backend/redis.log"
 echo "To stop services:"
-echo "  kill \$(cat backend/.backend_pid) || echo 'failed to kill backend'"
-echo "  kill \$(cat frontend/.frontend_pid) || echo 'failed to kill frontend'"
-echo "Note: On Windows run the equivalent commands in PowerShell or run this script in WSL/Git Bash."
+echo "  bash setup_and_run.sh   # Ctrl+C stops everything, or:"
+echo "  kill \$(cat backend/.backend_pid) \$(cat backend/.celery_worker.pid) \\"
+echo "      \$(cat backend/.celery_beat.pid) \$(cat frontend/.frontend_pid)"
+echo "Note: On Windows run in WSL/Git Bash, or use the docker-compose stack."
