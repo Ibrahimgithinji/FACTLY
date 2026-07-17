@@ -300,9 +300,14 @@ def newsletter_subscribe(request):
     return Response({'message': 'Subscribed successfully!'})
 
 
+class GuestSubmitRateThrottle(AnonRateThrottle):
+    rate = '3/hour'
+    scope = 'guest_submit'
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
-@throttle_classes([AnonRateThrottle])
+@throttle_classes([GuestSubmitRateThrottle])
 def guest_submit(request):
     serializer = GuestArticleSerializer(data=request.data)
     if not serializer.is_valid():
