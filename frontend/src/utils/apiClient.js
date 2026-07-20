@@ -73,6 +73,31 @@ const apiRequest = async (url, method, data = null, options = {}) => {
       }
     }
 
+    // Validate Content-Type header before parsing JSON
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      // Server returned non-JSON (likely HTML error page)
+      let responseText = '';
+      try {
+        responseText = await response.text();
+      } catch (e) {
+        // Failed to read response
+      }
+      
+      const errorMsg = response.ok 
+        ? 'Unexpected response format from server'
+        : `Server error: ${response.status} ${response.statusText}`;
+      
+      console.error('Non-JSON API response:', {
+        status: response.status,
+        contentType,
+        url,
+        responsePreview: responseText.substring(0, 200),
+      });
+      
+      throw new Error(errorMsg);
+    }
+
     const result = await response.json();
 
     if (!response.ok) {
