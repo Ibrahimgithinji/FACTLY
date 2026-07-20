@@ -83,6 +83,18 @@ class ExtractedContent:
 class URLExtractionService:
     """Service for extracting content from URLs."""
 
+    # Maximum response size (10 MB)
+    MAX_RESPONSE_SIZE = 10 * 1024 * 1024
+    
+    # Allowed content types for extraction
+    ALLOWED_CONTENT_TYPES = [
+        'text/html',
+        'application/xhtml+xml',
+        'application/xml',
+        'text/xml',
+        'text/plain',
+    ]
+
     def __init__(self, timeout: int = 30, user_agent: str = None):
         """
         Initialize the URL extraction service.
@@ -95,6 +107,7 @@ class URLExtractionService:
         self.user_agent = user_agent or "FACTLY-Bot/1.0"
         self.session = requests.Session()
         self.session.hooks['response'].append(self._validate_redirect_hook)
+        self.session.hooks['response'].append(self._validate_response_hook)
         self.session.headers.update({
             'User-Agent': self.user_agent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -154,6 +167,50 @@ class URLExtractionService:
                 logger.warning(f"SSRF blocked: redirect to {redirect_url}")
                 raise ValueError(f"Blocked redirect to invalid URL: {redirect_url}")
         return response
+
+    def _validate_response_hook(self, response, *args, **kwargs):
+        """Requests hook that validates response size and content-type.
+        
+        Prevents DoS attacks via oversized responses and ensures only
+        HTML content is processed for extraction.
+        """
+        # Check content-type header
+        content_type = response.headers.get('Content-Type', '').lower()
+        if response.status_code == 200:
+            # Extract base content type (ignore charset, etc.)
+            base_content_type = content_type.split(';')[0].strip()
+            
+            # Allow common variations
+            is_allowed = any(
+                allowed in base_content_type 
+                for allowed in self.ALLOWED_CONTENT_TYPES
+            )
+            
+            if not is_allowed:
+                logger.warning(
+                    f"Content-Type not allowed for extraction: {content_type} from {response.url}"
+                )
+                raise ValueError(
+                    f"Blocked response with content-type: {base_content_type}"
+                )
+            
+            # Check content length
+            content_length = response.headers.get('Content-Length')
+            if content_length:
+                try:
+                    size = int(content_length)
+                    if size > self.MAX_RESPONSE_SIZE:
+                        logger.warning(
+                            f"Response too large ({size} bytes) from {response.url}"
+                        )
+                        raise ValueError(
+                            f"Response exceeds maximum size ({size} > {self.MAX_RESPONSE_SIZE})"
+                        )
+                except (ValueError, TypeError):
+                    pass  # Continue if Content-Length is invalid
+        
+        return response
+
 
     def _detect_source_type(self, url: str) -> str:
         """Detect the type of content source."""
