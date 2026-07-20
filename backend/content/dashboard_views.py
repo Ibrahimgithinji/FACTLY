@@ -7,14 +7,22 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from .models import Article, PageView, NewsletterSubscriber, PushSubscription, Bookmark, Comment
 import ipaddress
 
 logger = logging.getLogger(__name__)
 
 
+class AnalyticsThrottle(AnonRateThrottle):
+    """Throttle for public analytics endpoints - 60 requests per hour per IP."""
+    rate = '60/hour'
+    scope = 'analytics'
+
+
 class LogPageView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnalyticsThrottle]
 
     def post(self, request):
         path = bleach.clean(request.data.get('path', ''), tags=[], strip=True)
@@ -22,6 +30,14 @@ class LogPageView(APIView):
 
         if not path:
             return Response({'error': 'path required'}, status=400)
+
+        # Validate article_id if provided
+        if article_id:
+            try:
+                Article.objects.get(id=article_id)
+            except Article.DoesNotExist:
+                # Invalid article_id - return error to prevent abuse
+                return Response({'error': 'Invalid article_id'}, status=status.HTTP_400_BAD_REQUEST)
 
         raw_ip = request.META.get('REMOTE_ADDR', '')
         try:
