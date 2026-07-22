@@ -244,9 +244,20 @@ DATABASES = {
 # CELERY CONFIGURATION - Distributed Task Processing
 # =============================================================================
 
-# Broker Configuration (Redis Cluster)
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
+# Development mode uses synchronous task execution (no Redis needed)
+# Production mode uses async workers with Redis broker
+
+_celery_dev_mode = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False').lower() in ('1', 'true', 'yes', 'true' if DEBUG else 'false')
+
+# Broker Configuration (Redis for production, SQLite for development)
+CELERY_BROKER_URL = os.getenv(
+    'CELERY_BROKER_URL', 
+    'redis://localhost:6379/0' if not DEBUG else 'sqla+sqlite:///celery_broker.sqlite3'
+)
+CELERY_RESULT_BACKEND = os.getenv(
+    'CELERY_RESULT_BACKEND', 
+    'redis://localhost:6379/1' if not DEBUG else 'db+sqlite:///celery_results.sqlite3'
+)
 
 # Serialization
 CELERY_ACCEPT_CONTENT = ['json']
@@ -257,9 +268,9 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_ENABLE_UTC = True
 
-# Task Execution Settings
-CELERY_TASK_ALWAYS_EAGER = False  # Never run tasks synchronously in production
-CELERY_TASK_STORE_EAGER_RESULT = False
+# Task Execution Settings - Development mode runs tasks synchronously
+CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False').lower() in ('1', 'true', 'yes')
+CELERY_TASK_STORE_EAGER_RESULT = os.getenv('CELERY_TASK_STORE_EAGER_RESULT', 'False').lower() in ('1', 'true', 'yes')
 CELERY_TASK_IGNORE_RESULT = False
 CELERY_TASK_TRACK_STARTED = True
 
@@ -286,22 +297,25 @@ CELERY_RESULT_EXTENDED = True
 
 # Broker Connection Retry
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10 if DEBUG else 1
 CELERY_BROKER_CONNECTION_TIMEOUT = 30
 
-# Redis-Specific Settings
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'visibility_timeout': 43200,  # 12 hours (tasks must complete within this)
-    'queue_order_strategy': 'priority',
-    'master_name': 'factly-redis-master',  # For Redis Sentinel
-}
-
-# Redis Result Backend Transport
-CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {
-    'retry_on_timeout': True,
-    'socket_connect_timeout': 30,
-    'socket_timeout': 30,
-}
+# Redis-Specific Settings (production only)
+if not DEBUG and 'redis://' in CELERY_BROKER_URL:
+    CELERY_BROKER_TRANSPORT_OPTIONS = {
+        'visibility_timeout': 43200,  # 12 hours (tasks must complete within this)
+        'queue_order_strategy': 'priority',
+        'master_name': 'factly-redis-master',  # For Redis Sentinel
+    }
+    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {
+        'retry_on_timeout': True,
+        'socket_connect_timeout': 30,
+        'socket_timeout': 30,
+    }
+else:
+    # SQLite broker for development
+    CELERY_BROKER_TRANSPORT_OPTIONS = {}
+    CELERY_RESULT_BACKEND_TRANSPORT_OPTIONS = {}
 
 # Task Routes (direct tasks to specific queues)
 # Beat schedule uses explicit options.queue; these routes apply as
