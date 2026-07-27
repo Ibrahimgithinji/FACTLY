@@ -380,6 +380,9 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
+# The calendar used to decide which editor-scheduled daily story is visible.
+DAILY_STORY_TIME_ZONE = os.getenv('DAILY_STORY_TIME_ZONE', 'Africa/Nairobi')
+
 USE_I18N = True
 
 USE_TZ = True
