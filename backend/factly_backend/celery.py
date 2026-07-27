@@ -33,6 +33,7 @@ def debug_task(self):
 # =============================================================================
 import services.tasks.refresh_tasks  # noqa: E402,F401
 import services.tasks.update_trending  # noqa: E402,F401
+import services.tasks.daily_story_tasks  # noqa: E402,F401
 
 
 # =============================================================================
@@ -74,10 +75,28 @@ app.conf.beat_schedule = {
         'schedule': 1800.0,  # 30 minutes
         'options': {'queue': 'ingestion'}
     },
-    # Refresh fact-check database daily
+    # Refresh fact-check database daily at 06:00 UTC
     'daily-fact-check-refresh': {
         'task': 'services.tasks.refresh_tasks.refresh_fact_check_cache',
-        'schedule': 86400.0,  # 24 hours
+        'schedule': 21600.0,  # 06:00 UTC
+        'options': {'queue': 'low_priority'}
+    },
+    # Prepare tomorrow's daily story draft at 23:00 UTC
+    'prepare-tomorrow-daily-story': {
+        'task': 'services.tasks.daily_story_tasks.prepare_tomorrow_daily_story',
+        'schedule': 82800.0,  # 23:00 UTC
+        'options': {'queue': 'low_priority'}
+    },
+    # Publish today's daily story at 00:00 UTC
+    'publish-today-daily-story': {
+        'task': 'services.tasks.daily_story_tasks.publish_today_daily_story',
+        'schedule': 86400.0,  # 00:00 UTC next day
+        'options': {'queue': 'low_priority'}
+    },
+    # Ensure daily story fallback at 06:00 UTC
+    'ensure-daily-story-fallback': {
+        'task': 'services.tasks.daily_story_tasks.ensure_daily_story_fallback',
+        'schedule': 21600.0,  # 06:00 UTC
         'options': {'queue': 'low_priority'}
     },
 }
