@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Category, Tag, AuthorProfile, Article, Comment
+from .models import (
+    Article, AuthorProfile, Category, Comment, DailyStoryEdition, Story, StoryEvent, Tag,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -45,6 +47,38 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'excerpt', 'content', 'featured_image',
             'category', 'tags', 'author', 'is_featured', 'is_trending',
             'read_time', 'published_at', 'created_at', 'updated_at',
+        ]
+
+
+class StoryEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoryEvent
+        fields = [
+            'id', 'position', 'occurred_at', 'title', 'summary',
+            'source_url', 'source_name', 'source_published_at', 'is_verified',
+        ]
+
+
+class StorySerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    events = StoryEventSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Story
+        fields = [
+            'id', 'title', 'slug', 'summary', 'current_status', 'featured_image',
+            'category', 'started_at', 'updated_at', 'events',
+        ]
+
+
+class DailyStoryEditionSerializer(serializers.ModelSerializer):
+    story = StorySerializer(read_only=True)
+    status = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = DailyStoryEdition
+        fields = [
+            'edition_date', 'story', 'status', 'selection_type', 'selection_reason', 'published_at',
         ]
 
 

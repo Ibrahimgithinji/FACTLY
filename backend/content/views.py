@@ -1,5 +1,8 @@
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import bleach
+from django.conf import settings
 from django.http import Http404
 from django.db import DatabaseError
 from django.db.models import Count
@@ -11,15 +14,26 @@ from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
-from .models import Category, Tag, Article, Comment
+from .models import Category, Tag, Article, Comment, DailyStoryEdition, DailyStoryEditionStatus, Story, StoryStatus
 from .serializers import (
     CategorySerializer, TagSerializer, ArticleListSerializer,
     ArticleDetailSerializer, CommentSerializer, CommentCreateSerializer,
-    GuestArticleSerializer, AuthorProfileSerializer,
+    DailyStoryEditionSerializer, GuestArticleSerializer, AuthorProfileSerializer, StorySerializer,
 )
 from .fallback_content import DEMO_CATEGORIES, demo_articles, demo_article_detail, demo_homepage
 
 logger = logging.getLogger(__name__)
+
+
+def _daily_story_date():
+    """Return the current date in the configured editorial timezone."""
+    timezone_name = getattr(settings, 'DAILY_STORY_TIME_ZONE', 'Africa/Nairobi')
+    try:
+        editorial_timezone = ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError:
+        logger.warning('Invalid DAILY_STORY_TIME_ZONE %s; falling back to UTC', timezone_name)
+        editorial_timezone = ZoneInfo('UTC')
+    return datetime.now(editorial_timezone).date(), timezone_name
 
 
 class CategoryListView(generics.ListAPIView):
@@ -256,6 +270,46 @@ def homepage_data(request):
         logger.warning("Homepage API falling back to editorial demo data: %s", exc)
 
     return Response(demo_homepage())
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def daily_story(request):
+    """Return the editor-scheduled or published story for the current editorial date."""
+    edition_date, timezone_name = _daily_story_date()
+    edition = DailyStoryEdition.objects.select_related(
+        'story__category'
+    ).prefetch_related('story__events').filter(
+        edition_date=edition_date,
+        status__in=[DailyStoryEditionStatus.SCHEDULED, DailyStoryEditionStatus.PUBLISHED],
+        story__status=StoryStatus.PUBLISHED,
+    ).first()
+
+    if not edition:
+        return Response(
+            {
+                'detail': 'No daily story has been scheduled or published for today.',
+                'edition_date': edition_date.isoformat(),
+                'edition_timezone': timezone_name,
+                'fallback': True,
+            },
+            status=404,
+        )
+
+    payload = DailyStoryEditionSerializer(edition).data
+    payload['edition_timezone'] = timezone_name
+    return Response(payload)
+
+
+class StoryDetailView(generics.RetrieveAPIView):
+    serializer_class = StorySerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        return Story.objects.select_related('category').prefetch_related('events').filter(
+            status=StoryStatus.PUBLISHED,
+        )
 
 
 @api_view(['POST'])
