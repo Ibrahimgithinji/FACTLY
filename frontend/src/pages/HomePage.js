@@ -212,6 +212,47 @@ function HeroSection({ leadArticle, stats }) {
   );
 }
 
+function DailyStorySpotlight({ edition }) {
+  const story = edition?.story;
+  if (!story) return null;
+
+  const formattedDate = edition.edition_date
+    ? new Date(`${edition.edition_date}T12:00:00`).toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric',
+    })
+    : 'Today';
+  const eventCount = story.events?.length || 0;
+
+  return (
+    <section className="daily-story-spotlight" aria-labelledby="daily-story-title">
+      <div className="daily-story-spotlight__eyebrow">
+        <span>Today&apos;s global story</span>
+        <span>{formattedDate}</span>
+      </div>
+      <div className="daily-story-spotlight__content">
+        <div>
+          {story.category && <span className="daily-story-spotlight__category">{story.category.name}</span>}
+          <h2 id="daily-story-title">{story.title}</h2>
+          <p>{story.summary}</p>
+          {story.current_status && (
+            <p className="daily-story-spotlight__status">
+              <strong>Current status:</strong> {story.current_status}
+            </p>
+          )}
+        </div>
+        <div className="daily-story-spotlight__actions">
+          <span className="daily-story-spotlight__count">
+            {eventCount} {eventCount === 1 ? 'documented event' : 'documented events'}
+          </span>
+          <Link to={`/stories/${story.slug}`} className="daily-story-spotlight__button">
+            Start from the beginning
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ClaimCollectionsSection() {
   return (
     <RevealOnScroll delay={0.1}>
@@ -429,6 +470,7 @@ export default function HomePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [dailyStory, setDailyStory] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [fetchError, setFetchError] = useState('');
   const pollRef = useRef(null);
@@ -444,17 +486,27 @@ export default function HomePage() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const [homeRes, catRes] = await Promise.all([
+      const [homeRes, catRes, dailyStoryRes] = await Promise.all([
         fetch(CONTENT_ENDPOINTS.HOMEPAGE, { signal: controller.signal }),
         fetch(CONTENT_ENDPOINTS.CATEGORIES, { signal: controller.signal }),
+        fetch(CONTENT_ENDPOINTS.DAILY_STORY, { signal: controller.signal }),
       ]);
       if (!mountedRef.current) return;
       if (!homeRes.ok) throw new Error(`Failed to load homepage (status ${homeRes.status})`);
       if (!catRes.ok) throw new Error(`Failed to load categories (status ${catRes.status})`);
       const homeData = await homeRes.json();
       const catData = await catRes.json();
+      let dailyStoryData = null;
+      if (dailyStoryRes.ok) {
+        try {
+          dailyStoryData = await dailyStoryRes.json();
+        } catch (dailyStoryError) {
+          console.warn('Failed to parse daily story:', dailyStoryError);
+        }
+      }
       setData(homeData);
       setCategories(catData);
+      setDailyStory(dailyStoryData);
       setLastUpdated(new Date().toISOString());
       setFetchError('');
     } catch (err) {
@@ -563,6 +615,8 @@ export default function HomePage() {
           Refresh
         </button>
       </div>
+
+      <DailyStorySpotlight edition={dailyStory} />
 
       <HeroSection leadArticle={leadArticle} />
 

@@ -45,6 +45,7 @@ const DailyBriefingPage = lazy(() => import('./pages/DailyBriefingPage'));
 const TrendingPage = lazy(() => import('./pages/TrendingPage'));
 const AlertsPage = lazy(() => import('./pages/AlertsPage'));
 const CommunityPage = lazy(() => import('./pages/CommunityPage'));
+const DailyStoryPage = lazy(() => import('./pages/DailyStoryPage'));
 
 const PageLoader = () => (
   <div className="loading-container" role="status" aria-live="polite">
@@ -99,6 +100,7 @@ function App() {
                     <Route path="/trending" element={<TrendingPage />} />
                     <Route path="/alerts" element={<AlertsPage />} />
                     <Route path="/community" element={<CommunityPage />} />
+                    <Route path="/stories/:slug" element={<DailyStoryPage />} />
                     <Route
                       path="/"
                       element={
