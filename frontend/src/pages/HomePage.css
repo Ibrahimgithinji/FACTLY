@@ -1076,3 +1076,105 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
+
+.daily-story-spotlight {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 16px;
+  margin: 8px 0 24px;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.daily-story-spotlight__eyebrow {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  font-size: 0.76rem;
+  font-weight: 800;
+  justify-content: space-between;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.daily-story-spotlight__eyebrow span:first-child {
+  color: var(--color-primary);
+}
+
+.daily-story-spotlight__content {
+  align-items: end;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 16px;
+}
+
+.daily-story-spotlight__category {
+  color: var(--text-secondary);
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.daily-story-spotlight h2 {
+  color: var(--text-primary);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.daily-story-spotlight p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 10px 0 0;
+  max-width: 760px;
+}
+
+.daily-story-spotlight__status strong {
+  color: var(--text-primary);
+}
+
+.daily-story-spotlight__actions {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.daily-story-spotlight__count {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.daily-story-spotlight__button {
+  background: var(--color-primary);
+  border-radius: 9px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 12px 16px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.daily-story-spotlight__button:hover {
+  background: var(--color-primary-dark);
+}
+
+@media (max-width: 640px) {
+  .daily-story-spotlight {
+    padding: 20px;
+  }
+
+  .daily-story-spotlight__content {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .daily-story-spotlight__button {
+    text-align: center;
+    width: 100%;
+  }
+}
