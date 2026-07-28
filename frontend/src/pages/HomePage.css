@@ -1194,6 +1194,55 @@
   100% { transform: translateX(-50%); }
 }
 
+.verified-sources {
+  padding: 18px 0;
+}
+
+.verified-sources__inner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.verified-sources__label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.verified-sources__list {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.verified-sources__item {
+  align-items: center;
+  color: var(--text-secondary);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.verified-sources__dot {
+  background: var(--color-primary);
+  border-radius: 50%;
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+}
+
+.verified-sources__count {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .daily-story-spotlight {
     padding: 20px;

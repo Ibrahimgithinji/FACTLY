@@ -68,6 +68,14 @@ const TRUSTED_BY = [
   'The Guardian', 'AFP', 'Deutsche Welle', 'NHK', 'France 24',
 ];
 
+const VERIFIED_SOURCES = [
+  { name: 'Reuters', count: 1240 },
+  { name: 'BBC', count: 980 },
+  { name: 'AP News', count: 850 },
+  { name: 'Al Jazeera', count: 720 },
+  { name: 'NPR', count: 640 },
+];
+
 function TrustedByTicker() {
   return (
     <section className="trusted-by" aria-label="Trusted by leading news organizations">
@@ -75,6 +83,25 @@ function TrustedByTicker() {
         {[...TRUSTED_BY, ...TRUSTED_BY].map((name, index) => (
           <span key={index} className="trusted-by__item">{name}</span>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function VerifiedSourcesBar() {
+  return (
+    <section className="verified-sources" aria-label="Verified sources">
+      <div className="verified-sources__inner">
+        <span className="verified-sources__label">Verified sources</span>
+        <div className="verified-sources__list">
+          {VERIFIED_SOURCES.map((source) => (
+            <span key={source.name} className="verified-sources__item">
+              <span className="verified-sources__dot" aria-hidden="true" />
+              {source.name}
+              <span className="verified-sources__count">{source.count.toLocaleString()}</span>
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -658,6 +685,8 @@ export default function HomePage() {
       <HeroSection leadArticle={leadArticle} stats={heroStats} />
 
       <TrustedByTicker />
+
+      <VerifiedSourcesBar />
 
       <section className="editorial-lead" aria-label="Top stories">
         <div className="editorial-lead__main">

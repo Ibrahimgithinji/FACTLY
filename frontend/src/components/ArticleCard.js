@@ -25,7 +25,7 @@ export default function ArticleCard({ article, featured, compact, horizontal }) 
         <Link to={`/article/${slug}`} className="article-card__link">
           {featured_image && (
             <div className="article-card__image">
-<img src={featured_image} alt="" loading="lazy" />
+              <img src={featured_image} alt="" loading="lazy" />
               {showSignal && (
                 <span className="article-card__signal">
                   {score ? `${score}% verified` : verdict}
@@ -36,6 +36,11 @@ export default function ArticleCard({ article, featured, compact, horizontal }) 
           <div className="article-card__body">
             <div className="article-card__kicker-row">
               {category && <span className="article-card__category">{category.name}</span>}
+              {showSignal && (
+                <span className="article-card__badge">
+                  {score ? 'Fact-checked' : 'Source verified'}
+                </span>
+              )}
               {verdict && <span className="article-card__verdict">{verdict}</span>}
             </div>
             <h2 className="article-card__title">{title}</h2>
@@ -67,6 +72,11 @@ export default function ArticleCard({ article, featured, compact, horizontal }) 
         <div className="article-card__body">
           <div className="article-card__kicker-row">
             {category && <span className="article-card__category">{category.name}</span>}
+            {showSignal && (
+              <span className="article-card__badge">
+                {score ? 'Fact-checked' : 'Source verified'}
+              </span>
+            )}
             {verdict && <span className="article-card__verdict">{verdict}</span>}
           </div>
           <h3 className="article-card__title">{title}</h3>
