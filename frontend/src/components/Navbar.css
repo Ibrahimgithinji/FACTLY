@@ -81,15 +81,17 @@
 
 .navbar__logo-mark {
   align-items: center;
-  background: var(--color-primary);
-  border-radius: 7px;
-  color: #ffffff;
   display: inline-flex;
-  font-size: 1.25rem;
-  font-weight: 950;
+  flex: 0 0 auto;
   height: 38px;
   justify-content: center;
   width: 38px;
+}
+
+.navbar__logo-mark svg {
+  display: block;
+  height: 100%;
+  width: 100%;
 }
 
 .navbar__logo-text {
