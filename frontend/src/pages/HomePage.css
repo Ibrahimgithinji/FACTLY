@@ -384,7 +384,7 @@
   font-size: 0.95rem;
   font-weight: 800;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hero-cta--primary {
