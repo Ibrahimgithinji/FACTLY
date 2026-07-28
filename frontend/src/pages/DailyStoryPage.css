@@ -2,6 +2,7 @@
   margin: 0 auto;
   max-width: 960px;
   padding: 32px 24px 72px;
+  background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.05), transparent 45%);
 }
 
 .daily-story-page__loading,

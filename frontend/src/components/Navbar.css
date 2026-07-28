@@ -8,6 +8,8 @@
 .navbar {
   background: var(--navbar-bg);
   border-bottom: 1px solid var(--navbar-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   left: 0;
   position: fixed;
   right: 0;

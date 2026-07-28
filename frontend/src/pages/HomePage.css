@@ -320,6 +320,8 @@
   padding: 48px 0 40px;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 28px;
+  background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.06), transparent 40%);
 }
 
 .hero-badge {
