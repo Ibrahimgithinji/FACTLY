@@ -1080,12 +1080,25 @@
 }
 
 .daily-story-spotlight {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(59, 130, 246, 0.1));
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  border-radius: 16px;
-  margin: 8px 0 24px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.08), 0 8px 24px rgba(0, 0, 0, 0.25);
+  margin: 12px 0 28px;
   overflow: hidden;
-  padding: 24px;
+  padding: 28px;
+  position: relative;
+}
+
+.daily-story-spotlight::before {
+  background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 60%);
+  content: '';
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  pointer-events: none;
 }
 
 .daily-story-spotlight__eyebrow {
@@ -1097,6 +1110,12 @@
   justify-content: space-between;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.daily-story-spotlight__icon {
+  color: #fbbf24;
+  font-size: 0.9rem;
+  margin-right: 6px;
 }
 
 .daily-story-spotlight__eyebrow span:first-child {

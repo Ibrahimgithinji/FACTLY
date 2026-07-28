@@ -274,7 +274,10 @@ function DailyStorySpotlight({ edition }) {
   return (
     <section className="daily-story-spotlight" aria-labelledby="daily-story-title">
       <div className="daily-story-spotlight__eyebrow">
-        <span>Today&apos;s global story</span>
+        <span>
+          <span className="daily-story-spotlight__icon" aria-hidden="true">★</span>
+          Today&apos;s pick
+        </span>
         <span>{formattedDate}</span>
       </div>
       <div className="daily-story-spotlight__content">
