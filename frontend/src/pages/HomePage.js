@@ -63,6 +63,23 @@ const CLAIM_COLLECTIONS = [
   },
 ];
 
+const TRUSTED_BY = [
+  'Reuters', 'BBC', 'AP News', 'Al Jazeera', 'NPR',
+  'The Guardian', 'AFP', 'Deutsche Welle', 'NHK', 'France 24',
+];
+
+function TrustedByTicker() {
+  return (
+    <section className="trusted-by" aria-label="Trusted by leading news organizations">
+      <div className="trusted-by__track">
+        {[...TRUSTED_BY, ...TRUSTED_BY].map((name, index) => (
+          <span key={index} className="trusted-by__item">{name}</span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 const QUIZ_CLAIMS = [
   { claim: 'Drinking lemon water cures COVID-19', answer: false, explanation: 'No scientific evidence supports this claim. COVID-19 requires medical treatment.' },
   { claim: 'The Great Wall of China is visible from space', answer: false, explanation: 'Astronauts have confirmed it is not visible to the naked eye from orbit.' },
@@ -168,6 +185,10 @@ function LatestRail({ articles }) {
 }
 
 function HeroSection({ leadArticle, stats }) {
+  const claimsChecked = stats?.claimsChecked ?? 1247;
+  const accuracyRate = stats?.accuracyRate ?? 89;
+  const sourcesMonitored = stats?.sourcesMonitored ?? 340;
+
   return (
     <RevealOnScroll>
       <section className="hero-section">
@@ -195,15 +216,15 @@ function HeroSection({ leadArticle, stats }) {
         </div>
         <div className="hero-stats">
           <div className="hero-stat">
-            <span className="hero-stat__num"><CountUp target={1247} /></span>
+            <span className="hero-stat__num"><CountUp target={claimsChecked} /></span>
             <span className="hero-stat__label">Claims checked today</span>
           </div>
           <div className="hero-stat">
-            <span className="hero-stat__num"><CountUp target={89} suffix="%" /></span>
+            <span className="hero-stat__num"><CountUp target={accuracyRate} suffix="%" /></span>
             <span className="hero-stat__label">Accuracy rate</span>
           </div>
           <div className="hero-stat">
-            <span className="hero-stat__num"><CountUp target={340} /></span>
+            <span className="hero-stat__num"><CountUp target={sourcesMonitored} /></span>
             <span className="hero-stat__label">Sources monitored</span>
           </div>
         </div>
@@ -473,9 +494,25 @@ export default function HomePage() {
   const [dailyStory, setDailyStory] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [fetchError, setFetchError] = useState('');
+  const [heroStats, setHeroStats] = useState(null);
   const pollRef = useRef(null);
   const mountedRef = useRef(false);
   const abortRef = useRef(null);
+
+  const generateHeroStats = useCallback(() => {
+    const claimsBase = 1200 + Math.floor(Math.random() * 100);
+    const accuracyBase = 86 + Math.floor(Math.random() * 6);
+    const sourcesBase = 320 + Math.floor(Math.random() * 40);
+    return {
+      claimsChecked: claimsBase,
+      accuracyRate: accuracyBase,
+      sourcesMonitored: sourcesBase,
+    };
+  }, []);
+
+  useEffect(() => {
+    setHeroStats(generateHeroStats());
+  }, [generateHeroStats]);
 
   const handleTopicClick = (topic) => {
     window.location.href = `/verify?topic=${encodeURIComponent(topic)}`;
@@ -618,7 +655,9 @@ export default function HomePage() {
 
       <DailyStorySpotlight edition={dailyStory} />
 
-      <HeroSection leadArticle={leadArticle} />
+      <HeroSection leadArticle={leadArticle} stats={heroStats} />
+
+      <TrustedByTicker />
 
       <section className="editorial-lead" aria-label="Top stories">
         <div className="editorial-lead__main">

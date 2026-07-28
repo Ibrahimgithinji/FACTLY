@@ -1165,6 +1165,35 @@
   background: var(--color-primary-dark);
 }
 
+.trusted-by {
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  overflow: hidden;
+  padding: 18px 0;
+}
+
+.trusted-by__track {
+  align-items: center;
+  display: flex;
+  gap: 48px;
+  white-space: nowrap;
+  width: fit-content;
+  animation: trusted-scroll 35s linear infinite;
+}
+
+.trusted-by__item {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@keyframes trusted-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 @media (max-width: 640px) {
   .daily-story-spotlight {
     padding: 20px;
